@@ -8,8 +8,6 @@ Compile this specific file to generate the .exe file
 #include <stdio.h>
 #include <stdlib.h>
 #include <random>
-#include "randlib.h"
-#include "SimulatorJY.h"  // Include the CSimulator class
 
 int main(int argc, char** argv)
 {
@@ -20,19 +18,6 @@ int main(int argc, char** argv)
 		return 0; 
 	}
 
-	// Set the seed
-	setall(1,1); 
-
-	// Create a CSimulator object
-	helsimJY mySim;
-
-	mySim.initialiseIO(argv[1], argv[2], argv[3]); 
-	
-	mySim.initialiseSimulation(); 
-
-	mySim.runRealizations(); 
-
-	mySim.outputRealisation(0);
 
 	return 1; 
 }
