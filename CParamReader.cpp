@@ -40,7 +40,7 @@ bool CParamReader::setFileName(char* filePath)
 }
 
 // return a string containing parameter data or Null.
-char* CParamReader::geteParamString(char* paramName)
+char* CParamReader::geteParamString(const char* paramName)
 {
 	// do we have a file attached?
 	paramFileStream.open(filePathString);
@@ -58,13 +58,20 @@ char* CParamReader::geteParamString(char* paramName)
 	{
 		paramFileStream.getline(paramBuffer,BUFFER_SIZE-1); // I don't know about the final \0.
 		token = strtok(paramBuffer,"\t");
-		if(strncmp(paramName,token,paramLength)==0)
+		// anything on this line?
+		if(token!=NULL)
 		{
-			// found it!
-			found = true;
-			paramString = strtok(NULL,"\t");
+			// line doesn't begin with # and matches param name?
+			if(token[0]!='#' && strncmp(paramName,token,paramLength)==0)
+			{
+				// found it!
+				found = true;
+				paramString = strtok(NULL,"\t");
+			}
 		}
 	}
+
+	paramFileStream.close();
 
 	return paramString;
 }

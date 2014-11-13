@@ -3,6 +3,10 @@
  *
  *  Created on: 12 Nov 2014
  *      Author: jtrusc
+ *
+ *      Each informative line of the param file should have the form:
+ *      paraName (tab) value information (tab) Any comments.
+ *      Any line starting with '#' is completely ignored.
  */
 
 #ifndef CPARAMREADER_H_
@@ -19,15 +23,13 @@ public:
 	virtual ~CParamReader();
 
 	bool setFileName(char* filePath);
-	char* geteParamString(char* paraName);
+	char* geteParamString(const char* paraName);
 
 
 	// members...
 	std::ifstream paramFileStream;
 	char* paramBuffer;
 	char* filePathString;
-
-	// use getline for the line getting.
 };
 
 #endif /* CPARAMREADER_H_ */

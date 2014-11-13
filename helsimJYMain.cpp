@@ -43,8 +43,8 @@ int main(int argc, char** argv)
 		std::cout << "Attached file: " << argv[1] << "\n";
 	}
 
-	char paramName[] = "param1";
-	char* test = myReader.geteParamString(paramName);
+	char* test = myReader.geteParamString("param1");
+	test = myReader.geteParamString("param2");
 
 	return 1; 
 }
