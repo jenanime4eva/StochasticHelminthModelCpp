@@ -22,7 +22,7 @@ public:
 	CParamReader();
 	virtual ~CParamReader();
 
-	bool setFileName(char* filePath);
+	bool setNewFileName(char* filePath);
 	char* geteParamString(const char* paraName);
 
 

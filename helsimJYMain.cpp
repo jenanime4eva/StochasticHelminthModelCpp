@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 
 	CParamReader myReader;
 
-	if(!myReader.setFileName(argv[1]))
+	if(!myReader.setNewFileName(argv[1]))
 	{
 		std::cout << "Failed to attach file: " << argv[1] << "\n";
 	} else

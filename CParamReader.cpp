@@ -23,8 +23,12 @@ CParamReader::~CParamReader()
 
 
 // set the file name and check that it exists.
-bool CParamReader::setFileName(char* filePath)
+bool CParamReader::setNewFileName(char* filePath)
 {
+	// If there's a file attached, remove it.
+	if(paramFileStream.is_open())
+		paramFileStream.close();
+
 	paramFileStream.open(filePath);
 
 	if(!paramFileStream.is_open())
