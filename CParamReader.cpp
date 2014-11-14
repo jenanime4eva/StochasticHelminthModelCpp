@@ -50,7 +50,7 @@ char* CParamReader::geteParamString(const char* paramName)
 	paramFileStream.open(filePathString);
 
 	if(!paramFileStream.is_open())
-		return false;
+		return NULL;
 
 	int paramLength = strlen(paramName);
 
