@@ -44,7 +44,7 @@ bool CParamReader::setNewFileName(char* filePath)
 }
 
 // return a string containing parameter data or Null.
-char* CParamReader::geteParamString(const char* paramName)
+char* CParamReader::getParamString(const char* paramName)
 {
 	// do we have a file attached?
 	paramFileStream.open(filePathString);
