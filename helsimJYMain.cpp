@@ -11,40 +11,40 @@ Compile this specific file to generate the .exe file
 
 #include "CParamReader.h"
 
-//using namespace std;
+// Using namespace std;
 
 #define BUFFER_SIZE 1024
 
 int main(int argc, char** argv)
 {
 	// Do we have the correct command line?
-	/*
+
 	if(argc!=2)
 	{
-		std::cout << "Incorrect command line. Expected:\nFile.exe logFile paramFile resultsFile\n";
+		std::cout << "Incorrect command line. Expected arguments for your .exe file: logFile paramFile resultsFile\n";
 		return 0; 
 	}
-	*/
+
 
 	// Debugging stuff...
-	// spit out the command line...
-	for(int i=0;i<argc;i++)
-	{
-		std::cout << argv[i] << "\n";
-	}
+	// Spit out the command line...
+//	for(int i=0;i<argc;i++)
+//	{
+//		std::cout << argv[i] << "\n";
+//	}
+//
+//	CParamReader myReader;
+//
+//	if(!myReader.setNewFileName(argv[1]))
+//	{
+//		std::cout << "Failed to attach file: " << argv[1] << "\n";
+//	} else
+//	{
+//		std::cout << "Attached file: " << argv[1] << "\n";
+//	}
 
-	CParamReader myReader;
-
-	if(!myReader.setNewFileName(argv[1]))
-	{
-		std::cout << "Failed to attach file: " << argv[1] << "\n";
-	} else
-	{
-		std::cout << "Attached file: " << argv[1] << "\n";
-	}
-
-	char* test = myReader.getParamString("param1");
-	test = myReader.getParamString("param2");
+	//char* test = myReader.getParamString("param1");
+	//test = myReader.getParamString("param2");
 
 	return 1; 
 }
