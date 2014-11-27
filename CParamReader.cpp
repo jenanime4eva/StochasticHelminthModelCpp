@@ -3,17 +3,21 @@
  *
  *  Created on: 12 Nov 2014
  *      Author: jtrusc
+ *  Modified: 26 Nov 2014
+ *		Author: Jie Yang
  */
 
 #include "CParamReader.h"
 #include <string.h>
 
+// Class Constructor
 CParamReader::CParamReader()
 {
 	paramBuffer = new char[BUFFER_SIZE];
 	filePathString = NULL;
 }
 
+// Class Destructor
 CParamReader::~CParamReader()
 {
 	delete[] paramBuffer;
@@ -22,7 +26,7 @@ CParamReader::~CParamReader()
 }
 
 
-// set the file name and check that it exists.
+// Set the file name and check that it exists
 bool CParamReader::setNewFileName(char* filePath)
 {
 	// If there's a file attached, remove it.
@@ -34,7 +38,7 @@ bool CParamReader::setNewFileName(char* filePath)
 	if(!paramFileStream.is_open())
 		return false;
 
-	paramFileStream.close(); // just checking; close it.
+	paramFileStream.close(); // Just checking, close it
 
 	//filePathString = new char[strlen(filePath)+1];
 	//strcpy(filePathString, filePath);
@@ -43,10 +47,10 @@ bool CParamReader::setNewFileName(char* filePath)
 	return true;
 }
 
-// return a string containing parameter data or Null.
+// Return a string containing parameter data or Null
 char* CParamReader::getParamString(const char* paramName)
 {
-	// do we have a file attached?
+	// Do we have a file attached?
 	paramFileStream.open(filePathString);
 
 	if(!paramFileStream.is_open())
@@ -57,18 +61,18 @@ char* CParamReader::getParamString(const char* paramName)
 	bool found = false;
 	char* paramString = NULL;
 	char* token;
-	// run through the lines of the file for the parameter.
+	// Run through the lines of the file for the parameter
 	while(!paramFileStream.eof() && !found)
 	{
-		paramFileStream.getline(paramBuffer,BUFFER_SIZE-1); // I don't know about the final \0.
+		paramFileStream.getline(paramBuffer,BUFFER_SIZE-1);
 		token = strtok(paramBuffer,"\t");
-		// anything on this line?
+		// Anything on this line?
 		if(token!=NULL)
 		{
-			// line doesn't begin with # and matches param name?
+			// Line doesn't begin with # and matches param name?
 			if(token[0]!='#' && strncmp(paramName,token,paramLength)==0)
 			{
-				// found it!
+				// Found it!
 				found = true;
 				paramString = strtok(NULL,"\t");
 			}

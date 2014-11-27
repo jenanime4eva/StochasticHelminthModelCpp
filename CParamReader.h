@@ -3,9 +3,10 @@
  *
  *  Created on: 12 Nov 2014
  *      Author: jtrusc
- *
+ *	Modified: 26 Nov 2014
+ *		Author: Jie Yang
  *      Each informative line of the param file should have the form:
- *      paraName (tab) value information (tab) Any comments.
+ *      paramNumber (tab) Value (tab) ## Comments
  *      Any line starting with '#' is completely ignored.
  */
 
@@ -26,7 +27,7 @@ public:
 	char* getParamString(const char* paraName);
 
 
-	// members...
+	// Members...
 	std::ifstream paramFileStream;
 	char* paramBuffer;
 	char* filePathString;
