@@ -1,16 +1,17 @@
 /*
  * CHost.h
  *
- *  Created on: 27 Nov 2014
- *      Author: Jie Yang
+ *  Created on: 1 Dec 2014
+ *      Author: jjy05
  */
 
-#include <fstream>
-
-#define BUFFER_SIZE 1024
+#ifndef CHOST_H_
+#define CHOST_H_
 
 class CHost {
 public:
 	CHost();
 	virtual ~CHost();
 };
+
+#endif /* CHOST_H_ */
