@@ -2,7 +2,7 @@
  * CHost.h
  *
  *  Created on: 1 Dec 2014
- *      Author: jjy05
+ *      Author: Jie yang
  */
 
 #ifndef CHOST_H_

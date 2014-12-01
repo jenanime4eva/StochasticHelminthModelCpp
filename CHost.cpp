@@ -2,7 +2,7 @@
  * CHost.cpp
  *
  *  Created on: 1 Dec 2014
- *      Author: jjy05
+ *      Author: Jie Yang
  */
 
 #include "CHost.h"

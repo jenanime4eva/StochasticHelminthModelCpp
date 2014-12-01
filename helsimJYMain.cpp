@@ -13,7 +13,7 @@ Compile this specific file to generate the .exe file
 #include <stdlib.h>
 //#include <random>
 
-// Using namespace std;
+using namespace std;
 
 #define BUFFER_SIZE 1024
 

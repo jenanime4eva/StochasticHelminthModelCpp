@@ -73,7 +73,7 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 	}
 
 
-	//nRepetitions = atoi(myReader.getParamString("param1"));
+	nRepetitions = atoi(myReader.getParamString("param1"));
 	//nYears = atoi(myReader.getParamString("param2"));
 	//nOutputsPerYear = atoi(myReader.getParamString("param3"));
 
