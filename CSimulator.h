@@ -5,7 +5,8 @@
  *      Author: Jie Yang
  */
 
-#pragma once
+#ifndef CSIMULATOR_H_
+#define CSIMULATOR_H_
 
 #include <fstream>
 #include "CParamReader.h"
@@ -42,3 +43,5 @@ public:
 	// Outputs
 	void outputSimulation(int n);
 };
+
+#endif /* CSIMULATOR_H_ */
