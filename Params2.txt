@@ -1,4 +1,0 @@
-## Dummy line. 
-param1	4	## Some comments. 
-
-param2 	345	## Hello...
