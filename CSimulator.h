@@ -32,6 +32,7 @@ public:
 	int nAG, CAGInfant, CAGPreSAC, CAGSAC, CAGAdult;
 	int R0, lambda, LDecayRate;
 	int TAGInfant, TAGPreSAC, TAGSAC, TAGAdult, treatStart, treatEnd, treatFreq;
+	double dt;
 	float gamma, z, k, sigma;
 	float demog_eta, demog_b, InfantBeta, PreSACBeta, SACBeta, AdultBeta;
 	float drugEfficacy, InfantCoverage, PreSACCoverage, SACCoverage, AdultCoverage;

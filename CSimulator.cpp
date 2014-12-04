@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <math.h>
 
 // Class Constructor
 CSimulator::CSimulator()
@@ -23,6 +24,7 @@ CSimulator::CSimulator()
 	nRepetitions = 0;
 	nYears = 0;
 	nOutputsPerYear = 0;
+	dt = 0;
 	nHosts = 0;
 	demog_eta = 0;
 	demog_b = 0;
@@ -107,17 +109,6 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 		return false;
 	}
 
-	// Get IO related parameters
-	nRepetitions = atoi(myReader.getParamString("param1"));
-	nYears = atoi(myReader.getParamString("param2"));
-	nOutputsPerYear = atoi(myReader.getParamString("param3"));
-
-	//Test: Parameter printout to console
-	printf ("Repetitions: %d\n",nRepetitions);
-	printf ("Years to run: %d\n",nYears);
-	printf ("Outputs per year: %d\n",nOutputsPerYear);
-
-
 	// Everything is ok
 	return true;
 }
@@ -126,6 +117,15 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 bool CSimulator::initialiseSimulation()
 {
 	// Get model related parameters
+
+	// Number of repetitions
+	nRepetitions = atoi(myReader.getParamString("param1"));
+
+	// Number of years to run
+	nYears = atoi(myReader.getParamString("param2"));
+
+	// Number of outputs per year
+	nOutputsPerYear = atoi(myReader.getParamString("param3"));
 
 	// Number of hosts
 	nHosts = atoi(myReader.getParamString("param4"));
@@ -197,6 +197,9 @@ bool CSimulator::initialiseSimulation()
 	treatFreq = strtol(chemoTimingsEndPointer,NULL,10);
 
 	//Test: Parameter printout to console
+	printf ("Repetitions: %d\n",nRepetitions);
+	printf ("Years to run: %d\n",nYears);
+	printf ("Outputs per year: %d\n",nOutputsPerYear);
 	printf ("Host population number: %d\n",nHosts);
 	printf ("Minimum age of treatment groups for infants, pre-SACs, SACs and adults : %d %d %d %d\n",TAGInfant,TAGPreSAC,TAGSAC,TAGAdult);
 	printf ("Coverages for infants, pre-SAC, SAC and adults: %g %g %g %g\n",InfantCoverage,PreSACCoverage,SACCoverage,AdultCoverage);
@@ -211,13 +214,14 @@ bool CSimulator::initialiseSimulation()
 	}
 
 	// Allocate memory
-	nTimeSteps = (int) nYears/nOutputsPerYear;
+	dt = (float) 1/nOutputsPerYear;
+	nTimeSteps = ((int) ceil(nYears/dt)) + 1; // CHECK THIS
 	results = new wormBurden*[nRepetitions];
 	for (int i=0;i<nRepetitions;i++)
 	{
 		// Allocate repetition
 		results[i] = new wormBurden[nTimeSteps];
-		memset (results[i],0,sizeof(wormBurden)*nTimeSteps); // LOOK INTO THIS
+		memset(results[i],0,sizeof(wormBurden)*nTimeSteps);
 
 		// Initialise nWorms in each repetition
 		results[i][0].nWorms = 0; // CHANGE THIS VALUE LATER
@@ -235,8 +239,8 @@ void CSimulator::runSimulation()
 		wormBurden* currentRun = results[runIndex];
 		for (timeIndex=0;timeIndex<nTimeSteps;timeIndex++)
 		{
-			//currentRun[timeIndex+1].nWorms = 0; // THIS LINE CAUSES CRASH, LOOK INTO IT
-			currentRun[timeIndex+1].time = currentRun[timeIndex].time + nOutputsPerYear;
+			//currentRun[timeIndex+1].nWorms = 1; // THIS LINE CAUSES CRASH, LOOK INTO IT
+			currentRun[timeIndex+1].time = currentRun[timeIndex].time + dt;
 		}
 	}
 }

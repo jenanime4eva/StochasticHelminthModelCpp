@@ -8,7 +8,7 @@
 
 param1	1	## Number of repetitions
 param2 	15	## Number of years to run
-param3	1	## Outputs per year
+param3	2	## Outputs per year
 param4	500	## Size of definitive host population (N)
 param5	9.88 0.0045	## demog_eta demog_b
 param6	70	## Number of age groups, may also be thought of as the maximum host age
