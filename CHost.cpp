@@ -7,12 +7,16 @@
 
 #include "CHost.h"
 
-CHost::CHost() {
+// Class constructor
+CHost::CHost()
+{
 	// TODO Auto-generated constructor stub
 
 }
 
-CHost::~CHost() {
+// Class destructor
+CHost::~CHost()
+{
 	// TODO Auto-generated destructor stub
 }
 

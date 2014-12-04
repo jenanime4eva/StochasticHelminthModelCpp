@@ -2,6 +2,8 @@
 
 ## Each informative line of the param file should have the form:
 ## paramNumber (tab) Value (tab) ## Comments
+## OR
+## paramNumber (tab) Value1 (space) Value2 (tab) ## Comments
 ## Any line starting with '#' is completely ignored.
 
 param1	1	## Number of repetitions
@@ -22,4 +24,4 @@ param15	5	## Reservoir decay rate (decay rate of eggs in the environment)
 param16	0 2 5 15	## Minimum age of treatment groups for infants, pre-SACs, SACs and adults 
 param17	0 0 0.75 0	## Coverages for infants, pre-SACs, SACs and adults 
 param18	0.9	## Drug efficacy (for no treatment make this value 0)
-param19 10 15 1	## Treatment start year, end year and frequency of treatment
+param19	10 15 1	## Treatment start year, end year and frequency of treatment

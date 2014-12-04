@@ -28,16 +28,23 @@ public:
 	// File input/output
 	std::ofstream logStream, resultsStream; // Output to log file and results file
 	bool initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName);
+	int nRepetitions, nYears, nOutputsPerYear, nTimeSteps;
+	int nAG, CAGInfant, CAGPreSAC, CAGSAC, CAGAdult;
+	int R0, lambda, LDecayRate;
+	int TAGInfant, TAGPreSAC, TAGSAC, TAGAdult, treatStart, treatEnd, treatFreq;
+	float gamma, z, k, sigma;
+	float demog_eta, demog_b, InfantBeta, PreSACBeta, SACBeta, AdultBeta;
+	float drugEfficacy, InfantCoverage, PreSACCoverage, SACCoverage, AdultCoverage;
 
-	// Initialisation
+	// General initialisation
 	char buffer[BUFFER_SIZE];
 	bool initialiseSimulation();
 	CParamReader myReader;
+	int nHosts;
+	wormBurden** results; // Array of worm burdens
+	CHost** hostPopulation; // Array of host population
 
 	// Simulation
-	int nRepetitions, nYears, nOutputsPerYear, nHosts;
-	wormBurden** results; // Array of worm burdens
-	CHost** hostPopulation;
 	void runSimulation();
 
 	// Outputs
