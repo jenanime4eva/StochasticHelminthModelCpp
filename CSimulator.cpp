@@ -94,20 +94,22 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 		std::cout << "Couldn't open the log file: " << logFileName << "\nexiting\n";
 		return false;
 	}
-	logStream << "Log file opened.\n";
+	logStream << "Log file opened.\n" << std::flush;
 
 	if (!myReader.setNewFileName(paramFileName))
  	{
-		logStream << "Couldn't open the param file: " << paramFileName << "\nexiting\n";
+		logStream << "Couldn't open the param file: " << paramFileName << "\nexiting\n" << std::flush;
 		return false;
 	}
+	logStream << "Param reader configured.\n" << std::flush;
 
 	resultsStream.open(resultsFileName);
 	if(!resultsStream.is_open())
 	{
-		logStream << "Couldn't open the results file: " << resultsFileName << "\nexiting\n";
+		logStream << "Couldn't open the results file: " << resultsFileName << "\nexiting\n" << std::flush;
 		return false;
 	}
+	logStream << "Results file opened.\n" << std::flush;
 
 	// Everything is ok
 	return true;
@@ -237,9 +239,9 @@ void CSimulator::runSimulation()
 	for (runIndex=0;runIndex<nRepetitions;runIndex++)
 	{
 		wormBurden* currentRun = results[runIndex];
-		for (timeIndex=0;timeIndex<nTimeSteps;timeIndex++)
+		for (timeIndex=0;timeIndex<nTimeSteps-1;timeIndex++)
 		{
-			//currentRun[timeIndex+1].nWorms = currentRun[timeIndex].nWorms + 1; // THIS LINE CAUSES CRASH, LOOK INTO IT
+			currentRun[timeIndex+1].nWorms = currentRun[timeIndex].nWorms + 1; // THIS LINE CAUSES CRASH, LOOK INTO IT
 			currentRun[timeIndex+1].time = currentRun[timeIndex].time + dt;
 		}
 	}
@@ -253,6 +255,7 @@ void CSimulator::outputSimulation(int n)
 		resultsStream << results[n][i].time << "\t"
 				<< results[n][i].nWorms << "\n";
 	}
+	resultsStream << std::flush;
 }
 
 

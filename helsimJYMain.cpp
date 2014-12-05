@@ -27,7 +27,13 @@ int main(int argc, char** argv)
 
 	// Create a CSimulator object
 	CSimulator SIMULATE;
-	SIMULATE.initialiseIO(argv[1],argv[2],argv[3]); // Initialise the input/output aspects of the simulator
+	// Initialise the input/output aspects of the simulator
+	if(!SIMULATE.initialiseIO(argv[1],argv[2],argv[3]))
+	{
+		SIMULATE.logStream << "Failure in initialiseIO(...).\n" << std::flush;
+		return 0;
+	}
+
 	SIMULATE.initialiseSimulation(); // General initialisation
 	SIMULATE.runSimulation(); // Run simulation
 	SIMULATE.outputSimulation(0); // Output simulation
