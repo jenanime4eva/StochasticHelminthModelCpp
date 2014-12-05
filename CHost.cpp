@@ -6,6 +6,7 @@
  */
 
 #include "CHost.h"
+#include <random>
 
 // Class constructor
 CHost::CHost()

@@ -215,7 +215,7 @@ bool CSimulator::initialiseSimulation()
 
 	// Allocate memory
 	dt = (float) 1/nOutputsPerYear;
-	nTimeSteps = ((int) ceil(nYears/dt)) + 1; // CHECK THIS
+	nTimeSteps = ((int) ceil(nYears/dt)) + 1;
 	results = new wormBurden*[nRepetitions];
 	for (int i=0;i<nRepetitions;i++)
 	{
@@ -239,7 +239,7 @@ void CSimulator::runSimulation()
 		wormBurden* currentRun = results[runIndex];
 		for (timeIndex=0;timeIndex<nTimeSteps;timeIndex++)
 		{
-			//currentRun[timeIndex+1].nWorms = 1; // THIS LINE CAUSES CRASH, LOOK INTO IT
+			//currentRun[timeIndex+1].nWorms = currentRun[timeIndex].nWorms + 1; // THIS LINE CAUSES CRASH, LOOK INTO IT
 			currentRun[timeIndex+1].time = currentRun[timeIndex].time + dt;
 		}
 	}
