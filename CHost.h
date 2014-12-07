@@ -12,6 +12,9 @@ class CHost {
 public:
 	CHost();
 	virtual ~CHost();
+
+	// Members.
+	double birthDate, deathDate;
 };
 
 #endif /* CHOST_H_ */

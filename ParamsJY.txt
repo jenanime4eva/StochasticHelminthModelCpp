@@ -6,6 +6,16 @@
 ## paramNumber (tab) Value1 (space) Value2 (tab) ## Comments
 ## Any line starting with '#' is completely ignored.
 
+
+demog_eta	0.05	## params for survival curve. WAS 9.88 
+demog_b	0.0045	## params for survival curve.
+survivalDt	0.5	## age step for survival curve in years. 
+survivalMaxAge	100	## maximum age for survival curve and hence individuals. 
+
+############################################################
+
+testVector	2 1.0 2.0	## test vector. 
+
 param1	1	## Number of repetitions
 param2 	15	## Number of years to run
 param3	2	## Outputs per year

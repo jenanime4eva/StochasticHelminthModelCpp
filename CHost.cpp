@@ -6,13 +6,12 @@
  */
 
 #include "CHost.h"
-#include <random>
 
 // Class constructor
 CHost::CHost()
 {
 	// TODO Auto-generated constructor stub
-
+	birthDate = deathDate = 0;
 }
 
 // Class destructor

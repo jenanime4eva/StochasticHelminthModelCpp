@@ -15,6 +15,7 @@
 #include <memory.h>
 #include <math.h>
 
+
 // Class Constructor
 CSimulator::CSimulator()
 {
@@ -24,8 +25,15 @@ CSimulator::CSimulator()
 	nRepetitions = 0;
 	nYears = 0;
 	nOutputsPerYear = 0;
+	nTimeSteps = 0;
 	dt = 0;
 	nHosts = 0;
+
+	survivalCurve = survivalCurveIntegral = NULL;
+	survivalDt = 0;
+	survivalMaxIndex = 0;
+	demog_b = demog_eta = 0;
+	/*
 	demog_eta = 0;
 	demog_b = 0;
 	nAG = 0;
@@ -53,10 +61,10 @@ CSimulator::CSimulator()
 	SACCoverage = 0;
 	AdultCoverage = 0;
 	drugEfficacy = 0;
-	nTimeSteps = 0;
 	treatStart = 0;
 	treatEnd = 0;
 	treatFreq = 0;
+	*/
 }
 
 // Class Destructor
@@ -82,6 +90,13 @@ CSimulator::~CSimulator()
 		}
 		delete[] hostPopulation;
 	}
+
+	if(survivalCurve!=NULL)
+		delete[] survivalCurve;
+
+	if(survivalCurveIntegral!=NULL)
+		delete[] survivalCurveIntegral;
+
 }
 
 // Initialise the input/output aspects of the simulator
@@ -118,8 +133,8 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 // General initialisation
 bool CSimulator::initialiseSimulation()
 {
+	char* endPointer; // general variable for the end pointer used in strto_ functions.
 	// Get model related parameters
-
 	// Number of repetitions
 	nRepetitions = atoi(myReader.getParamString("param1"));
 
@@ -132,6 +147,45 @@ bool CSimulator::initialiseSimulation()
 	// Number of hosts
 	nHosts = atoi(myReader.getParamString("param4"));
 
+	/////////////////////////////////////////////////////////////////////////////
+	///  Set up demography.
+
+	// TODO: Read a parameter to determine whether to use data for the survival curve or a named function.
+
+	// use the expo-expo function to define the survival curve.
+	demog_eta = strtod(myReader.getParamString("demog_eta"),&endPointer);
+	demog_b = strtod(myReader.getParamString("demog_b"),&endPointer);
+	survivalDt = strtod(myReader.getParamString("survivalDt"),&endPointer);
+	double survivalMaxAge = strtod(myReader.getParamString("survivalMaxAge"),&endPointer);
+
+	survivalMaxIndex = (int) ceil(survivalMaxAge/survivalDt);
+	survivalCurve = new double[survivalMaxIndex];
+	survivalCurveIntegral = new double[survivalMaxIndex];
+	double subTotal = 0;
+	for(int i=0;i<survivalMaxIndex;i++)
+	{
+		//survivalCurve[i] = exp(-demog_eta*(exp(demog_b*survivalDt*i)-1));
+		survivalCurve[i] = exp(-demog_eta*survivalDt*i);
+		subTotal += survivalCurve[i];
+		survivalCurveIntegral[i] = (subTotal - (survivalCurve[0]+survivalCurve[i])/2)*survivalDt;
+	}
+
+	// Set up host population array
+	hostPopulation = new CHost* [nHosts];
+	for (int i=0;i<nHosts;i++)
+	{
+		hostPopulation[i] = new CHost;
+		// do lifespan stuff...
+		double lifespan = drawLifespan();
+		hostPopulation[i]->birthDate = -myRand()*lifespan;
+		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
+
+
+	/*
 	// Demography info
 	char * demog;
 	demog_eta = strtof(myReader.getParamString("param5"),&demog); // Convert string to float
@@ -207,13 +261,11 @@ bool CSimulator::initialiseSimulation()
 	printf ("Coverages for infants, pre-SAC, SAC and adults: %g %g %g %g\n",InfantCoverage,PreSACCoverage,SACCoverage,AdultCoverage);
 	printf ("Drug Efficacy: %g\n",drugEfficacy);
 	printf ("Treatment start year, end year and frequency: %d %d %d\n",treatStart,treatEnd,treatFreq);
+	*/
 
-	// Set up host population array
-	hostPopulation = new CHost* [nHosts];
-	for (int i=0;i<nHosts;i++)
-	{
-		hostPopulation[i] = new CHost;
-	}
+	/////////////////////////////////////////////////////////////////////////////////////
+	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
+
 
 	// Allocate memory
 	dt = (float) 1/nOutputsPerYear;
@@ -229,6 +281,8 @@ bool CSimulator::initialiseSimulation()
 		results[i][0].nWorms = 0; // CHANGE THIS VALUE LATER
 		results[i][0].time = 0;
 	}
+
+
 	return true;
 }
 
@@ -258,5 +312,82 @@ void CSimulator::outputSimulation(int n)
 	resultsStream << std::flush;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+/// Auxiliary function definitions.
 
+double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
+{
+	// read in the length of the vector.
+	char* endPointer;
+	int length = strtol(currentString,&endPointer,10);
+	currentLength = length;
 
+	if(length<0)
+		return NULL;
+
+	// create array of doubles.
+	double* vectorArray = new double[length];
+	for(int i=0;i<length;i++)
+	{
+		vectorArray[i] = strtod(endPointer, &endPointer);
+	}
+	return vectorArray;
+}
+
+// This function takes a random number (0-1) and multiplies it by the max of the passed array.
+// It then finds the smallest index that has an array value greater than the product above.
+// For a cumulative multinomial array, this will return the index of the event that occurred.
+// Also used for drawing a lifespan from the survival curve integral.
+int CSimulator::multiNomBasic(double* array, int length, double randNum)
+{
+	int loopMax = ceil(log(length)/log(2)+2);
+	int bottom = -1;
+	//double bottomVal;
+	int top = length-1;
+	double topVal = array[top];
+	double target = topVal*randNum;
+	int count = 0;
+
+	while(++count<loopMax && (top-bottom>1))
+	{
+		int mid = (top+bottom)/2;
+		double midVal = array[mid];
+		if(midVal>=target)
+		{
+			top = mid;
+			topVal = midVal;
+		} else
+		{
+			bottom = mid;
+			//bottomVal = midVal;
+		}
+	}
+
+	if(count>=loopMax)
+	{
+		logStream << "Max iterations exceeded in multiNomBasic(...),\n" << std::flush;
+		return -1;
+	}
+
+	return top;
+}
+
+// uniform random number generator. Should be using the <random> functions.
+double CSimulator::myRand()
+{
+	return (1.0*rand())/RAND_MAX;
+}
+
+// draw a life span from the survival curve from he population.
+double CSimulator::drawLifespan()
+{
+	// get a random integer from the survivalcurve integral from the multinomial generator. This shouldn't be zero!!
+	double currentRand = myRand();
+	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
+
+	// interpolate from the returned value.
+	double target = currentRand*survivalCurveIntegral[survivalMaxIndex-1];
+	double a = (target - survivalCurveIntegral[index-1])/(survivalCurveIntegral[index] - survivalCurveIntegral[index-1]);
+	double ans = a*survivalDt + (index - 1)*survivalDt;
+	return ans;
+}

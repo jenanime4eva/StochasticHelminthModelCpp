@@ -11,6 +11,8 @@
 #include <fstream>
 #include "CParamReader.h"
 #include "CHost.h"
+#include <random>
+
 
 #define BUFFER_SIZE 1024
 
@@ -29,13 +31,24 @@ public:
 	std::ofstream logStream, resultsStream; // Output to log file and results file
 	bool initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName);
 	int nRepetitions, nYears, nOutputsPerYear, nTimeSteps;
+	double dt;
+
+
+	// demographics.
+	double demog_eta, demog_b, survivalDt;
+	int survivalMaxIndex;
+	double* survivalCurve;
+	double* survivalCurveIntegral;
+	double drawLifespan();
+
+	/*
 	int nAG, CAGInfant, CAGPreSAC, CAGSAC, CAGAdult;
 	int R0, lambda, LDecayRate;
 	int TAGInfant, TAGPreSAC, TAGSAC, TAGAdult, treatStart, treatEnd, treatFreq;
-	double dt;
 	float gamma, z, k, sigma;
-	float demog_eta, demog_b, InfantBeta, PreSACBeta, SACBeta, AdultBeta;
+	float InfantBeta, PreSACBeta, SACBeta, AdultBeta;
 	float drugEfficacy, InfantCoverage, PreSACCoverage, SACCoverage, AdultCoverage;
+	*/
 
 	// General initialisation
 	char buffer[BUFFER_SIZE];
@@ -50,6 +63,15 @@ public:
 
 	// Outputs
 	void outputSimulation(int n);
+
+	////////////////////////////////////////////////////
+	/// Auxiliary functions.
+	// a function to read in a list of doubles into a vector.
+	double* readDoublesVector(char* valuesString, int& currentLength);
+	// return an index for the value that is just above a uniform random deviate.
+	int multiNomBasic(double* array, int length, double randNum);
+	// a uniform random number generator (do better than this!)
+	double myRand();
 };
 
 #endif /* CSIMULATOR_H_ */

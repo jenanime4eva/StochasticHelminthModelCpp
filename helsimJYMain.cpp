@@ -11,6 +11,7 @@ Compile this specific file to generate the .exe file
 #include <stdio.h>
 #include <stdlib.h>
 #include <random>
+#include <time.h>
 
 using namespace std;
 
@@ -23,7 +24,9 @@ int main(int argc, char** argv)
 		return 0; 
 	}
 
-	// Set the seed (ADD THIS LATER)
+	// Set the seed.
+	//srand(10);
+	srand(time(NULL));
 
 	// Create a CSimulator object
 	CSimulator SIMULATE;
