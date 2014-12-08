@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <math.h>
+#include "randlib.h"
 
 
 // Class Constructor
@@ -62,7 +63,6 @@ CSimulator::CSimulator()
 	treatStart = 0;
 	treatEnd = 0;
 	treatFreq = 0;
-
 }
 
 // Class Destructor
@@ -149,7 +149,7 @@ bool CSimulator::initialiseSimulation()
 
 	// Read a parameter to determine whether to use data for the survival curve or a named function
 
-	// Use the expo-expo function to define the survival curve
+	// Use the exponential-exponential function to define the survival curve
 	char* demographyEndPointer;
 	demog_eta = strtod(myReader.getParamString("demography"),&demographyEndPointer);
 	demog_b = strtod(demographyEndPointer,NULL);
@@ -162,9 +162,10 @@ bool CSimulator::initialiseSimulation()
 	double subTotal = 0;
 	for(int i=0;i<survivalMaxIndex;i++)
 	{
-		survivalCurve[i] = exp(-demog_eta*(exp(demog_b*survivalDt*i)-1));
-		//survivalCurve[i] = exp(-demog_eta*survivalDt*i);
-		subTotal += survivalCurve[i];
+		// Exponential-exponential function
+		// survivalCurve[i] = exp(-demog_eta*(exp(demog_b*survivalDt*i)-1)); // Uncomment later
+		survivalCurve[i] = exp(-demog_eta*survivalDt*i);
+		subTotal += survivalCurve[i]; // subTotal = subTotal + survivalCurve
 		survivalCurveIntegral[i] = (subTotal - (survivalCurve[0]+survivalCurve[i])/2)*survivalDt;
 	}
 
@@ -241,7 +242,7 @@ bool CSimulator::initialiseSimulation()
 	treatFreq = strtol(chemoTimingsEndPointer,NULL,10);
 
 	// Print some parameters of different types to log file to check if they are being read in correctly
-	logStream << "Repetitions: " << nRepetitions << "\n"
+	logStream << "\nRepetitions: " << nRepetitions << "\n"
 				<< "Fecundity parameter: " << z << "\n"
 				<< "demog_eta and demog_b: " << demog_eta << "\t" << demog_b << "\n"
 				<< std::flush;

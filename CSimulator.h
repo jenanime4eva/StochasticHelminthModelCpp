@@ -11,7 +11,8 @@
 #include <fstream>
 #include "CParamReader.h"
 #include "CHost.h"
-#include <random>
+//#include <random>
+#include "randlib.h"
 
 
 #define BUFFER_SIZE 1024
