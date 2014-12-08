@@ -29,14 +29,12 @@ CSimulator::CSimulator()
 	dt = 0;
 	nHosts = 0;
 
+	demog_b = demog_eta = 0;
 	survivalCurve = survivalCurveIntegral = NULL;
 	survivalDt = 0;
+	survivalMaxAge = 0;
 	survivalMaxIndex = 0;
-	demog_b = demog_eta = 0;
-	/*
-	demog_eta = 0;
-	demog_b = 0;
-	nAG = 0;
+
 	CAGInfant = 0;
 	CAGPreSAC = 0;
 	CAGSAC = 0;
@@ -64,7 +62,7 @@ CSimulator::CSimulator()
 	treatStart = 0;
 	treatEnd = 0;
 	treatFreq = 0;
-	*/
+
 }
 
 // Class Destructor
@@ -133,30 +131,30 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 // General initialisation
 bool CSimulator::initialiseSimulation()
 {
-	char* endPointer; // general variable for the end pointer used in strto_ functions.
 	// Get model related parameters
 	// Number of repetitions
-	nRepetitions = atoi(myReader.getParamString("param1"));
+	nRepetitions = atoi(myReader.getParamString("numberRepetitions"));
 
 	// Number of years to run
-	nYears = atoi(myReader.getParamString("param2"));
+	nYears = atoi(myReader.getParamString("numberYears"));
 
 	// Number of outputs per year
-	nOutputsPerYear = atoi(myReader.getParamString("param3"));
+	nOutputsPerYear = atoi(myReader.getParamString("numberOutputsPerYear"));
 
 	// Number of hosts
-	nHosts = atoi(myReader.getParamString("param4"));
+	nHosts = atoi(myReader.getParamString("numberHosts"));
 
 	/////////////////////////////////////////////////////////////////////////////
-	///  Set up demography.
+	///  Set up demography
 
-	// TODO: Read a parameter to determine whether to use data for the survival curve or a named function.
+	// Read a parameter to determine whether to use data for the survival curve or a named function
 
-	// use the expo-expo function to define the survival curve.
-	demog_eta = strtod(myReader.getParamString("demog_eta"),&endPointer);
-	demog_b = strtod(myReader.getParamString("demog_b"),&endPointer);
-	survivalDt = strtod(myReader.getParamString("survivalDt"),&endPointer);
-	double survivalMaxAge = strtod(myReader.getParamString("survivalMaxAge"),&endPointer);
+	// Use the expo-expo function to define the survival curve
+	char* demographyEndPointer;
+	demog_eta = strtod(myReader.getParamString("demography"),&demographyEndPointer);
+	demog_b = strtod(demographyEndPointer,NULL);
+	survivalDt = atof(myReader.getParamString("survivalDt"));
+	survivalMaxAge = atof(myReader.getParamString("survivalMaxAge"));
 
 	survivalMaxIndex = (int) ceil(survivalMaxAge/survivalDt);
 	survivalCurve = new double[survivalMaxIndex];
@@ -164,8 +162,8 @@ bool CSimulator::initialiseSimulation()
 	double subTotal = 0;
 	for(int i=0;i<survivalMaxIndex;i++)
 	{
-		//survivalCurve[i] = exp(-demog_eta*(exp(demog_b*survivalDt*i)-1));
-		survivalCurve[i] = exp(-demog_eta*survivalDt*i);
+		survivalCurve[i] = exp(-demog_eta*(exp(demog_b*survivalDt*i)-1));
+		//survivalCurve[i] = exp(-demog_eta*survivalDt*i);
 		subTotal += survivalCurve[i];
 		survivalCurveIntegral[i] = (subTotal - (survivalCurve[0]+survivalCurve[i])/2)*survivalDt;
 	}
@@ -175,93 +173,78 @@ bool CSimulator::initialiseSimulation()
 	for (int i=0;i<nHosts;i++)
 	{
 		hostPopulation[i] = new CHost;
-		// do lifespan stuff...
+		// Do lifespan stuff...
 		double lifespan = drawLifespan();
-		hostPopulation[i]->birthDate = -myRand()*lifespan;
-		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
+		hostPopulation[i] -> birthDate = -myRand()*lifespan;
+		hostPopulation[i] -> deathDate = hostPopulation[i] -> birthDate + lifespan;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
 
-
-	/*
-	// Demography info
-	char * demog;
-	demog_eta = strtof(myReader.getParamString("param5"),&demog); // Convert string to float
-	demog_b = strtof(demog,NULL);
-
-	// Number of age groups
-	nAG = atoi(myReader.getParamString("param6"));
-
 	// Contact age groups
 	char * CAGEndPointer;
-	CAGInfant = strtol(myReader.getParamString("param7"),&CAGEndPointer,10); // Convert string to integer, base 10
+	CAGInfant = strtol(myReader.getParamString("contactAgeGroups"),&CAGEndPointer,10); // Convert string to integer, base 10
 	CAGPreSAC = strtol(CAGEndPointer,&CAGEndPointer,10);
 	CAGSAC = strtol(CAGEndPointer,&CAGEndPointer,10);
 	CAGAdult = strtol(CAGEndPointer,NULL,10);
 
 	// Beta values
 	char * betaEndPointer;
-	InfantBeta = strtof(myReader.getParamString("param8"),&betaEndPointer); // Convert string to float
+	InfantBeta = strtof(myReader.getParamString("beta"),&betaEndPointer); // Convert string to float
 	PreSACBeta = strtof(betaEndPointer,&betaEndPointer);
 	SACBeta = strtof(betaEndPointer,&betaEndPointer);
 	AdultBeta = strtof(betaEndPointer,NULL);
 
 	// R0
-	R0 = atoi(myReader.getParamString("param9"));
+	R0 = atoi(myReader.getParamString("R0"));
 
 	// Egg per gram
-	lambda = atoi(myReader.getParamString("param10"));
+	lambda = atoi(myReader.getParamString("lambda"));
 
 	// Exponential density dependence of parasite adult stage
-	gamma = atof(myReader.getParamString("param11"));
+	gamma = atof(myReader.getParamString("gamma"));
 
 	// Fecundity parameter z = exp(-gamma)
-	z = atof(myReader.getParamString("param12"));
+	z = atof(myReader.getParamString("z"));
 
 	// Shape parameter of assumed negative binomial distribution of worms amongst host
-	k = atof(myReader.getParamString("param13"));
+	k = atof(myReader.getParamString("k"));
 
 	// Worm death rate i.e. 1/worm_life_span
-	sigma = atof(myReader.getParamString("param14"));
+	sigma = atof(myReader.getParamString("sigma"));
 
 	// Reservoir decay rate (decay rate of eggs in the environment)
-	LDecayRate = atoi(myReader.getParamString("param15"));
+	LDecayRate = atoi(myReader.getParamString("LDecayRate"));
 
 	// Treatment age groups
 	char * TAGEndPointer;
-	TAGInfant = strtol(myReader.getParamString("param16"),&TAGEndPointer,10); // Convert string to integer, base 10
+	TAGInfant = strtol(myReader.getParamString("treatmentAgeGroups"),&TAGEndPointer,10); // Convert string to integer, base 10
 	TAGPreSAC = strtol(TAGEndPointer,&TAGEndPointer,10);
 	TAGSAC = strtol(TAGEndPointer,&TAGEndPointer,10);
 	TAGAdult = strtol(TAGEndPointer,NULL,10);
 
 	// Coverages
 	char * coverageEndPointer;
-	InfantCoverage = strtof(myReader.getParamString("param17"),&coverageEndPointer); // Convert string to float
+	InfantCoverage = strtof(myReader.getParamString("coverages"),&coverageEndPointer); // Convert string to float
 	PreSACCoverage = strtof(coverageEndPointer,&coverageEndPointer);
 	SACCoverage = strtof(coverageEndPointer,&coverageEndPointer);
 	AdultCoverage = strtof(coverageEndPointer,NULL);
 
 	// Drug efficacy
-	drugEfficacy = atof(myReader.getParamString("param18"));
+	drugEfficacy = atof(myReader.getParamString("drugEfficacy"));
 
 	// Chemotherapy timings
 	char * chemoTimingsEndPointer;
-	treatStart = strtol(myReader.getParamString("param19"),&chemoTimingsEndPointer,10); // Convert string to integer, base 10
+	treatStart = strtol(myReader.getParamString("treatmentTimes"),&chemoTimingsEndPointer,10); // Convert string to integer, base 10
 	treatEnd = strtol(chemoTimingsEndPointer,&chemoTimingsEndPointer,10);
 	treatFreq = strtol(chemoTimingsEndPointer,NULL,10);
 
-	//Test: Parameter printout to console
-	printf ("Repetitions: %d\n",nRepetitions);
-	printf ("Years to run: %d\n",nYears);
-	printf ("Outputs per year: %d\n",nOutputsPerYear);
-	printf ("Host population number: %d\n",nHosts);
-	printf ("Minimum age of treatment groups for infants, pre-SACs, SACs and adults : %d %d %d %d\n",TAGInfant,TAGPreSAC,TAGSAC,TAGAdult);
-	printf ("Coverages for infants, pre-SAC, SAC and adults: %g %g %g %g\n",InfantCoverage,PreSACCoverage,SACCoverage,AdultCoverage);
-	printf ("Drug Efficacy: %g\n",drugEfficacy);
-	printf ("Treatment start year, end year and frequency: %d %d %d\n",treatStart,treatEnd,treatFreq);
-	*/
+	// Print some parameters of different types to log file to check if they are being read in correctly
+	logStream << "Repetitions: " << nRepetitions << "\n"
+				<< "Fecundity parameter: " << z << "\n"
+				<< "demog_eta and demog_b: " << demog_eta << "\t" << demog_b << "\n"
+				<< std::flush;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
@@ -295,7 +278,7 @@ void CSimulator::runSimulation()
 		wormBurden* currentRun = results[runIndex];
 		for (timeIndex=0;timeIndex<nTimeSteps-1;timeIndex++)
 		{
-			currentRun[timeIndex+1].nWorms = currentRun[timeIndex].nWorms + 1; // THIS LINE CAUSES CRASH, LOOK INTO IT
+			currentRun[timeIndex+1].nWorms = currentRun[timeIndex].nWorms + 1;
 			currentRun[timeIndex+1].time = currentRun[timeIndex].time + dt;
 		}
 	}
@@ -313,11 +296,11 @@ void CSimulator::outputSimulation(int n)
 }
 
 //////////////////////////////////////////////////////////////////////////////////
-/// Auxiliary function definitions.
+/// Auxiliary function definitions
 
 double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 {
-	// read in the length of the vector.
+	// Read in the length of the vector
 	char* endPointer;
 	int length = strtol(currentString,&endPointer,10);
 	currentLength = length;
@@ -325,7 +308,7 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 	if(length<0)
 		return NULL;
 
-	// create array of doubles.
+	// Create array of doubles
 	double* vectorArray = new double[length];
 	for(int i=0;i<length;i++)
 	{
@@ -372,20 +355,20 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 	return top;
 }
 
-// uniform random number generator. Should be using the <random> functions.
+// Uniform random number generator. Should be using the <random> functions.
 double CSimulator::myRand()
 {
 	return (1.0*rand())/RAND_MAX;
 }
 
-// draw a life span from the survival curve from he population.
+// Draw a life span from the survival curve from the population.
 double CSimulator::drawLifespan()
 {
-	// get a random integer from the survivalcurve integral from the multinomial generator. This shouldn't be zero!!
+	// Get a random integer from the survivalcurve integral from the multinomial generator. This shouldn't be zero!!
 	double currentRand = myRand();
 	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
 
-	// interpolate from the returned value.
+	// Interpolate from the returned value.
 	double target = currentRand*survivalCurveIntegral[survivalMaxIndex-1];
 	double a = (target - survivalCurveIntegral[index-1])/(survivalCurveIntegral[index] - survivalCurveIntegral[index-1]);
 	double ans = a*survivalDt + (index - 1)*survivalDt;

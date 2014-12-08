@@ -10,7 +10,7 @@
 // Class constructor
 CHost::CHost()
 {
-	// TODO Auto-generated constructor stub
+	// Default values
 	birthDate = deathDate = 0;
 }
 

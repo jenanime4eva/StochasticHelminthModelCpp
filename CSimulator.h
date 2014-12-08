@@ -34,21 +34,19 @@ public:
 	double dt;
 
 
-	// demographics.
-	double demog_eta, demog_b, survivalDt;
+	// Demographics
+	double demog_eta, demog_b, survivalDt,survivalMaxAge;
 	int survivalMaxIndex;
 	double* survivalCurve;
 	double* survivalCurveIntegral;
 	double drawLifespan();
 
-	/*
-	int nAG, CAGInfant, CAGPreSAC, CAGSAC, CAGAdult;
+	int CAGInfant, CAGPreSAC, CAGSAC, CAGAdult;
 	int R0, lambda, LDecayRate;
 	int TAGInfant, TAGPreSAC, TAGSAC, TAGAdult, treatStart, treatEnd, treatFreq;
-	float gamma, z, k, sigma;
-	float InfantBeta, PreSACBeta, SACBeta, AdultBeta;
-	float drugEfficacy, InfantCoverage, PreSACCoverage, SACCoverage, AdultCoverage;
-	*/
+	double gamma, z, k, sigma;
+	double InfantBeta, PreSACBeta, SACBeta, AdultBeta;
+	double drugEfficacy, InfantCoverage, PreSACCoverage, SACCoverage, AdultCoverage;
 
 	// General initialisation
 	char buffer[BUFFER_SIZE];
@@ -64,13 +62,13 @@ public:
 	// Outputs
 	void outputSimulation(int n);
 
-	////////////////////////////////////////////////////
-	/// Auxiliary functions.
-	// a function to read in a list of doubles into a vector.
+	////////////////////////////////////////////////////////////////////////////////
+	/// Auxiliary functions
+	// A function to read in a list of doubles into a vector
 	double* readDoublesVector(char* valuesString, int& currentLength);
-	// return an index for the value that is just above a uniform random deviate.
+	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
-	// a uniform random number generator (do better than this!)
+	// A uniform random number generator (do better than this!) -> GET RANDOM HEADER WORKING HERE
 	double myRand();
 };
 

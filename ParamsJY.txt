@@ -1,37 +1,35 @@
 ## Parameter values for the stochastic model
 
 ## Each informative line of the param file should have the form:
-## paramNumber (tab) Value (tab) ## Comments
+## ParamName (tab) Value (tab) ## Comments
 ## OR
-## paramNumber (tab) Value1 (space) Value2 (tab) ## Comments
-## Any line starting with '#' is completely ignored.
+## ParamName (tab) Value1 (space) Value2 (tab) ## Comments
+## Any line starting with '#' is completely ignored
 
+## RUN PARAMETERS
+numberRepetitions	1	## Number of repetitions
+numberYears 	15	## Number of years to run
+numberOutputsPerYear	1	## Outputs per year
 
-demog_eta	0.05	## params for survival curve. WAS 9.88 
-demog_b	0.0045	## params for survival curve.
-survivalDt	0.5	## age step for survival curve in years. 
-survivalMaxAge	100	## maximum age for survival curve and hence individuals. 
+## HOST PARAMETERS
+numberHosts	500	## Size of definitive host population (N)
+demography	9.88 0.0045	## demog_eta demog_b
+survivalDt	0.5	## age step for survival curve in years
+survivalMaxAge	100	## maximum age for survival curve and hence individuals
+contactAgeGroups	0 2 5 15	## Contact age group break for infants, pre-SACs, SACs and adults
+beta	0.5 0.5 1 2	# Beta values for infants, pre-SACs, SACs and adults
 
-############################################################
+## WORM PARAMETERS
+R0	2	## Basic reproductive number (R0)
+lambda	5470	## Eggs per gram (lambda)
+gamma	0.083	## Exponential density dependence of parasite adult stage (gamma) 
+z	0.92	## Fecundity parameter z = exp(-gamma)
+k	0.5	## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
+sigma	0.2	## Worm death rate (sigma) i.e. 1/worm_life_span, same for all development stages
+LDecayRate	5	## Reservoir decay rate (decay rate of eggs in the environment)
 
-testVector	2 1.0 2.0	## test vector. 
-
-param1	1	## Number of repetitions
-param2 	15	## Number of years to run
-param3	2	## Outputs per year
-param4	500	## Size of definitive host population (N)
-param5	9.88 0.0045	## demog_eta demog_b
-param6	70	## Number of age groups, may also be thought of as the maximum host age
-param7	0 2 5 15	## Contact age group break for infants, pre-SACs, SACs and adults
-param8	0.5 0.5 1 2	# Beta values for infants, pre-SACs, SACs and adults
-param9	2	## Basic reproductive number (R0)
-param10	5470	## Eggs per gram (lambda)
-param11	0.083	## Exponential density dependence of parasite adult stage (gamma) 
-param12	0.92	## Fecundity parameter z = exp(-gamma)
-param13	0.5	## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
-param14	0.2	## Worm death rate (sigma) i.e. 1/worm_life_span, same for all development stages
-param15	5	## Reservoir decay rate (decay rate of eggs in the environment)
-param16	0 2 5 15	## Minimum age of treatment groups for infants, pre-SACs, SACs and adults 
-param17	0 0 0.75 0	## Coverages for infants, pre-SACs, SACs and adults 
-param18	0.9	## Drug efficacy (for no treatment make this value 0)
-param19	10 15 1	## Treatment start year, end year and frequency of treatment
+## TREATMENT PARAMETERS
+treatmentAgeGroups	0 2 5 15	## Minimum age of treatment groups for infants, pre-SACs, SACs and adults 
+coverages	0 0 0.75 0	## Coverages for infants, pre-SACs, SACs and adults 
+drugEfficacy	0.9	## Drug efficacy (for no treatment make this value 0)
+treatmentTimes	10 15 1	## Treatment start year, end year and frequency of treatment
