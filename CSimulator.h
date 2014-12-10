@@ -12,8 +12,6 @@
 #include "CParamReader.h"
 #include "CHost.h"
 //#include <random>
-#include "randlib.h"
-
 
 #define BUFFER_SIZE 1024
 
@@ -65,12 +63,15 @@ public:
 
 	////////////////////////////////////////////////////////////////////////////////
 	/// Auxiliary functions
+	char* endPointer;
 	// A function to read in a list of doubles into a vector
-	double* readDoublesVector(char* valuesString, int& currentLength);
+	double* readDoublesVector(char* valuesString);
+	// A function to read in a list of integers into a vector
+	int* readIntsVector(char* valuesString);
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
-	// A uniform random number generator (do better than this!) -> GET RANDOM HEADER WORKING HERE
-	double myRand();
+//	// A uniform random number generator (do better than this!) -> GET RANDOM HEADER WORKING HERE
+//	double myRand();
 };
 
 #endif /* CSIMULATOR_H_ */
