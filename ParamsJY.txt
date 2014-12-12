@@ -14,6 +14,7 @@ survivalMaxAge	100	## maximum age for survival curve and hence individuals.
 
 ############################################################
 
+demog	2 9.88 0.0045	## aasdasdasdasdasds 
 testVector	2 1.0 2.0	## test vector. 
 
 param1	1	## Number of repetitions

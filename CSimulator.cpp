@@ -133,6 +133,10 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 // General initialisation
 bool CSimulator::initialiseSimulation()
 {
+	int vectorLength;
+	double* myVector = readDoublesVector(myReader.getParamString("demog"), vectorLength);
+
+
 	char* endPointer; // general variable for the end pointer used in strto_ functions.
 	// Get model related parameters
 	// Number of repetitions

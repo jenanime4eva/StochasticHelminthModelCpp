@@ -7,6 +7,8 @@ Compile this specific file to generate the .exe file
 //#include "CParamReader.h"
 #include ".\CSimulator.h"
 //#include "CHost.h"
+#include "CPreDetEventQueue.h"
+
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +25,12 @@ int main(int argc, char** argv)
 		std::cout << "Incorrect command line. Expected arguments for your .exe file: logFile paramFile resultsFile\n";
 		return 0; 
 	}
+
+	///////////////////// DEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUG /////////////////////////////
+	CPreDetEventQueue testQueue;
+	testQueue.addEvent(HOST_DEATH,2.2);
+
+	////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Set the seed.
 	//srand(10);

@@ -56,7 +56,7 @@ char* CParamReader::getParamString(const char* paramName)
 	if(!paramFileStream.is_open())
 		return NULL;
 
-	int paramLength = strlen(paramName);
+	//int paramLength = strlen(paramName);
 
 	bool found = false;
 	char* paramString = NULL;
@@ -70,7 +70,7 @@ char* CParamReader::getParamString(const char* paramName)
 		if(token!=NULL)
 		{
 			// Line doesn't begin with # and matches param name?
-			if(token[0]!='#' && strncmp(paramName,token,paramLength)==0)
+			if(token[0]!='#' && strcmp(paramName,token)==0)
 			{
 				// Found it!
 				found = true;
