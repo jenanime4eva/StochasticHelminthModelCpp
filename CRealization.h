@@ -11,22 +11,34 @@
 #include "CHost.h"
 #include "CPreDetEventQueue.h"
 
+// structure to contain data from individuals in survey results.
+struct surveyResultData
+{
+	double age;
+};
+
 class CRealization
 {
 public:
-	CRealization(class CSimulator* currentOwner);
+	CRealization();
 	virtual ~CRealization();
 
-	bool initialize();
+	bool initialize(class CSimulator* currentOwner);
 	bool run();
 
+	// Pre-determined event responses...
 	bool hostDeathResponse(Event& currentEvent);
+	bool surveyResultResponse(Event& currentEvent);
 	void debugEventResponse(Event& currentEvent);
 
+	////////////////////////////////////////////////////////
 	// members...
 	class CSimulator* owner;
 	int nHosts;
 	CHost** hostPopulation; // Array of host population.
+
+	//int surveyResultsArrayLength;  // got this in CSimulator.
+	surveyResultData** surveyResultsArray;
 
 	// realization event queue.
 	CPreDetEventQueue localEvents;

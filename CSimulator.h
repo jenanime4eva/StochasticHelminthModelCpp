@@ -10,9 +10,11 @@
 
 #include <fstream>
 #include <random>
+#include <string>
 
 #include "CParamReader.h"
 #include "CHost.h"
+#include "CRealization.h"
 
 #define BUFFER_SIZE 1024
 
@@ -28,10 +30,12 @@ public:
 	virtual ~CSimulator();
 
 	// File input/output
-	std::ofstream logStream, resultsStream; // Output to log file and results file
+	std::ofstream logStream; // Output to log file
 	bool initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName);
 	int nRepetitions, nOutputsPerYear, nTimeSteps;
 	double dt;
+	std::string runName;
+	std::string thePath;
 
 
 	// demographics.
@@ -40,6 +44,11 @@ public:
 	double* survivalCurve;
 	double* survivalCurveIntegral;
 	double drawLifespan();
+
+	// Results.
+	double* surveyResultTimes; // default NULL. If NULL none are collected.
+	int surveyResultTimesLength;
+	std::string resultsStub;
 
 	/*
 	int nAG, CAGInfant, CAGPreSAC, CAGSAC, CAGAdult;
@@ -55,15 +64,15 @@ public:
 	bool initialiseSimulation();
 	CParamReader myReader;
 	int nHosts;
-	wormBurden** results; // Array of worm burdens
-	CHost** hostPopulation; // Array of host population.
+	//wormBurden** results; // Array of worm burdens
 	double startYear, nYears;
+	CRealization myRealization; // DEBUG: just one at the moment.
 
 	// Simulation
 	void runSimulation();
 
 	// Outputs
-	void outputSimulation(int n);
+	void outputSimulation();
 
 	////////////////////////////////////////////////////
 	/// Auxiliary functions.

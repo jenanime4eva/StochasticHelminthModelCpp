@@ -40,14 +40,14 @@ bool CParamReader::setNewFileName(char* filePath)
 
 	paramFileStream.close(); // Just checking, close it
 
-	//filePathString = new char[strlen(filePath)+1];
-	//strcpy(filePathString, filePath);
-	filePathString = filePath;
+	filePathString = new char[strlen(filePath)+1];
+	strcpy(filePathString, filePath);
+	//filePathString = filePath;		// THIS WAS ACTIVE.
 
 	return true;
 }
 
-// Return a string containing parameter data or Null
+// Return a string containing parameter data or NULL.
 char* CParamReader::getParamString(const char* paramName)
 {
 	// Do we have a file attached?

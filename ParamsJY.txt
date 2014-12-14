@@ -16,6 +16,7 @@ nHosts	50		## number of hosts in population.
 startYear	0	## year to start (this may be done more intelligently later). 
 nYears	100		## number of years to run for. 
 nReps	1		## number of independent realizations. 
+surveyTimes	2 1.0 50.0	## These are the times to get data from all individuals inthe population. If absent, the code doesn't do it. 
 
 ############################################################
 

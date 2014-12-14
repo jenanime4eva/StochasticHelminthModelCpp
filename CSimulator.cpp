@@ -8,7 +8,6 @@
 #include ".\CSimulator.h"
 #include "CHost.h"
 #include "CParamReader.h"
-#include "CRealization.h"
 
 #include <iostream>
 #include <string.h>
@@ -16,14 +15,13 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <math.h>
+//#include <string>
 
 
 // Class Constructor
 CSimulator::CSimulator()
 {
 	// Default values
-	hostPopulation = NULL;
-	results = NULL;
 	nRepetitions = 0;
 	nYears = 0;
 	nOutputsPerYear = 0;
@@ -31,10 +29,17 @@ CSimulator::CSimulator()
 	dt = 0;
 	nHosts = 0;
 
+
 	survivalCurve = survivalCurveIntegral = NULL;
 	survivalDt = 0;
 	survivalMaxIndex = 0;
 	demog_b = demog_eta = 0;
+
+	// Results-related variables.
+	surveyResultTimes = NULL;
+
+
+
 	/*
 	demog_eta = 0;
 	demog_b = 0;
@@ -72,61 +77,46 @@ CSimulator::CSimulator()
 // Class Destructor
 CSimulator::~CSimulator()
 {
-	// Delete results array allocations
-	if (results!=NULL)
-	{
-		// Delete memory
-		for (int i=0;i<nRepetitions;i++)
-		{
-			delete results[i];
-		}
-		delete[] results;
-	}
-
-	// Delete hostPopulation array allocations
-	if (hostPopulation!=NULL)
-	{
-		for (int i=0;i<nHosts;i++)
-		{
-			delete hostPopulation[i];
-		}
-		delete[] hostPopulation;
-	}
-
 	if(survivalCurve!=NULL)
 		delete[] survivalCurve;
 
 	if(survivalCurveIntegral!=NULL)
 		delete[] survivalCurveIntegral;
 
+	if(surveyResultTimes!=NULL)
+		delete[] surveyResultTimes;
 }
 
 // Initialise the input/output aspects of the simulator
-bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName)
+bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 {
-	// Setting up all the files needed
-	logStream.open(logFileName);
+	// as strings classes...
+	runName = run;
+	thePath = path;
+
+	// Setting up all the files needed.
+	std::string logFilePath = thePath + runName + ".log.txt";
+	logStream.open(logFilePath.c_str());
 	if(!logStream.is_open())
 	{
-		std::cout << "Couldn't open the log file: " << logFileName << "\nexiting\n";
+		std::cout << "Couldn't open the log file: " << logFilePath << "\nexiting\n" << std::flush;
 		return false;
 	}
 	logStream << "Log file opened.\n" << std::flush;
 
-	if (!myReader.setNewFileName(paramFileName))
+	myReader.setNewFileName(paramFilePath);
+	/*
+	if (!myReader.setNewFileName(paramFilePath))
  	{
-		logStream << "Couldn't open the param file: " << paramFileName << "\nexiting\n" << std::flush;
+		logStream << "Couldn't open the param file: " << paramFilePath << "\nexiting\n" << std::flush;
 		return false;
 	}
 	logStream << "Param reader configured.\n" << std::flush;
+	*/
 
-	resultsStream.open(resultsFileName);
-	if(!resultsStream.is_open())
-	{
-		logStream << "Couldn't open the results file: " << resultsFileName << "\nexiting\n" << std::flush;
-		return false;
-	}
-	logStream << "Results file opened.\n" << std::flush;
+	// stub name for all results files.
+	resultsStub = thePath + runName;
+
 
 	// Everything is ok
 	return true;
@@ -170,11 +160,17 @@ bool CSimulator::initialiseSimulation()
 		survivalCurveIntegral[i] = (subTotal - (survivalCurve[0]+survivalCurve[i])/2)*survivalDt;
 	}
 
+	//////////// Set up results collection.
+	char* temp = myReader.getParamString("surveyTimes");
+	if(temp!=NULL)
+	{
+		// there are survey results to collect.
+		surveyResultTimes = readDoublesVector(temp,surveyResultTimesLength);
+	}
 
 	//////////// Test area ////////////////////////////////////////
 	// set up a realization.
-	CRealization myRealization(this);
-	myRealization.initialize();
+	myRealization.initialize(this);
 	myRealization.run();
 
 	/*
@@ -201,27 +197,33 @@ bool CSimulator::initialiseSimulation()
 // Run simulation
 void CSimulator::runSimulation()
 {
-	int runIndex, timeIndex;
-	for (runIndex=0;runIndex<nRepetitions;runIndex++)
-	{
-		wormBurden* currentRun = results[runIndex];
-		for (timeIndex=0;timeIndex<nTimeSteps-1;timeIndex++)
-		{
-			currentRun[timeIndex+1].nWorms = currentRun[timeIndex].nWorms + 1; // THIS LINE CAUSES CRASH, LOOK INTO IT
-			currentRun[timeIndex+1].time = currentRun[timeIndex].time + dt;
-		}
-	}
 }
 
 // Output simulation
-void CSimulator::outputSimulation(int n)
+void CSimulator::outputSimulation()
 {
-	for (int i=0;i<nTimeSteps;i++)
+	// output survey-type results if there's any...
+	if(surveyResultTimes!=NULL)
 	{
-		resultsStream << results[n][i].time << "\t"
-				<< results[n][i].nWorms << "\n";
+		// there's some survey results...
+		// create output stream...
+		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
+		std::ofstream surveyStream(surveyResultsOut.c_str());
+
+		// DEBUG: currently only ONE realization, so...
+		for(int j=0;j<surveyResultTimesLength;j++)
+			surveyStream << surveyResultTimes[j] << "\t";
+		surveyStream << "\n";
+		// loop through the hosts...
+		for(int i=0;i<nHosts;i++)
+		{
+			for(int j=0;j<surveyResultTimesLength;j++)
+			{
+				surveyStream << myRealization.surveyResultsArray[j][i].age << "\t";
+			}
+			surveyStream << "\n";
+		}
 	}
-	resultsStream << std::flush;
 }
 
 //////////////////////////////////////////////////////////////////////////////////

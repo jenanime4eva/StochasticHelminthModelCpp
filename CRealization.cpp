@@ -8,19 +8,38 @@
 #include "CRealization.h"
 #include "CSimulator.h"
 
-CRealization::CRealization(CSimulator* currentOwner)
+CRealization::CRealization()
 {
-	owner = currentOwner;
+	hostPopulation = NULL;
+
+	surveyResultsArray = NULL;
 }
 
 CRealization::~CRealization()
 {
-	// TODO Auto-generated destructor stub
+	int i;
+	if(hostPopulation!=NULL)
+	{
+		for(i=0;i<nHosts;i++)
+			delete hostPopulation[i];
+
+		delete[] hostPopulation;
+	}
+
+	if(surveyResultsArray!=NULL)
+	{
+		for(i=0;i<owner->surveyResultTimesLength;i++)
+			delete[] surveyResultsArray[i];
+
+		delete[] surveyResultsArray;
+	}
 }
 
 // set up the realization.
-bool CRealization::initialize()
+bool CRealization::initialize(CSimulator* currentOwner)
 {
+	owner = currentOwner; // set the pointer to the owner.
+
 	nHosts = owner->nHosts;
 
 	// Set up host population array
@@ -37,6 +56,19 @@ bool CRealization::initialize()
 
 	// add run termination point.
 	localEvents.addEvent(TERMINATE,owner->startYear+owner->nYears,NULL);
+
+	// set up results collection for this realization.
+	if(owner->surveyResultTimes!=NULL)
+	{
+		// there are survey results to collect.
+		// for each time point set up an array of surveyResultData structures the length of the population size.
+		surveyResultsArray = new surveyResultData*[owner->surveyResultTimesLength];
+		for(int i=0;i<owner->surveyResultTimesLength;i++)
+		{
+			surveyResultsArray[i] = new surveyResultData[nHosts];
+			localEvents.addEvent(SURVEY_EVENT,owner->surveyResultTimes[i],surveyResultsArray[i]); // add a pointer to the array that's going to hold the data.
+		}
+	}
 
 	// DEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUG
 	localEvents.addEvent(DEBUG_EVENT,95.0,NULL);
@@ -68,10 +100,14 @@ bool CRealization::run()
 			case DEBUG_EVENT:
 				debugEventResponse(currentEvent);
 				break;
+			case SURVEY_EVENT:
+				surveyResultResponse(currentEvent);
+				break;
 			case TERMINATE:
 				// nothing to do here. Perhaps shouldn't even switch on it?
 				break;
 			default:
+				owner->logStream << "Event number " << currentEvent.type << " not known.\n" << std::flush;
 				break;
 		}
 	}while(currentEvent.type!=TERMINATE);
@@ -94,15 +130,20 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	return true;
 }
 
+bool CRealization::surveyResultResponse(Event& currentEvent)
+{
+	// collect data from each host individual.
+	surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
+	for(int i=0;i<nHosts;i++)
+	{
+		outputArray[i].age = currentEvent.time - hostPopulation[i]->birthDate;
+	}
+	return true;
+}
+
 // just for testing...
 void CRealization::debugEventResponse(Event& currentEvent)
 {
-	owner->logStream << "\nCurrent ages at time: " << currentEvent.time << "\n";
-	for(int i=0;i<nHosts;i++)
-	{
-		owner->logStream << currentEvent.time - hostPopulation[i]->birthDate << "\n";
-	}
-	owner->logStream << std::flush;
 }
 
 

@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 	// Do we have the correct command line?
 	if(argc!=4)
 	{
-		std::cout << "Incorrect command line. Expected arguments for your .exe file: logFile paramFile resultsFile\n";
+		std::cout << "Incorrect number of command line arguments. Expected 4: run name, path for results/log and param file with path\n";
 		return 0; 
 	}
 
@@ -32,17 +32,19 @@ int main(int argc, char** argv)
 	srand(time(NULL));
 
 	// Create a CSimulator object
-	CSimulator SIMULATE;
+	CSimulator simulator;
 	// Initialise the input/output aspects of the simulator
-	if(!SIMULATE.initialiseIO(argv[1],argv[2],argv[3]))
+
+	if(!simulator.initialiseIO(argv[1],argv[2],argv[3]))
 	{
-		SIMULATE.logStream << "Failure in initialiseIO(...).\n" << std::flush;
+		simulator.logStream << "Failure in initialiseIO(...).\n" << std::flush;
 		return 0;
 	}
 
-	SIMULATE.initialiseSimulation(); // General initialisation
-	//SIMULATE.runSimulation(); // Run simulation
-	//SIMULATE.outputSimulation(0); // Output simulation
+
+	simulator.initialiseSimulation(); // General initialisation
+	//simulator.runSimulation(); // Run simulation
+	simulator.outputSimulation(); // Output simulation
 
 	return 1; 
 }

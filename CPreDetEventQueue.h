@@ -22,6 +22,7 @@ struct Event
 #define HOST_DEATH 1
 #define TERMINATE 2
 #define DEBUG_EVENT 3
+#define SURVEY_EVENT 4
 
 class CPreDetEventQueue
 {
