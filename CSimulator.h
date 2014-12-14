@@ -9,10 +9,10 @@
 #define CSIMULATOR_H_
 
 #include <fstream>
-#include "CParamReader.h"
-#include "CHost.h"
 #include <random>
 
+#include "CParamReader.h"
+#include "CHost.h"
 
 #define BUFFER_SIZE 1024
 
@@ -30,7 +30,7 @@ public:
 	// File input/output
 	std::ofstream logStream, resultsStream; // Output to log file and results file
 	bool initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName);
-	int nRepetitions, nYears, nOutputsPerYear, nTimeSteps;
+	int nRepetitions, nOutputsPerYear, nTimeSteps;
 	double dt;
 
 
@@ -56,7 +56,8 @@ public:
 	CParamReader myReader;
 	int nHosts;
 	wormBurden** results; // Array of worm burdens
-	CHost** hostPopulation; // Array of host population
+	CHost** hostPopulation; // Array of host population.
+	double startYear, nYears;
 
 	// Simulation
 	void runSimulation();

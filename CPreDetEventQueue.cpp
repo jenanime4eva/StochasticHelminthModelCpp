@@ -38,6 +38,7 @@ void CPreDetEventQueue::expandArray()
 	{
 		temp[arrayLength+i] = new Event;
 		temp[arrayLength+i]->type = UNUSED_EVENT;
+		temp[arrayLength+i]->subject = NULL;
 		temp[arrayLength+i]->time = 0.0; // is this the right default value??
 	}
 
@@ -55,12 +56,15 @@ void CPreDetEventQueue::popEvent(Event& current)
 		// no events on the queue. You shouldn't be asking, I think.
 		current.type = UNUSED_EVENT;
 		current.time = 0.0; // A better default value??
+		current.subject = NULL;
 	}
 	else
 	{
 		// copy the next value.
 		current.type = eventArray[0]->type;
 		current.time = eventArray[0]->time;
+		current.subject = eventArray[0]->subject;
+
 		Event* temp = eventArray[0];
 		if(nEvents>1)
 			memmove(eventArray, eventArray+1,(nEvents-1)*sizeof(Event*)); // conditional 'cos don't know if you can move zero bytes.
@@ -72,7 +76,7 @@ void CPreDetEventQueue::popEvent(Event& current)
 	}
 }
 
-void CPreDetEventQueue::addEvent(int newType, double newTime)
+void CPreDetEventQueue::addEvent(int newType, double newTime, void* newSubject)
 {
 	// if the array's not long enough, expand it.
 	if(nEvents==arrayLength)
@@ -82,6 +86,7 @@ void CPreDetEventQueue::addEvent(int newType, double newTime)
 	Event* temp = eventArray[nEvents];
 	temp->type = newType;
 	temp->time = newTime;
+	temp->subject = newSubject;
 
 	// if no events, no shuffling needed.
 	if(nEvents==0)

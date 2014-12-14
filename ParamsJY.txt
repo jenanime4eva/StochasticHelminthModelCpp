@@ -12,6 +12,11 @@ demog_b	0.0045	## params for survival curve.
 survivalDt	0.5	## age step for survival curve in years. 
 survivalMaxAge	100	## maximum age for survival curve and hence individuals. 
 
+nHosts	50		## number of hosts in population. 
+startYear	0	## year to start (this may be done more intelligently later). 
+nYears	100		## number of years to run for. 
+nReps	1		## number of independent realizations. 
+
 ############################################################
 
 demog	2 9.88 0.0045	## aasdasdasdasdasds 

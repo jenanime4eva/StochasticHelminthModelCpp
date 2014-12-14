@@ -26,11 +26,6 @@ int main(int argc, char** argv)
 		return 0; 
 	}
 
-	///////////////////// DEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUG /////////////////////////////
-	CPreDetEventQueue testQueue;
-	testQueue.addEvent(HOST_DEATH,2.2);
-
-	////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Set the seed.
 	//srand(10);
@@ -46,8 +41,8 @@ int main(int argc, char** argv)
 	}
 
 	SIMULATE.initialiseSimulation(); // General initialisation
-	SIMULATE.runSimulation(); // Run simulation
-	SIMULATE.outputSimulation(0); // Output simulation
+	//SIMULATE.runSimulation(); // Run simulation
+	//SIMULATE.outputSimulation(0); // Output simulation
 
 	return 1; 
 }
