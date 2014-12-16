@@ -173,6 +173,17 @@ bool CSimulator::initialiseSimulation()
 		hostPopulation[i] -> deathDate = hostPopulation[i] -> birthDate + lifespan;
 	}
 
+//	// Set up worm population array
+//	wormPopulation = new CWorms* [nWorms];
+//	for (int i=0;i<nWorms;i++)
+//	{
+//		wormPopulation[i] = new CWorm;
+//		// Do worm reproduction stuff...
+//		double wormReproduction = drawWormReproduction();
+//		wormPopulation[i] -> femaleWorms = -genunf(0,1)*wormReproduction;
+//		wormPopulation[i] -> totalWorms = wormPopulation[i] -> femaleWorms + wormReproduction;
+//	}
+
 	/////////////////////////////////////////////////////////////////////////////////////
 	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
 
@@ -375,17 +386,11 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 	return top;
 }
 
-int currentRandIndex = 1; // Test line, remove later
-
 // Draw a life span from the survival curve from the population.
 double CSimulator::drawLifespan()
 {
 	// Get a random integer from survivalCurveIntegral using the multinomial generator. This shouldn't be zero!!
 	double currentRand = genunf(0,1);
-
-	 // Test lines, remove later
-	printf("currentRand number %d: %g\n",currentRandIndex,currentRand);
-	currentRandIndex += 1;
 
 	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
 
