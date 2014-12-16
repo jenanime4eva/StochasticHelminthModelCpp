@@ -7,6 +7,7 @@
 
 #include ".\CSimulator.h"
 #include "CHost.h"
+#include "CWorm.h"
 #include "CParamReader.h"
 #include <iostream>
 #include <string.h>
@@ -21,6 +22,7 @@ CSimulator::CSimulator()
 {
 	// Default values
 	hostPopulation = NULL;
+	wormPopulation = NULL;
 	results = NULL;
 	nRepetitions = 0;
 	nYears = 0;
@@ -29,6 +31,7 @@ CSimulator::CSimulator()
 	dt = 0;
 
 	nHosts = 0;
+	nWorms = 0;
 	demog_b = demog_eta = 0;
 	survivalCurve = survivalCurveIntegral = NULL;
 	survivalDt = 0;
@@ -83,6 +86,16 @@ CSimulator::~CSimulator()
 
 	if(survivalCurveIntegral!=NULL)
 		delete[] survivalCurveIntegral;
+
+	// Delete wormPopulation array allocations
+	if (wormPopulation!=NULL)
+	{
+		for (int i=0;i<nWorms;i++)
+		{
+			delete wormPopulation[i];
+		}
+		delete[] wormPopulation;
+	}
 
 }
 
@@ -268,7 +281,7 @@ bool CSimulator::initialiseSimulation()
 		memset(results[i],0,sizeof(wormBurden)*nTimeSteps);
 
 		// Initialise nWorms in each repetition
-		results[i][0].nWorms = 0; // CHANGE THIS VALUE LATER
+		results[i][0].nWormBurden = 0; // CHANGE THIS VALUE LATER
 		results[i][0].time = 0;
 	}
 
@@ -285,7 +298,7 @@ void CSimulator::runSimulation()
 		wormBurden* currentRun = results[runIndex];
 		for (timeIndex=0;timeIndex<nTimeSteps-1;timeIndex++)
 		{
-			currentRun[timeIndex+1].nWorms = currentRun[timeIndex].nWorms + 1;
+			currentRun[timeIndex+1].nWormBurden = currentRun[timeIndex].nWormBurden + 10; // Change later
 			currentRun[timeIndex+1].time = currentRun[timeIndex].time + dt;
 		}
 	}
@@ -297,7 +310,7 @@ void CSimulator::outputSimulation(int n)
 	for (int i=0;i<nTimeSteps;i++)
 	{
 		resultsStream << results[n][i].time << "\t"
-				<< results[n][i].nWorms << "\n";
+				<< results[n][i].nWormBurden << "\n";
 	}
 	resultsStream << std::flush;
 }
@@ -400,3 +413,18 @@ double CSimulator::drawLifespan()
 	double ans = a*survivalDt + (index - 1)*survivalDt;
 	return ans;
 }
+
+//// Worm reproduction
+//double CSimulator::drawWormReproduction()
+//{
+//	// Get a random integer from survivalCurveIntegral using the multinomial generator. This shouldn't be zero!!
+//	double currentRand = genunf(0,1);
+//
+//	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
+//
+//	// Interpolate from the returned value.
+//	double target = currentRand*survivalCurveIntegral[survivalMaxIndex-1];
+//	double a = (target - survivalCurveIntegral[index-1])/(survivalCurveIntegral[index] - survivalCurveIntegral[index-1]);
+//	double ans = a*survivalDt + (index - 1)*survivalDt;
+//	return ans;
+//}

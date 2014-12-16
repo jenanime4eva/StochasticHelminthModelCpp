@@ -11,6 +11,7 @@
 #include <fstream>
 #include "CParamReader.h"
 #include "CHost.h"
+#include "CWorm.h"
 //#include <random>
 
 #define BUFFER_SIZE 1024
@@ -18,7 +19,7 @@
 struct wormBurden
 {
 	double time;
-	int nWorms;
+	int nWormBurden;
 };
 
 class CSimulator {
@@ -51,9 +52,10 @@ public:
 	char buffer[BUFFER_SIZE];
 	bool initialiseSimulation();
 	CParamReader myReader;
-	int nHosts;
-	wormBurden** results; // Array of worm burdens
+	int nHosts, nWorms;
+	wormBurden** results; // Array of female worm burdens
 	CHost** hostPopulation; // Array of host population
+	CWorm** wormPopulation; // Array of worm population
 
 	// Simulation
 	void runSimulation();
