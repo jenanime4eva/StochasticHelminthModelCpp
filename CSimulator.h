@@ -65,9 +65,9 @@ public:
 	/// Auxiliary functions
 	char* endPointer;
 	// A function to read in a list of doubles into a vector
-	double* readDoublesVector(char* valuesString);
+	double* readDoublesVector(char* valuesString, int& currentLength);
 	// A function to read in a list of integers into a vector
-	int* readIntsVector(char* valuesString);
+	int* readIntsVector(char* valuesString, int& currentLength);
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
 //	// A uniform random number generator (do better than this!) -> GET RANDOM HEADER WORKING HERE

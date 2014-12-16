@@ -69,12 +69,12 @@ char* CParamReader::getParamString(const char* paramName)
 		// Anything on this line?
 		if(token!=NULL)
 		{
-			// Line doesn't begin with # and matches param name?
+		// Line doesn't begin with # and matches param name?
 			if(token[0]!='#' && strncmp(paramName,token,paramLength)==0)
 			{
-				// Found it!
-				found = true;
-				paramString = strtok(NULL,"\t");
+			// Found it!
+			found = true;
+			paramString = strtok(NULL,"\t");
 			}
 		}
 	}

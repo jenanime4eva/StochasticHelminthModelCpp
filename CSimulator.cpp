@@ -122,6 +122,8 @@ bool CSimulator::initialiseSimulation()
 {
 	// Get model related parameters
 
+	int vectorLength;
+
 	// Number of repetitions
 	nRepetitions = atoi(myReader.getParamString("numberRepetitions"));
 
@@ -140,9 +142,10 @@ bool CSimulator::initialiseSimulation()
 	// Read a parameter to determine whether to use data for the survival curve or a named function
 
 	// Use the exponential-exponential function to define the survival curve
-	double* demography = readDoublesVector(myReader.getParamString("demography"));
+	double* demography = readDoublesVector(myReader.getParamString("demography"),vectorLength);
 	demog_eta = demography[0];
 	demog_b = demography[1];
+
 	survivalDt = atof(myReader.getParamString("survivalDt"));
 	survivalMaxAge = atof(myReader.getParamString("survivalMaxAge"));
 
@@ -174,14 +177,14 @@ bool CSimulator::initialiseSimulation()
 	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
 
 	// Contact age groups
-	int* contactAgeGroups = readIntsVector(myReader.getParamString("contactAgeGroups"));
+	int* contactAgeGroups = readIntsVector(myReader.getParamString("contactAgeGroups"),vectorLength);
 	CAGInfant = contactAgeGroups[0];
 	CAGPreSAC = contactAgeGroups[1];
 	CAGSAC = contactAgeGroups[2];
 	CAGAdult = contactAgeGroups[3];
 
 	// Beta values
-	double* beta = readDoublesVector(myReader.getParamString("beta"));
+	double* beta = readDoublesVector(myReader.getParamString("beta"),vectorLength);
 	InfantBeta = beta[0];
 	PreSACBeta = beta[1];
 	SACBeta = beta[2];
@@ -209,14 +212,14 @@ bool CSimulator::initialiseSimulation()
 	LDecayRate = atoi(myReader.getParamString("LDecayRate"));
 
 	// Treatment age groups
-	int* treatmentAgeGroups = readIntsVector(myReader.getParamString("treatmentAgeGroups"));
+	int* treatmentAgeGroups = readIntsVector(myReader.getParamString("treatmentAgeGroups"),vectorLength);
 	TAGInfant = treatmentAgeGroups[0];
 	TAGPreSAC = treatmentAgeGroups[1];
 	TAGSAC = treatmentAgeGroups[2];
 	TAGAdult = treatmentAgeGroups[3];
 
 	// Coverages
-	double* coverages = readDoublesVector(myReader.getParamString("coverages"));
+	double* coverages = readDoublesVector(myReader.getParamString("coverages"),vectorLength);
 	InfantCoverage = coverages[0];
 	PreSACCoverage = coverages[1];
 	SACCoverage = coverages[2];
@@ -226,7 +229,7 @@ bool CSimulator::initialiseSimulation()
 	drugEfficacy = atof(myReader.getParamString("drugEfficacy"));
 
 	// Chemotherapy timings
-	int* treatmentTimes = readIntsVector(myReader.getParamString("treatmentTimes"));
+	int* treatmentTimes = readIntsVector(myReader.getParamString("treatmentTimes"),vectorLength);
 	treatStart = treatmentTimes[0];
 	treatEnd = treatmentTimes[1];
 	treatFreq = treatmentTimes[2];
@@ -235,6 +238,7 @@ bool CSimulator::initialiseSimulation()
 	logStream << "\nNumber of repetitions (int type): " << nRepetitions << "\n"
 				<< "Fecundity parameter (double type): " << z << "\n"
 				<< "demog_eta and demog_b (double vector type): " << demog_eta << "\t" << demog_b << "\n"
+				<< "Beta values (double vector type): " << TAGInfant << "\t" << TAGPreSAC << "\t" << TAGSAC << "\t" << TAGAdult << "\n"
 				<< "Treatment start time, end time and frequency (int vector type): " << treatStart << "\t" << treatEnd << "\t" << treatFreq << "\n"
 				<< std::flush;
 
@@ -290,12 +294,13 @@ void CSimulator::outputSimulation(int n)
 //////////////////////////////////////////////////////////////////////////////////
 /// Auxiliary function definitions
 
-char* endPointer; // endPointer for each call to strto_ type functions
-
-double* CSimulator::readDoublesVector(char* currentString)
+double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 {
+	char* endPointer; // endPointer for each call to strto_ type functions
+
 	// Read in the length of the vector
 	int length = strlen(currentString);
+	currentLength = length;
 
 	if(length<0)
 		return NULL;
@@ -307,13 +312,17 @@ double* CSimulator::readDoublesVector(char* currentString)
 	{
 		doubleVectorArray[i] = strtod(endPointer, &endPointer);
 	}
+
 	return doubleVectorArray;
 }
 
-int* CSimulator::readIntsVector(char* currentString)
+int* CSimulator::readIntsVector(char* currentString, int& currentLength)
 {
+	char* endPointer; // endPointer for each call to strto_ type functions
+
 	// Read in the length of the vector
 	int length = strlen(currentString);
+	currentLength = length;
 
 	if(length<0)
 		return NULL;
@@ -327,7 +336,6 @@ int* CSimulator::readIntsVector(char* currentString)
 	}
 	return intVectorArray;
 }
-
 
 // This function takes a random number (0-1) and multiplies it by the max of the passed array.
 // It then finds the smallest index that has an array value greater than the product above.
@@ -366,12 +374,6 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 
 	return top;
 }
-
-//// Uniform random number generator. Should be using the <random> functions.
-//double CSimulator::myRand()
-//{
-//	return (1.0*rand())/RAND_MAX;
-//}
 
 int currentRandIndex = 1; // Test line, remove later
 
