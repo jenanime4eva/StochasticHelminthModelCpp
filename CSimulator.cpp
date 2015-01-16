@@ -276,7 +276,7 @@ bool CSimulator::initialiseSimulation()
 	results = new wormBurden*[nRepetitions];
 	for (int i=0;i<nRepetitions;i++)
 	{
-		// Allocate repetition
+		// Allocate repetitions
 		results[i] = new wormBurden[nTimeSteps];
 		memset(results[i],0,sizeof(wormBurden)*nTimeSteps);
 
@@ -306,7 +306,7 @@ void CSimulator::runSimulation()
 
 // What simulation outputs do we want to see?
 // 1) Frequency vs Number of worms
-// 2) Individual runs of worm burden across time
+// 2) Individual runs of worm burden across time (FOCUS ON THIS ONE FIRST)
 // 3) Mean worm burden across time
 // 4) Prevalence across time
 
@@ -315,8 +315,12 @@ void CSimulator::outputSimulation(int n)
 {
 	for (int i=0;i<nTimeSteps;i++)
 	{
-		resultsStream << results[n][i].time << "\t"
-				<< results[n][i].nWormBurden << "\n";
+		resultsStream << results[n][i].time << "\t";
+		for (int n=0;n<nRepetitions;n++)
+		{
+			resultsStream << results[n][i].nWormBurden << "\t";
+		}
+		resultsStream << "\n";
 	}
 	resultsStream << std::flush;
 }
@@ -409,7 +413,7 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 double CSimulator::drawLifespan()
 {
 	// Get a random integer from survivalCurveIntegral using the multinomial generator. This shouldn't be zero!!
-	double currentRand = genunf(0,1);
+	double currentRand = genunf(0,1); //geunf(double low, double high) generates uniform real between low and high
 
 	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
 
