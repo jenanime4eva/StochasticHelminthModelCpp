@@ -280,7 +280,7 @@ bool CSimulator::initialiseSimulation()
 		results[i] = new wormBurden[nTimeSteps];
 		memset(results[i],0,sizeof(wormBurden)*nTimeSteps);
 
-		// Initialise nWorms in each repetition
+		// Initialise nWormBurden in each repetition
 		results[i][0].nWormBurden = 0; // CHANGE THIS VALUE LATER
 		results[i][0].time = 0;
 	}
@@ -303,6 +303,12 @@ void CSimulator::runSimulation()
 		}
 	}
 }
+
+// What simulation outputs do we want to see?
+// 1) Frequency vs Number of worms
+// 2) Individual runs of worm burden across time
+// 3) Mean worm burden across time
+// 4) Prevalence across time
 
 // Output simulation
 void CSimulator::outputSimulation(int n)
