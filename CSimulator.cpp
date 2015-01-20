@@ -28,15 +28,22 @@ CSimulator::CSimulator()
 	nTimeSteps = 0;
 	dt = 0;
 	nHosts = 0;
+	startYear = 0;
 
-
-	survivalCurve = survivalCurveIntegral = NULL;
-	survivalDt = 0;
-	survivalMaxIndex = 0;
+	survivalCurve = survivalCurveCumul = NULL;
+	hostMu = probDeath = probDeathIntegral = NULL;
+	demogDt = 0;
 	demog_b = demog_eta = 0;
+	hostMuData = NULL;
+	hostMuDataLength = 0;
+	muDataUpperBounds = NULL;
+	muUpperBoundsLength = 0;
+	upperAgeBound = 0;
+	maxDtIntevals = 0;
 
 	// Results-related variables.
 	surveyResultTimes = NULL;
+	surveyResultTimesLength = 0;
 
 
 
@@ -80,11 +87,26 @@ CSimulator::~CSimulator()
 	if(survivalCurve!=NULL)
 		delete[] survivalCurve;
 
-	if(survivalCurveIntegral!=NULL)
-		delete[] survivalCurveIntegral;
+	if(survivalCurveCumul!=NULL)
+		delete[] survivalCurveCumul;
 
 	if(surveyResultTimes!=NULL)
 		delete[] surveyResultTimes;
+
+	if(hostMuData!=NULL)
+		delete[] hostMuData;
+
+	if(muDataUpperBounds!=NULL)
+		delete[] muDataUpperBounds;
+
+	if(hostMu!=NULL)
+		delete[] hostMu;
+
+	if(probDeath!=NULL)
+		delete[] probDeath;
+
+	if(probDeathIntegral!=NULL)
+		delete[] probDeathIntegral;
 }
 
 // Initialise the input/output aspects of the simulator
@@ -126,6 +148,7 @@ bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 bool CSimulator::initialiseSimulation()
 {
 	char* endPointer; // general variable for the end pointer used in strto_ functions.
+	char* temp; // general purpose pointer to string.
 	// Get model related parameters
 	// Number of repetitions
 	nRepetitions = atoi(myReader.getParamString("param1"));
@@ -142,26 +165,65 @@ bool CSimulator::initialiseSimulation()
 	/////////////////////////////////////////////////////////////////////////////
 	///  Set up demography.
 
-	// use the expo-expo function to define the survival curve.
+	// use the expo-expo function to define the survival curve.   DEBUGDEBUG some of these may not be needed anymore.
 	demog_eta = strtod(myReader.getParamString("demog_eta"),&endPointer);
 	demog_b = strtod(myReader.getParamString("demog_b"),&endPointer);
-	survivalDt = strtod(myReader.getParamString("survivalDt"),&endPointer);
-	double survivalMaxAge = strtod(myReader.getParamString("survivalMaxAge"),&endPointer);
+	demogDt = strtod(myReader.getParamString("demogDt"),&endPointer);
 
-	survivalMaxIndex = (int) ceil(survivalMaxAge/survivalDt);
-	survivalCurve = new double[survivalMaxIndex];
-	survivalCurveIntegral = new double[survivalMaxIndex];
-	double subTotal = 0;
-	for(int i=0;i<survivalMaxIndex;i++)
+
+	// read in death rates.
+	temp = myReader.getParamString("hostMu");
+	if(temp!=NULL)
 	{
-		//survivalCurve[i] = exp(-demog_eta*(exp(demog_b*survivalDt*i)-1));
-		survivalCurve[i] = exp(-demog_eta*survivalDt*i);
-		subTotal += survivalCurve[i];
-		survivalCurveIntegral[i] = (subTotal - (survivalCurve[0]+survivalCurve[i])/2)*survivalDt;
+		hostMuData = readDoublesVector(temp,hostMuDataLength);
 	}
 
+	// read in death rate upper bounds.
+	temp = myReader.getParamString("muUpperB");
+	if(temp!=NULL)
+	{
+		muDataUpperBounds = readDoublesVector(temp, muUpperBoundsLength);
+	}
+
+
+	// construct the mu, prob of death and survival vectors.
+	//double upperAgeBound = muUpperBounds[muUpperBoundsLength-1];
+	maxDtIntevals = (int) floor(muDataUpperBounds[muUpperBoundsLength-1]/demogDt);
+	upperAgeBound = maxDtIntevals*demogDt;
+	int currentMuIndex = 0;
+	double currentSurvival = 1;
+	double currentSurvivalCumul = 0;
+	double currentProbDeathCumul = 0;
+	double currentMuDtCumul = 0;
+	double tiny = 0.01;
+	survivalCurve = new double[maxDtIntevals];
+	survivalCurveCumul = new double[maxDtIntevals];
+	hostMu = new double[maxDtIntevals];
+	probDeath = new double[maxDtIntevals];
+	probDeathIntegral = new double[maxDtIntevals];
+
+	for(int i=0;i<maxDtIntevals;i++)
+	{
+		double currentIntEnd = (i+1)*demogDt;
+		if(muDataUpperBounds[currentMuIndex]+tiny<currentIntEnd) // is current dt interval within data upper bound?
+			currentMuIndex++;
+		hostMu[i] = hostMuData[currentMuIndex];
+		probDeath[i] = currentSurvival*hostMu[i]*demogDt;
+		currentMuDtCumul += hostMu[i]*demogDt;
+
+		probDeathIntegral[i] = currentProbDeathCumul + probDeath[i];
+		currentProbDeathCumul = probDeathIntegral[i];
+
+		survivalCurve[i] = exp(-currentMuDtCumul);
+		currentSurvival = survivalCurve[i];
+
+		survivalCurveCumul[i] = survivalCurve[i] + currentSurvivalCumul;
+		currentSurvivalCumul = survivalCurveCumul[i];
+	}
+
+
 	//////////// Set up results collection.
-	char* temp = myReader.getParamString("surveyTimes");
+	temp = myReader.getParamString("surveyTimes");
 	if(temp!=NULL)
 	{
 		// there are survey results to collect.
@@ -173,23 +235,6 @@ bool CSimulator::initialiseSimulation()
 	myRealization.initialize(this);
 	myRealization.run();
 
-	/*
-	////////////////////////////////// THIS NEEDS TO GO IN THE REALIZATION ////////////////////////////////////
-	// Allocate memory
-	dt = (float) 1/nOutputsPerYear;
-	nTimeSteps = ((int) ceil(nYears/dt)) + 1;
-	results = new wormBurden*[nRepetitions];
-	for (int i=0;i<nRepetitions;i++)
-	{
-		// Allocate repetition
-		results[i] = new wormBurden[nTimeSteps];
-		memset(results[i],0,sizeof(wormBurden)*nTimeSteps);
-
-		// Initialise nWorms in each repetition
-		results[i][0].nWorms = 0; // CHANGE THIS VALUE LATER
-		results[i][0].time = 0;
-	}
-	*/
 
 	return true;
 }
@@ -229,6 +274,8 @@ void CSimulator::outputSimulation()
 //////////////////////////////////////////////////////////////////////////////////
 /// Auxiliary function definitions.
 
+// creates a vector of doubles from string from param file.
+// Allocates memory, so need to delete.
 double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 {
 	// read in the length of the vector.
@@ -295,13 +342,10 @@ double CSimulator::myRand()
 // draw a life span from the survival curve from he population.
 double CSimulator::drawLifespan()
 {
-	// get a random integer from the survivalcurve integral from the multinomial generator. This shouldn't be zero!!
+	// get a random integer from the probDeathIntegral integral from the multinomial generator. This shouldn't be zero!!
 	double currentRand = myRand();
-	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
+	int index = multiNomBasic(probDeathIntegral, maxDtIntevals,currentRand);
 
-	// interpolate from the returned value.
-	double target = currentRand*survivalCurveIntegral[survivalMaxIndex-1];
-	double a = (target - survivalCurveIntegral[index-1])/(survivalCurveIntegral[index] - survivalCurveIntegral[index-1]);
-	double ans = a*survivalDt + (index - 1)*survivalDt;
+	double ans = (index+0.5)*demogDt;  // choose a point in the middle of the interval in which the person dies.
 	return ans;
 }

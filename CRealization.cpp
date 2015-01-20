@@ -11,7 +11,8 @@
 CRealization::CRealization()
 {
 	hostPopulation = NULL;
-
+	owner = NULL;
+	nHosts = 0;
 	surveyResultsArray = NULL;
 }
 
@@ -80,7 +81,7 @@ bool CRealization::initialize(CSimulator* currentOwner)
 bool CRealization::run()
 {
 	// Get the start time.
-	double time = owner->startYear;
+	//double time = owner->startYear;
 	Event currentEvent;
 
 	do

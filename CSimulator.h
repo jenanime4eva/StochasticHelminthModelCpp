@@ -39,11 +39,21 @@ public:
 
 
 	// demographics.
-	double demog_eta, demog_b, survivalDt;
-	int survivalMaxIndex;
-	double* survivalCurve;
-	double* survivalCurveIntegral;
+	double demog_eta, demog_b;
+	double demogDt;
 	double drawLifespan();
+	double* hostMuData;  // death rates.
+	int hostMuDataLength;
+	double* muDataUpperBounds; // upper bounds for death rates.
+	int muUpperBoundsLength;
+
+	int maxDtIntevals;
+	double* survivalCurve;  // survival to end of ith dt.
+	double* survivalCurveCumul;  // cumulative sum of the above.
+	double* hostMu;
+	double* probDeath; // prob of dying in the ith dt.
+	double* probDeathIntegral; // integral to end of ith dt.
+	double upperAgeBound;
 
 	// Results.
 	double* surveyResultTimes; // default NULL. If NULL none are collected.
