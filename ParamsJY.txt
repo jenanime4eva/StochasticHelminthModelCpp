@@ -31,6 +31,6 @@ gamma	0.06	## Exponential density dependence of parasite adult stage (gamma) N.B
 treatmentBreaks	0 2 5 15 70		## Minimum age of each treatment group: Infants; Pre-SAC; SAC; Adults
 coverage	0 0.75 0 0			## Coverages: Infants; Pre-SAC; SAC; Adults
 drugEff	0.9						## Drug efficacy
-treatStart	100					## Treatment year start; Treatment year end; Frequency of treatment by year
+treatStart	100					## Treatment year start
 nRounds	50						## Number of treatment rounds
 treatInterval	1				## Interval between treatments in years 
