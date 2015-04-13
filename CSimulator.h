@@ -1,25 +1,27 @@
 /*
- * CSimulator.h
+ * File Name: CSimulator.h
  *
- *  Created on: 26 Nov 2014
- *      Author: Jie Yang
+ * Created on: 26 Nov 2014
+ * Author: Jie Yang
+ *
  */
 
 #ifndef CSIMULATOR_H_
 #define CSIMULATOR_H_
 
 #include <fstream>
+#include <random>
+#include <string>
 #include "CParamReader.h"
 #include "CHost.h"
-#include "CWorm.h"
-//#include <random>
+#include "CRealization.h"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1024 // Define buffer size
 
 struct wormBurden
 {
 	double time;
-	int nWormBurden;
+	int nWorms;
 };
 
 class CSimulator {
@@ -28,52 +30,70 @@ public:
 	virtual ~CSimulator();
 
 	// File input/output
-	std::ofstream logStream, resultsStream; // Output to log file and results file
+	std::ofstream logStream; // Output to log file
 	bool initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName);
-	int nRepetitions, nYears, nOutputsPerYear, nTimeSteps;
+	int nRepetitions, nOutputsPerYear, nTimeSteps;
 	double dt;
+	std::string runName;
+	std::string thePath;
 
-
-	// Demographics
-	double demog_eta, demog_b, survivalDt,survivalMaxAge;
-	int survivalMaxIndex;
-	double* survivalCurve;
-	double* survivalCurveIntegral;
+	// Demographic structure
+	double demogDt;
 	double drawLifespan();
+	double* hostMuData;  // Death rates
+	int hostMuDataLength;
+	double* muDataUpperBounds; // Upper bounds for death rates.
+	int muUpperBoundsLength;
+	int maxDtIntervals;
+	double* survivalCurve;  // Survival to end of ith dt
+	double* survivalCurveCumul;  // Cumulative sum of the above
+	double* hostMu;
+	double* probDeath; // Probability of dying in the ith dt
+	double* probDeathIntegral; // Integral to end of ith dt
+	double upperAgeBound;
 
-	int CAGInfant, CAGPreSAC, CAGSAC, CAGAdult;
-	int R0, lambda, LDecayRate;
-	int TAGInfant, TAGPreSAC, TAGSAC, TAGAdult, treatStart, treatEnd, treatFreq;
-	double gamma, z, k, sigma;
-	double InfantBeta, PreSACBeta, SACBeta, AdultBeta;
-	double drugEfficacy, InfantCoverage, PreSACCoverage, SACCoverage, AdultCoverage;
+	// Social structure
+	double* contactAgeBreaks;
+	int contactAgeBreaksLength;
+	double* betaValues;
+	int betaValuesLength;
+	double* rhoValues;
+	int rhoValuesLength;
+
+	// Epidemiological parameters
+	double k, R0, sigma, gamma;
+	int lambda, ReservoirDecayRate;
+
+	// Treatment
+	double* treatmentBreaks;
+	int treatmentBreaksLength;
+	double* coverage;
+	int coverageLength;
+	double drugEff, treatInterval;
+	int treatStart, nRounds;
 
 	// General initialisation
 	char buffer[BUFFER_SIZE];
 	bool initialiseSimulation();
 	CParamReader myReader;
-	int nHosts, nWorms;
-	wormBurden** results; // Array of female worm burdens
-	CHost** hostPopulation; // Array of host population
-	CWorm** wormPopulation; // Array of worm population
+	int nHosts;
+	//wormBurden** results; // Array of worm burdens
+	double nYears;
+	CRealization myRealization; // DEBUG: just one at the moment
 
 	// Simulation
 	void runSimulation();
 
 	// Outputs
-	void outputSimulation(int n);
+	void outputSimulation();
+	std::string resultsStub;
 
-	////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////
 	/// Auxiliary functions
-	char* endPointer;
-	// A function to read in a list of doubles into a vector
+	// a function to read in a list of doubles into a vector.
 	double* readDoublesVector(char* valuesString, int& currentLength);
-	// A function to read in a list of integers into a vector
-	int* readIntsVector(char* valuesString, int& currentLength);
-	// Return an index for the value that is just above a uniform random deviate
+	// return an index for the value that is just above a uniform random deviate.
 	int multiNomBasic(double* array, int length, double randNum);
-//	// A uniform random number generator (do better than this!) -> GET RANDOM HEADER WORKING HERE
-//	double myRand();
 };
 
 #endif /* CSIMULATOR_H_ */

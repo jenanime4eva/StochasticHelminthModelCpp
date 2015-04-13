@@ -1,13 +1,13 @@
 /*
- * CSimulator.cpp
+ * File Name: CSimulator.cpp
  *
  *  Created on: 26 Nov 2014
- *      Author: Jie Yang
+ *  Author: Jie Yang
+ *
  */
 
 #include ".\CSimulator.h"
 #include "CHost.h"
-#include "CWorm.h"
 #include "CParamReader.h"
 #include <iostream>
 #include <string.h>
@@ -20,111 +20,115 @@
 // Class Constructor
 CSimulator::CSimulator()
 {
-	// Default values
-	hostPopulation = NULL;
-	wormPopulation = NULL;
-	results = NULL;
+	// Set default values
+
+	// Model running parameters
 	nRepetitions = 0;
 	nYears = 0;
+	nHosts = 0;
 	nOutputsPerYear = 0;
 	nTimeSteps = 0;
 	dt = 0;
 
-	nHosts = 0;
-	nWorms = 0;
-	demog_b = demog_eta = 0;
-	survivalCurve = survivalCurveIntegral = NULL;
-	survivalDt = 0;
-	survivalMaxAge = 0;
-	survivalMaxIndex = 0;
+	// Demographic structure
+	survivalCurve = survivalCurveCumul = NULL;
+	hostMu = probDeath = probDeathIntegral = NULL;
+	demogDt = 0;
+	hostMuData = NULL;
+	hostMuDataLength = 0;
+	muDataUpperBounds = NULL;
+	muUpperBoundsLength = 0;
+	upperAgeBound = 0;
+	maxDtIntervals = 0;
 
-	CAGInfant = CAGPreSAC = CAGSAC = CAGAdult = 0;
-	InfantBeta = PreSACBeta = SACBeta = AdultBeta = 0;
+	// Social structure
+	contactAgeBreaks = NULL;
+	contactAgeBreaksLength = 0;
+	betaValues = NULL;
+	betaValuesLength = 0;
+	rhoValues = NULL;
+	rhoValuesLength = 0;
 
-	R0 = 0;
-	lambda = 0;
-	gamma = 0;
-	z = 0;
+	// Epidemiological parameters
 	k = 0;
+	lambda = 0;
+	R0 = 0;
+	ReservoirDecayRate = 0;
 	sigma = 0;
-	LDecayRate = 0;
+	gamma = 0;
 
-	TAGInfant = TAGPreSAC = TAGSAC = TAGAdult = 0;
-	InfantCoverage = PreSACCoverage = SACCoverage = AdultCoverage = 0;
-	drugEfficacy = 0;
-	treatStart = treatEnd = treatFreq = 0;
-
-	endPointer = NULL;
+	// Treatment parameters
+	treatmentBreaks = NULL;
+	treatmentBreaksLength = 0;
+	coverage = NULL;
+	coverageLength = 0;
+	drugEff = 0;
+	treatStart = 0;
+	nRounds = 0;
+	treatInterval = 0;
 }
 
 // Class Destructor
 CSimulator::~CSimulator()
 {
-	// Delete results array allocations
-	if (results!=NULL)
-	{
-		// Delete memory
-		for (int i=0;i<nRepetitions;i++)
-		{
-			delete results[i];
-		}
-		delete[] results;
-	}
-
-	// Delete hostPopulation array allocations
-	if (hostPopulation!=NULL)
-	{
-		for (int i=0;i<nHosts;i++)
-		{
-			delete hostPopulation[i];
-		}
-		delete[] hostPopulation;
-	}
-
 	if(survivalCurve!=NULL)
 		delete[] survivalCurve;
 
-	if(survivalCurveIntegral!=NULL)
-		delete[] survivalCurveIntegral;
+	if(survivalCurveCumul!=NULL)
+			delete[] survivalCurveCumul;
 
-	// Delete wormPopulation array allocations
-	if (wormPopulation!=NULL)
-	{
-		for (int i=0;i<nWorms;i++)
-		{
-			delete wormPopulation[i];
-		}
-		delete[] wormPopulation;
-	}
+	if(hostMuData!=NULL)
+			delete[] hostMuData;
 
+	if(muDataUpperBounds!=NULL)
+		delete[] muDataUpperBounds;
+
+	if(hostMu!=NULL)
+		delete[] hostMu;
+
+	if(probDeath!=NULL)
+		delete[] probDeath;
+
+	if(probDeathIntegral!=NULL)
+		delete[] probDeathIntegral;
+
+	if(contactAgeBreaks!=NULL)
+		delete[] contactAgeBreaks;
+
+	if(betaValues!=NULL)
+		delete[] betaValues;
+
+	if(rhoValues!=NULL)
+		delete[] rhoValues;
+
+	if(treatmentBreaks!=NULL)
+		delete[] treatmentBreaks;
+
+	if(coverage!=NULL)
+		delete[] coverage;
 }
 
 // Initialise the input/output aspects of the simulator
-bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName)
+bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 {
+	// As strings classes
+	runName = run;
+	thePath = path;
+
 	// Setting up all the files needed
-	logStream.open(logFileName);
+	std::string logFilePath = thePath + runName + ".log.txt";
+	logStream.open(logFilePath.c_str());
 	if(!logStream.is_open())
 	{
-		std::cout << "Couldn't open the log file: " << logFileName << "\nexiting\n";
+		std::cout << "Couldn't open the log file: " << logFilePath << "\nexiting\n" << std::flush;
 		return false;
 	}
 	logStream << "Log file opened.\n" << std::flush;
 
-	if (!myReader.setNewFileName(paramFileName))
- 	{
-		logStream << "Couldn't open the param file: " << paramFileName << "\nexiting\n" << std::flush;
-		return false;
-	}
-	logStream << "Param reader configured.\n" << std::flush;
+	myReader.setNewFileName(paramFilePath);
 
-	resultsStream.open(resultsFileName);
-	if(!resultsStream.is_open())
-	{
-		logStream << "Couldn't open the results file: " << resultsFileName << "\nexiting\n" << std::flush;
-		return false;
-	}
-	logStream << "Results file opened.\n" << std::flush;
+	// Stub name for all results files
+	resultsStub = thePath + runName;
 
 	// Everything is ok
 	return true;
@@ -133,157 +137,152 @@ bool CSimulator::initialiseIO(char* logFileName, char* paramFileName, char* resu
 // General initialisation
 bool CSimulator::initialiseSimulation()
 {
-	// Get model related parameters
+	char* endPointer; // General variable for the end pointer used in strto_ type functions
+	char* temp; // General purpose pointer to string
 
-	int vectorLength;
+	// READ IN MODEL RUNNING PARAMETERS
 
 	// Number of repetitions
-	nRepetitions = atoi(myReader.getParamString("numberRepetitions"));
+	nRepetitions = atoi(myReader.getParamString("repNum"));
 
 	// Number of years to run
-	nYears = atoi(myReader.getParamString("numberYears"));
-
-	// Number of outputs per year
-	nOutputsPerYear = atoi(myReader.getParamString("numberOutputsPerYear"));
+	nYears = atoi(myReader.getParamString("nYears"));
 
 	// Number of hosts
-	nHosts = atoi(myReader.getParamString("numberHosts"));
+	nHosts = atoi(myReader.getParamString("nHosts"));
 
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	///  Set up demography
+	// SET UP DEMOGRAPHY
 
-	// Read a parameter to determine whether to use data for the survival curve or a named function
-
-	// Use the exponential-exponential function to define the survival curve
-	double* demography = readDoublesVector(myReader.getParamString("demography"),vectorLength);
-	demog_eta = demography[0];
-	demog_b = demography[1];
-
-	survivalDt = atof(myReader.getParamString("survivalDt"));
-	survivalMaxAge = atof(myReader.getParamString("survivalMaxAge"));
-
-	survivalMaxIndex = (int) ceil(survivalMaxAge/survivalDt);
-	survivalCurve = new double[survivalMaxIndex];
-	survivalCurveIntegral = new double[survivalMaxIndex];
-	double subTotal = 0;
-	for(int i=0;i<survivalMaxIndex;i++)
+	// Read in host death rates
+	temp = myReader.getParamString("hostMu");
+	if(temp!=NULL)
 	{
-		// Exponential-exponential function
-		// survivalCurve[i] = exp(-demog_eta*(exp(demog_b*survivalDt*i)-1)); // Uncomment later
-		survivalCurve[i] = exp(-demog_eta*survivalDt*i);
-		subTotal += survivalCurve[i]; // subTotal = subTotal + survivalCurve
-		survivalCurveIntegral[i] = (subTotal - (survivalCurve[0]+survivalCurve[i])/2)*survivalDt;
+		hostMuData = readDoublesVector(temp,hostMuDataLength);
 	}
 
-	// Set up host population array
-	hostPopulation = new CHost* [nHosts];
-	for (int i=0;i<nHosts;i++)
+	// Read in host death rate upper bounds
+	temp = myReader.getParamString("upperBoundData");
+	if(temp!=NULL)
 	{
-		hostPopulation[i] = new CHost;
-		// Do lifespan stuff...
-		double lifespan = drawLifespan();
-		hostPopulation[i] -> birthDate = -genunf(0,1)*lifespan;
-		hostPopulation[i] -> deathDate = hostPopulation[i] -> birthDate + lifespan;
+		muDataUpperBounds = readDoublesVector(temp,muUpperBoundsLength);
 	}
 
-//	// Set up worm population array
-//	wormPopulation = new CWorms* [nWorms];
-//	for (int i=0;i<nWorms;i++)
-//	{
-//		wormPopulation[i] = new CWorm;
-//		// Do worm reproduction stuff...
-//		double wormReproduction = drawWormReproduction();
-//		wormPopulation[i] -> femaleWorms = -genunf(0,1)*wormReproduction;
-//		wormPopulation[i] -> totalWorms = wormPopulation[i] -> femaleWorms + wormReproduction;
-//	}
+	// Construct mu, probability of death and survival vectors
+	maxDtIntervals = (int) floor(muDataUpperBounds[muUpperBoundsLength-1]/demogDt);
+	upperAgeBound = maxDtIntervals*demogDt;
+	int currentMuIndex = 0;
+	double currentSurvival = 1;
+	double currentSurvivalCumul = 0;
+	double currentProbDeathCumul = 0;
+	double currentMuDtCumul = 0;
+	double tinyIncrement = 0.01;
+	survivalCurve = new double[maxDtIntervals];
+	survivalCurveCumul = new double[maxDtIntervals];
+	hostMu = new double[maxDtIntervals];
+	probDeath = new double[maxDtIntervals];
+	probDeathIntegral = new double[maxDtIntervals];
 
-	/////////////////////////////////////////////////////////////////////////////////////
-	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
+	for(int i=0;i<maxDtIntervals;i++)
+	{
+		double currentIntEnd = (i+1)*demogDt;
+		// Is current dt interval within data upper bound?
+		if(muDataUpperBounds[currentMuIndex]+tinyIncrement<currentIntEnd)
+				currentMuIndex++;
+		hostMu[i] = hostMuData[currentMuIndex];
+		probDeath[i] = currentSurvival*hostMu[i]*demogDt;
+		currentMuDtCumul += hostMu[i]*demogDt;
 
-	// Contact age groups
-	int* contactAgeGroups = readIntsVector(myReader.getParamString("contactAgeGroups"),vectorLength);
-	CAGInfant = contactAgeGroups[0];
-	CAGPreSAC = contactAgeGroups[1];
-	CAGSAC = contactAgeGroups[2];
-	CAGAdult = contactAgeGroups[3];
+		probDeathIntegral[i] = currentProbDeathCumul + probDeath[i];
+		currentProbDeathCumul = probDeathIntegral[i];
 
-	// Beta values
-	double* beta = readDoublesVector(myReader.getParamString("beta"),vectorLength);
-	InfantBeta = beta[0];
-	PreSACBeta = beta[1];
-	SACBeta = beta[2];
-	AdultBeta = beta[3];
+		survivalCurve[i] = exp(-currentMuDtCumul);
+		currentSurvival = survivalCurve[i];
 
-	// R0
-	R0 = atoi(myReader.getParamString("R0"));
+		survivalCurveCumul[i] = survivalCurve[i] + currentSurvivalCumul;
+		currentSurvivalCumul = survivalCurveCumul[i];
+	}
 
-	// Egg per gram
-	lambda = atoi(myReader.getParamString("lambda"));
+	// SET UP SOCIAL STRUCTURE
 
-	// Exponential density dependence of parasite adult stage
-	gamma = atof(myReader.getParamString("gamma"));
+	// Read in contact age group breaks
+	temp = myReader.getParamString("contactAgeBreaks");
+	if(temp!=NULL)
+	{
+		contactAgeBreaks = readDoublesVector(temp,contactAgeBreaksLength);
+	}
 
-	// Fecundity parameter z = exp(-gamma)
-	z = atof(myReader.getParamString("z"));
+	// Read in beta values (contact rates)
+	temp = myReader.getParamString("betaValues");
+	if(temp!=NULL)
+	{
+		betaValues = readDoublesVector(temp,betaValuesLength);
+	}
+
+	// Read in rho values (contribution to the reservoir by contact age group)
+	temp = myReader.getParamString("rhoValues");
+	if(temp!=NULL)
+	{
+		rhoValues = readDoublesVector(temp,rhoValuesLength);
+	}
+
+	// READ IN EPIDEMIOLOGICAL PARAMETERS
 
 	// Shape parameter of assumed negative binomial distribution of worms amongst host
 	k = atof(myReader.getParamString("k"));
 
-	// Worm death rate i.e. 1/worm_life_span
+	// Eggs per gram
+	lambda = atoi(myReader.getParamString("lambda"));
+
+	// Basic reproductive number
+	R0 = atof(myReader.getParamString("R0"));
+
+	// Decay rate of eggs in the environment
+	ReservoirDecayRate = atoi(myReader.getParamString("ReservoirDecayRate"));
+
+	// Worm death rate i.e. 1/worm life span, same for all development stages
 	sigma = atof(myReader.getParamString("sigma"));
 
-	// Reservoir decay rate (decay rate of eggs in the environment)
-	LDecayRate = atoi(myReader.getParamString("LDecayRate"));
+	// Exponential density dependence of parasite adult stage (N.B. fecundity parameter z = exp(-gamma))
+	gamma = atof(myReader.getParamString("gamma"));
 
-	// Treatment age groups
-	int* treatmentAgeGroups = readIntsVector(myReader.getParamString("treatmentAgeGroups"),vectorLength);
-	TAGInfant = treatmentAgeGroups[0];
-	TAGPreSAC = treatmentAgeGroups[1];
-	TAGSAC = treatmentAgeGroups[2];
-	TAGAdult = treatmentAgeGroups[3];
+	// SET UP TREATMENT
 
-	// Coverages
-	double* coverages = readDoublesVector(myReader.getParamString("coverages"),vectorLength);
-	InfantCoverage = coverages[0];
-	PreSACCoverage = coverages[1];
-	SACCoverage = coverages[2];
-	AdultCoverage = coverages[3];
+	// Read in treatment age group breaks
+	temp = myReader.getParamString("treatmentBreaks");
+	if(temp!=NULL)
+	{
+		treatmentBreaks = readDoublesVector(temp,treatmentBreaksLength);
+	}
+
+	// Read in coverages
+	temp = myReader.getParamString("coverage");
+	if(temp!=NULL)
+	{
+		coverage = readDoublesVector(temp,coverageLength);
+	}
 
 	// Drug efficacy
-	drugEfficacy = atof(myReader.getParamString("drugEfficacy"));
+	drugEff = atof(myReader.getParamString("drugEff"));
 
-	// Chemotherapy timings
-	int* treatmentTimes = readIntsVector(myReader.getParamString("treatmentTimes"),vectorLength);
-	treatStart = treatmentTimes[0];
-	treatEnd = treatmentTimes[1];
-	treatFreq = treatmentTimes[2];
+	// Treatment year start
+	treatStart = atoi(myReader.getParamString("treatStart"));
+
+	// Number of treatment rounds
+	nRounds = atoi(myReader.getParamString("nRounds"));
+
+	// Interval between treatments in years
+	treatInterval = atof(myReader.getParamString("treatInterval"));
+
+	// TEST AREA
 
 	// Print some parameters of different types to log file to check if they are being read in correctly
 	logStream << "\nNumber of repetitions (int type): " << nRepetitions << "\n"
-				<< "Fecundity parameter (double type): " << z << "\n"
-				<< "demog_eta and demog_b (double vector type): " << demog_eta << "\t" << demog_b << "\n"
-				<< "Beta values (double vector type): " << TAGInfant << "\t" << TAGPreSAC << "\t" << TAGSAC << "\t" << TAGAdult << "\n"
-				<< "Treatment start time, end time and frequency (int vector type): " << treatStart << "\t" << treatEnd << "\t" << treatFreq << "\n"
+				<< "Shape parameter of assumed negative binomial distribution of worms amongst host (k): " << k << "\n"
 				<< std::flush;
 
-	/////////////////////////////////////////////////////////////////////////////////////
-	//// DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE DEBUG CODE ///
-
-
-	// Allocate memory
-	dt = (float) 1/nOutputsPerYear;
-	nTimeSteps = ((int) ceil(nYears/dt)) + 1;
-	results = new wormBurden*[nRepetitions];
-	for (int i=0;i<nRepetitions;i++)
-	{
-		// Allocate repetitions
-		results[i] = new wormBurden[nTimeSteps];
-		memset(results[i],0,sizeof(wormBurden)*nTimeSteps);
-
-		// Initialise nWormBurden in each repetition
-		results[i][0].nWormBurden = 0; // CHANGE THIS VALUE LATER
-		results[i][0].time = 0;
-	}
+	// Set up a realisation
+	myRealization.initialize(this);
+	myRealization.run();
 
 
 	return true;
@@ -292,16 +291,7 @@ bool CSimulator::initialiseSimulation()
 // Run simulation
 void CSimulator::runSimulation()
 {
-	int runIndex, timeIndex;
-	for (runIndex=0;runIndex<nRepetitions;runIndex++)
-	{
-		wormBurden* currentRun = results[runIndex];
-		for (timeIndex=0;timeIndex<nTimeSteps-1;timeIndex++)
-		{
-			currentRun[timeIndex+1].nWormBurden = currentRun[timeIndex].nWormBurden + 10; // Change later
-			currentRun[timeIndex+1].time = currentRun[timeIndex].time + dt;
-		}
-	}
+
 }
 
 // What simulation outputs do we want to see?
@@ -311,64 +301,35 @@ void CSimulator::runSimulation()
 // 4) Prevalence across time
 
 // Output simulation
-void CSimulator::outputSimulation(int n)
+void CSimulator::outputSimulation()
 {
-	for (int i=0;i<nTimeSteps;i++)
-	{
-		resultsStream << results[n][i].time << "\t";
-		for (int n=0;n<nRepetitions;n++)
-		{
-			resultsStream << results[n][i].nWormBurden << "\t";
-		}
-		resultsStream << "\n";
-	}
-	resultsStream << std::flush;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 /// Auxiliary function definitions
 
+// Creates a vector of doubles from string from param file
+// Allocates memory so need to delete
 double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 {
 	char* endPointer; // endPointer for each call to strto_ type functions
 
 	// Read in the length of the vector
-	int length = strlen(currentString);
+	int length = strtol(currentString,&endPointer,10);
 	currentLength = length;
 
 	if(length<0)
 		return NULL;
 
 	// Create array of doubles
-	double* doubleVectorArray = new double[length];
-	doubleVectorArray[0] = strtod(currentString,&endPointer);
-	for(int i=1;i<length;i++)
+	double* vectorArray = new double[length];
+	for(int i=0;i<length;i++)
 	{
-		doubleVectorArray[i] = strtod(endPointer, &endPointer);
+		vectorArray[i] = strtod(endPointer, &endPointer);
 	}
 
-	return doubleVectorArray;
-}
-
-int* CSimulator::readIntsVector(char* currentString, int& currentLength)
-{
-	char* endPointer; // endPointer for each call to strto_ type functions
-
-	// Read in the length of the vector
-	int length = strlen(currentString);
-	currentLength = length;
-
-	if(length<0)
-		return NULL;
-
-	// Create array of integers
-	int* intVectorArray = new int[length];
-	intVectorArray[0] = strtol(currentString, &endPointer,10);
-	for(int i=1;i<length;i++)
-	{
-		intVectorArray[i] = strtol(endPointer, &endPointer,10);
-	}
-	return intVectorArray;
+	return vectorArray;
 }
 
 // This function takes a random number (0-1) and multiplies it by the max of the passed array.
@@ -412,29 +373,13 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 // Draw a life span from the survival curve from the population.
 double CSimulator::drawLifespan()
 {
-	// Get a random integer from survivalCurveIntegral using the multinomial generator. This shouldn't be zero!!
+	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!!
 	double currentRand = genunf(0,1); //geunf(double low, double high) generates uniform real between low and high
 
-	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
+	int index = multiNomBasic(probDeathIntegral, maxDtIntervals,currentRand);
 
-	// Interpolate from the returned value.
-	double target = currentRand*survivalCurveIntegral[survivalMaxIndex-1];
-	double a = (target - survivalCurveIntegral[index-1])/(survivalCurveIntegral[index] - survivalCurveIntegral[index-1]);
-	double ans = a*survivalDt + (index - 1)*survivalDt;
+	// Choose a point in the middle of the interval in which the person dies
+	double ans = (index+0.5)*demogDt;
+
 	return ans;
 }
-
-//// Worm reproduction
-//double CSimulator::drawWormReproduction()
-//{
-//	// Get a random integer from survivalCurveIntegral using the multinomial generator. This shouldn't be zero!!
-//	double currentRand = genunf(0,1);
-//
-//	int index = multiNomBasic(survivalCurveIntegral, survivalMaxIndex,currentRand);
-//
-//	// Interpolate from the returned value.
-//	double target = currentRand*survivalCurveIntegral[survivalMaxIndex-1];
-//	double a = (target - survivalCurveIntegral[index-1])/(survivalCurveIntegral[index] - survivalCurveIntegral[index-1]);
-//	double ans = a*survivalDt + (index - 1)*survivalDt;
-//	return ans;
-//}

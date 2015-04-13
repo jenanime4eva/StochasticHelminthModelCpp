@@ -1,10 +1,8 @@
 /*
- * CParamReader.cpp
+ * File Name: CParamReader.cpp
  *
- *  Created on: 12 Nov 2014
- *      Author: jtrusc
- *  Modified: 26 Nov 2014
- *		Author: Jie Yang
+ * Created on: 12 Nov 2014
+ *
  */
 
 #include "CParamReader.h"
@@ -25,8 +23,7 @@ CParamReader::~CParamReader()
 		delete[] filePathString;
 }
 
-
-// Set the file name and check that it exists
+// Set up the file name and check that it exists
 bool CParamReader::setNewFileName(char* filePath)
 {
 	// If there's a file attached, remove it.
@@ -40,14 +37,13 @@ bool CParamReader::setNewFileName(char* filePath)
 
 	paramFileStream.close(); // Just checking, close it
 
-	//filePathString = new char[strlen(filePath)+1];
-	//strcpy(filePathString, filePath);
-	filePathString = filePath;
+	filePathString = new char[strlen(filePath)+1];
+	strcpy(filePathString, filePath);
 
 	return true;
 }
 
-// Return a string containing parameter data or Null
+// Return a string containing parameter data or NULL
 char* CParamReader::getParamString(const char* paramName)
 {
 	// Do we have a file attached?
@@ -56,25 +52,25 @@ char* CParamReader::getParamString(const char* paramName)
 	if(!paramFileStream.is_open())
 		return NULL;
 
-	int paramLength = strlen(paramName);
-
 	bool found = false;
 	char* paramString = NULL;
 	char* token;
+
 	// Run through the lines of the file for the parameter
-	while(!paramFileStream.eof() && !found)
+	while(!paramFileStream.eof() && !found) // eof = end of file function
 	{
 		paramFileStream.getline(paramBuffer,BUFFER_SIZE-1);
 		token = strtok(paramBuffer,"\t");
+
 		// Anything on this line?
 		if(token!=NULL)
 		{
-		// Line doesn't begin with # and matches param name?
-			if(token[0]!='#' && strncmp(paramName,token,paramLength)==0)
+			// Line doesn't begin with # and matches parameter name
+			if(token[0]!='#' && strcmp(paramName,token)==0)
 			{
-			// Found it!
-			found = true;
-			paramString = strtok(NULL,"\t");
+				// Found it!
+				found = true;
+				paramString = strtok(NULL,"\t");
 			}
 		}
 	}
@@ -83,6 +79,3 @@ char* CParamReader::getParamString(const char* paramName)
 
 	return paramString;
 }
-
-
-

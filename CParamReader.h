@@ -1,13 +1,12 @@
 /*
- * CParamReader.h
+ * File name: CParamReader.h
  *
- *  Created on: 12 Nov 2014
- *      Author: jtrusc
- *	Modified: 26 Nov 2014
- *		Author: Jie Yang
- *      Each informative line of the param file should have the form:
- *      paramNumber (tab) Value (tab) ## Comments
+ * Created on: 12 Nov 2014
+ *
+ *      Each informative line of the parameter file should have the form:
+ *      Name (TAB) Values separated by spaces (TAB) ## Comments
  *      Any line starting with '#' is completely ignored.
+ *
  */
 
 #ifndef CPARAMREADER_H_
@@ -15,19 +14,19 @@
 
 #include <fstream>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1024 // Define buffer size
 
 class CParamReader
 {
 public:
-	CParamReader();
-	virtual ~CParamReader();
+	CParamReader(); // This is the constructor declaration
+	virtual ~CParamReader(); // This is the destructor declaration
 
+	// Functions to be defined
 	bool setNewFileName(char* filePath);
 	char* getParamString(const char* paraName);
 
-
-	// Members...
+	// Members
 	std::ifstream paramFileStream;
 	char* paramBuffer;
 	char* filePathString;
