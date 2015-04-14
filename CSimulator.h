@@ -86,14 +86,17 @@ public:
 
 	// Outputs
 	void outputSimulation();
+	double* surveyResultTimes;
+	int surveyResultTimesLength;
 	std::string resultsStub;
 
-	////////////////////////////////////////////////////
-	/// Auxiliary functions
-	// a function to read in a list of doubles into a vector.
+	// AUXILIARY FUNCTIONS
+
+	// A function to read in a list of doubles into a vector
 	double* readDoublesVector(char* valuesString, int& currentLength);
-	// return an index for the value that is just above a uniform random deviate.
+	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
+	double myRandUni();
 };
 
 #endif /* CSIMULATOR_H_ */

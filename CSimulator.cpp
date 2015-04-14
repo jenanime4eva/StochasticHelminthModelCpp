@@ -6,7 +6,7 @@
  *
  */
 
-#include ".\CSimulator.h"
+#include "CSimulator.h"
 #include "CHost.h"
 #include "CParamReader.h"
 #include <iostream>
@@ -66,6 +66,10 @@ CSimulator::CSimulator()
 	treatStart = 0;
 	nRounds = 0;
 	treatInterval = 0;
+
+	// Results
+	surveyResultTimes = NULL;
+	surveyResultTimesLength = 0;
 }
 
 // Class Destructor
@@ -106,6 +110,9 @@ CSimulator::~CSimulator()
 
 	if(coverage!=NULL)
 		delete[] coverage;
+
+	if(surveyResultTimes!=NULL)
+		delete[] surveyResultTimes;
 }
 
 // Initialise the input/output aspects of the simulator
@@ -273,6 +280,15 @@ bool CSimulator::initialiseSimulation()
 	// Interval between treatments in years
 	treatInterval = atof(myReader.getParamString("treatInterval"));
 
+	// SET UP RESULTS COLLECTION
+
+	temp = myReader.getParamString("surveyTimes");
+	if(temp!=NULL)
+	{
+		// There are survey results to collect
+		surveyResultTimes = readDoublesVector(temp,surveyResultTimesLength);
+	}
+
 	// TEST AREA
 
 	// Print some parameters of different types to log file to check if they are being read in correctly
@@ -303,7 +319,24 @@ void CSimulator::runSimulation()
 // Output simulation
 void CSimulator::outputSimulation()
 {
+	// Output survey-type results if there's any
+	// Create output stream
+	std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
+	std::ofstream surveyStream(surveyResultsOut.c_str());
 
+	//  DEBUG: currently for only ONE realisation
+	for(int j=0;j<surveyResultTimesLength;j++)
+		surveyStream << surveyResultTimes[j] << "\t";
+	surveyStream << "\n";
+	// Loop through the hosts
+	for(int i=0;i<nHosts;i++)
+	{
+		for(int j=0;j<surveyResultTimesLength;j++)
+		{
+			surveyStream << myRealization.surveyResultsArray[j][i].age << "\t";
+		}
+		surveyStream << "\n";
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -370,11 +403,18 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 	return top;
 }
 
-// Draw a life span from the survival curve from the population.
+// Uniform random number generator (should be using the <random> functions)
+double CSimulator::myRandUni()
+{
+	return (1.0*rand())/RAND_MAX;
+}
+
+// Draw a life span from the survival curve from the population
 double CSimulator::drawLifespan()
 {
-	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!!
-	double currentRand = genunf(0,1); //geunf(double low, double high) generates uniform real between low and high
+	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
+	//genunf(double low, double high) generates uniform real between low and high
+	double currentRand = myRandUni();
 
 	int index = multiNomBasic(probDeathIntegral, maxDtIntervals,currentRand);
 

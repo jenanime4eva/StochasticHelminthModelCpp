@@ -8,6 +8,7 @@
 repNum	1		## Number of repetitions
 nYears	150		## Number of years to run
 nHosts	1000	## Size of definitive host population (N)
+surveyTimes	99 100 101 102 103 104 105 106 107 108 109 110 120 130 140 150	## Times to get data from all individuals in the population
 
 ### Demographic structure
 ## The following death rates are for Kenya 2012 and come from the WHO global observatory.

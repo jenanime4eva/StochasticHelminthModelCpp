@@ -4,7 +4,7 @@ Created by Jie Yang, November 2014
 Compile this specific file to generate the .exe file
 */
 
-#include ".\CSimulator.h"
+#include "CSimulator.h"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 	}
 
 	simulator.initialiseSimulation(); // General initialisation
-	simulator.outputSimulation(0); // Output simulation
+	simulator.outputSimulation(); // Output simulation
 
 	return 1; 
 }
