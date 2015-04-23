@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
-#include <math.h>
 #include "randlib.h"
 
 // Class Constructor
@@ -310,28 +309,8 @@ void CSimulator::runSimulation() {
 // 4) Prevalence across time
 
 // Output simulation
-void CSimulator::outputSimulation() {
-	/*
-	 // Output survey-type results if there's any
-	 // Create output stream
-	 std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
-	 std::ofstream surveyStream(surveyResultsOut.c_str());
-
-	 //  DEBUG: currently for only ONE realisation
-	 for(int j=0;j<surveyResultTimesLength;j++)
-	 surveyStream << surveyResultTimes[j] << "\t";
-	 surveyStream << "\n";
-	 // Loop through the hosts
-	 for(int i=0;i<nHosts;i++)
-	 {
-	 for(int j=0;j<surveyResultTimesLength;j++)
-	 {
-	 surveyStream << myRealization.surveyResultsArray[j][i].age << "\t";
-	 }
-	 surveyStream << "\n";
-	 }
-	 */
-
+void CSimulator::outputSimulation()
+{
 	// Output survey-type results if there's any
 	if (surveyResultTimes != NULL) {
 		// There's some survey results
@@ -413,14 +392,16 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum) {
 }
 
 // Uniform random number generator (should be using the <random> functions)
-double CSimulator::myRandUni() {
-	return (1.0 * rand()) / RAND_MAX;
+double CSimulator::myRandUni()
+{
+	//genunf(double low, double high) generates uniform real between low and high
+	  return  genunf(0,1);
+
 }
 
 // Draw a life span from the survival curve from the population
 double CSimulator::drawLifespan() {
 	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
-	//genunf(double low, double high) generates uniform real between low and high
 	double currentRand = myRandUni();
 
 	int index = multiNomBasic(probDeathIntegral, maxDtIntervals, currentRand);

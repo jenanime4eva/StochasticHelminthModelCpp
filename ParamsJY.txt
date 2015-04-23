@@ -18,16 +18,16 @@ demogDt	1.0	## Age step for survival curve in years
 
 ### Social structure
 contactAgeBreaks	0 2 5 15 70		## Contact age group breaks
-betaValues	0.53 2 1 0.56			## Relative contact rates (Beta)
-rhoValues	0.53 2 1 0.56			## Contribution to the reservoir by contact age group (Rho)
+betaValues	0.51 1.92 1 0.59		## Relative contact rates (Beta)
+rhoValues	0.51 1.92 1 0.59		## Contribution to the reservoir by contact age group (Rho)
 
 ### Epidemiological parameters 
-k	0.5			## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
+k	0.7			## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
 lambda	5470	## Eggs per gram (lambda)
 R0	2.0			## Basic reproductive number (R0) 
 ReservoirDecayRate	5	## Reservoir decay rate (decay rate of eggs in the environment)
 sigma	1		## Worm death rate (sigma) i.e. 1/worm_life_span, same for all development stages
-gamma	0.06	## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
+gamma	0.08	## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
 
 ### Treatment parameters 
 treatmentBreaks	0 2 5 15 70		## Treatment age group breaks
