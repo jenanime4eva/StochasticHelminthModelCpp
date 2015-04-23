@@ -139,25 +139,32 @@ bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 
 	// Stub name for all results files
 	resultsStub = thePath + runName;
+	logStream << "Stub name for all results files: " << resultsStub << "\n" << std::flush;
 
 	// Everything is ok
 	return true;
 }
 
 // General initialisation
-bool CSimulator::initialiseSimulation() {
+bool CSimulator::initialiseSimulation()
+{
 	char* temp; // General purpose pointer to string
 
 	// READ IN MODEL RUNNING PARAMETERS
 
+	logStream << "\nPARAMETERS READ IN\n" << std::flush;
+
 	// Number of repetitions
 	nRepetitions = atoi(myReader.getParamString("repNum"));
+	logStream << "Number of repetitions: " << nRepetitions << "\n" << std::flush; // Test flag
 
 	// Number of years to run
 	nYears = atoi(myReader.getParamString("nYears"));
+	logStream << "Number of years to run: " << nYears << "\n" << std::flush; // Test flag
 
 	// Number of hosts
 	nHosts = atoi(myReader.getParamString("nHosts"));
+	logStream << "Number of hosts: " << nHosts << "\n" << std::flush; // Test flag
 
 	// SET UP DEMOGRAPHY
 
@@ -166,6 +173,7 @@ bool CSimulator::initialiseSimulation() {
 	if (temp != NULL) {
 		hostMuData = readDoublesVector(temp, hostMuDataLength);
 	}
+	logStream << "hostMuData vector length: " << hostMuDataLength << "\n" << std::flush; // Test flag
 
 	// Read in host death rate upper bounds
 	temp = myReader.getParamString("upperBoundData");
@@ -241,6 +249,7 @@ bool CSimulator::initialiseSimulation() {
 
 	// Basic reproductive number
 	R0 = atof(myReader.getParamString("R0"));
+	logStream << "R0: " << R0 << "\n" << std::flush; // Test flag
 
 	// Decay rate of eggs in the environment
 	ReservoirDecayRate = atoi(myReader.getParamString("ReservoirDecayRate"));
@@ -283,13 +292,6 @@ bool CSimulator::initialiseSimulation() {
 		surveyResultTimes = readDoublesVector(temp, surveyResultTimesLength);
 	}
 
-	// TEST AREA
-
-	// Print some parameters of different types to log file to check if they are being read in correctly
-	logStream << "\nNumber of repetitions (int type): " << nRepetitions << "\n"
-			<< "Coverage: " << coverage << "\n" << "Coverage vector length: "
-			<< coverageLength << "\n" << std::flush;
-
 	// Set up a realisation
 	myRealization.initialize(this);
 	myRealization.run();
@@ -298,7 +300,8 @@ bool CSimulator::initialiseSimulation() {
 }
 
 // Run simulation
-void CSimulator::runSimulation() {
+void CSimulator::runSimulation()
+{
 
 }
 
@@ -338,7 +341,8 @@ void CSimulator::outputSimulation()
 
 // Creates a vector of doubles from string from param file
 // Allocates memory so need to delete
-double* CSimulator::readDoublesVector(char* currentString, int& currentLength) {
+double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
+{
 	char* endPointer; // endPointer for each call to strto_ type functions
 
 	// Read in the length of the vector
