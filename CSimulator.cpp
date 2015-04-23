@@ -68,6 +68,8 @@ CSimulator::CSimulator() {
 	// Results
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
+
+	endPointer = NULL;
 }
 
 // Class Destructor
@@ -166,7 +168,8 @@ bool CSimulator::initialiseSimulation()
 	nHosts = atoi(myReader.getParamString("nHosts"));
 	logStream << "Number of hosts: " << nHosts << "\n" << std::flush; // Test flag
 
-	// SET UP DEMOGRAPHY
+	/*
+	/// SET UP DEMOGRAPHY
 
 	// Read in host death rates
 	temp = myReader.getParamString("hostMu");
@@ -238,6 +241,7 @@ bool CSimulator::initialiseSimulation()
 	if (temp != NULL) {
 		rhoValues = readDoublesVector(temp, rhoValuesLength);
 	}
+	*/
 
 	// READ IN EPIDEMIOLOGICAL PARAMETERS
 
@@ -267,12 +271,16 @@ bool CSimulator::initialiseSimulation()
 	if (temp != NULL) {
 		treatmentBreaks = readDoublesVector(temp, treatmentBreaksLength);
 	}
+	logStream << "treatmentBreaks vector length: " << treatmentBreaksLength << "\n" << std::flush; // Test flag
 
 	// Read in coverages
 	temp = myReader.getParamString("coverage");
 	if (temp != NULL) {
 		coverage = readDoublesVector(temp, coverageLength);
 	}
+	logStream << "Coverages vector length: " << coverageLength << "\n" << std::flush; // Test flag
+	logStream << "pre-SAC coverage: " << coverage[1] << "\n" << std::flush; // Test flag
+	logStream << "SAC coverage: " << coverage[2] << "\n" << std::flush; // Test flag
 
 	// Drug efficacy
 	drugEff = atof(myReader.getParamString("drugEff"));
@@ -291,6 +299,8 @@ bool CSimulator::initialiseSimulation()
 	if (temp != NULL) {
 		surveyResultTimes = readDoublesVector(temp, surveyResultTimesLength);
 	}
+	logStream << "surveyResultTimes vector length: " << surveyResultTimesLength << "\n" << std::flush; // Test flag
+
 
 	// Set up a realisation
 	myRealization.initialize(this);
@@ -344,9 +354,10 @@ void CSimulator::outputSimulation()
 double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 {
 	char* endPointer; // endPointer for each call to strto_ type functions
+	int counter;
 
 	// Read in the length of the vector
-	int length = strtol(currentString, &endPointer, 10);
+	int length = strlen(currentString);
 	currentLength = length;
 
 	if (length < 0)
@@ -354,9 +365,35 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 
 	// Create array of doubles
 	double* vectorArray = new double[length];
-	for (int i = 0; i < length; i++) {
-		vectorArray[i] = strtod(endPointer, &endPointer);
+	vectorArray[0] = strtod(currentString,&endPointer);
+
+	// IMPORTANT: Make sure 0 entries are written as 1e-10 in the parameter file
+	// This is for the purposes of finding non-zero elements in an array
+	// 1e-10 values will be converted to 0 as soon as the non-zero entries counter is no longer required
+
+	// Change 1e-10 vector entry back into 0 if necessary
+	if(vectorArray[0]==1e-10)
+	{
+		vectorArray[0] = 0;
 	}
+
+	counter = 1;
+	for (int i = 1; i < length; i++)
+	{
+		vectorArray[i] = strtod(endPointer, &endPointer);
+		// Count non-zero entries in vector
+		if(vectorArray[i]!=0)
+		{
+			counter = counter + 1;
+		}
+		// Change any 1e-10 vector entries back into 0 now that we've finished using the counter
+		if(vectorArray[i]==1e-10)
+		{
+			vectorArray[i] = 0;
+		}
+	}
+
+	currentLength =  counter;  // Check number of elements in the vector
 
 	return vectorArray;
 }
