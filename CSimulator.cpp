@@ -18,8 +18,7 @@
 #include "randlib.h"
 
 // Class Constructor
-CSimulator::CSimulator()
-{
+CSimulator::CSimulator() {
 	// Set default values
 
 	// Model running parameters
@@ -37,7 +36,7 @@ CSimulator::CSimulator()
 	hostMuData = NULL;
 	hostMuDataLength = 0;
 	muDataUpperBounds = NULL;
-	muUpperBoundsLength = 0;
+	muDataUpperBoundsLength = 0;
 	upperAgeBound = 0;
 	maxDtIntervals = 0;
 
@@ -73,66 +72,71 @@ CSimulator::CSimulator()
 }
 
 // Class Destructor
-CSimulator::~CSimulator()
-{
-	if(survivalCurve!=NULL)
+CSimulator::~CSimulator() {
+	if (survivalCurve != NULL)
 		delete[] survivalCurve;
 
-	if(survivalCurveCumul!=NULL)
-			delete[] survivalCurveCumul;
+	if (survivalCurveCumul != NULL)
+		delete[] survivalCurveCumul;
 
-	if(hostMuData!=NULL)
-			delete[] hostMuData;
+	if (hostMuData != NULL)
+		delete[] hostMuData;
 
-	if(muDataUpperBounds!=NULL)
+	if (muDataUpperBounds != NULL)
 		delete[] muDataUpperBounds;
 
-	if(hostMu!=NULL)
+	if (hostMu != NULL)
 		delete[] hostMu;
 
-	if(probDeath!=NULL)
+	if (probDeath != NULL)
 		delete[] probDeath;
 
-	if(probDeathIntegral!=NULL)
+	if (probDeathIntegral != NULL)
 		delete[] probDeathIntegral;
 
-	if(contactAgeBreaks!=NULL)
+	if (contactAgeBreaks != NULL)
 		delete[] contactAgeBreaks;
 
-	if(betaValues!=NULL)
+	if (betaValues != NULL)
 		delete[] betaValues;
 
-	if(rhoValues!=NULL)
+	if (rhoValues != NULL)
 		delete[] rhoValues;
 
-	if(treatmentBreaks!=NULL)
+	if (treatmentBreaks != NULL)
 		delete[] treatmentBreaks;
 
-	if(coverage!=NULL)
+	if (coverage != NULL)
 		delete[] coverage;
 
-	if(surveyResultTimes!=NULL)
+	if (surveyResultTimes != NULL)
 		delete[] surveyResultTimes;
 }
 
 // Initialise the input/output aspects of the simulator
 bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 {
-	// As strings classes
+	// As string classes
 	runName = run;
 	thePath = path;
 
 	// Setting up all the files needed
 	std::string logFilePath = thePath + runName + ".log.txt";
 	logStream.open(logFilePath.c_str());
-	if(!logStream.is_open())
-	{
-		std::cout << "Couldn't open the log file: " << logFilePath << "\nexiting\n" << std::flush;
+	if (!logStream.is_open()) {
+		std::cout << "Couldn't open the log file: " << logFilePath
+				<< "\nexiting\n" << std::flush;
 		return false;
 	}
 	logStream << "Log file opened.\n" << std::flush;
 
 	myReader.setNewFileName(paramFilePath);
+	if (!myReader.setNewFileName(paramFilePath)) {
+		logStream << "Couldn't open the parameter file: " << paramFilePath
+				<< "\nexiting\n" << std::flush;
+		return false;
+	}
+	logStream << "Param reader configured.\n" << std::flush;
 
 	// Stub name for all results files
 	resultsStub = thePath + runName;
@@ -142,9 +146,7 @@ bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 }
 
 // General initialisation
-bool CSimulator::initialiseSimulation()
-{
-	char* endPointer; // General variable for the end pointer used in strto_ type functions
+bool CSimulator::initialiseSimulation() {
 	char* temp; // General purpose pointer to string
 
 	// READ IN MODEL RUNNING PARAMETERS
@@ -162,21 +164,23 @@ bool CSimulator::initialiseSimulation()
 
 	// Read in host death rates
 	temp = myReader.getParamString("hostMu");
-	if(temp!=NULL)
-	{
-		hostMuData = readDoublesVector(temp,hostMuDataLength);
+	if (temp != NULL) {
+		hostMuData = readDoublesVector(temp, hostMuDataLength);
 	}
 
 	// Read in host death rate upper bounds
 	temp = myReader.getParamString("upperBoundData");
-	if(temp!=NULL)
-	{
-		muDataUpperBounds = readDoublesVector(temp,muUpperBoundsLength);
+	if (temp != NULL) {
+		muDataUpperBounds = readDoublesVector(temp, muDataUpperBoundsLength);
 	}
 
+	// Age step for survival curve in years
+	demogDt = atof(myReader.getParamString("demogDt"));
+
 	// Construct mu, probability of death and survival vectors
-	maxDtIntervals = (int) floor(muDataUpperBounds[muUpperBoundsLength-1]/demogDt);
-	upperAgeBound = maxDtIntervals*demogDt;
+	maxDtIntervals = (int) floor(
+			muDataUpperBounds[muDataUpperBoundsLength - 1] / demogDt);
+	upperAgeBound = maxDtIntervals * demogDt;
 	int currentMuIndex = 0;
 	double currentSurvival = 1;
 	double currentSurvivalCumul = 0;
@@ -189,15 +193,14 @@ bool CSimulator::initialiseSimulation()
 	probDeath = new double[maxDtIntervals];
 	probDeathIntegral = new double[maxDtIntervals];
 
-	for(int i=0;i<maxDtIntervals;i++)
-	{
-		double currentIntEnd = (i+1)*demogDt;
+	for (int i = 0; i < maxDtIntervals; i++) {
+		double currentIntEnd = (i + 1) * demogDt;
 		// Is current dt interval within data upper bound?
-		if(muDataUpperBounds[currentMuIndex]+tinyIncrement<currentIntEnd)
-				currentMuIndex++;
+		if (muDataUpperBounds[currentMuIndex] + tinyIncrement < currentIntEnd)
+			currentMuIndex++;
 		hostMu[i] = hostMuData[currentMuIndex];
-		probDeath[i] = currentSurvival*hostMu[i]*demogDt;
-		currentMuDtCumul += hostMu[i]*demogDt;
+		probDeath[i] = currentSurvival * hostMu[i] * demogDt;
+		currentMuDtCumul += hostMu[i] * demogDt;
 
 		probDeathIntegral[i] = currentProbDeathCumul + probDeath[i];
 		currentProbDeathCumul = probDeathIntegral[i];
@@ -213,23 +216,20 @@ bool CSimulator::initialiseSimulation()
 
 	// Read in contact age group breaks
 	temp = myReader.getParamString("contactAgeBreaks");
-	if(temp!=NULL)
-	{
-		contactAgeBreaks = readDoublesVector(temp,contactAgeBreaksLength);
+	if (temp != NULL) {
+		contactAgeBreaks = readDoublesVector(temp, contactAgeBreaksLength);
 	}
 
 	// Read in beta values (contact rates)
 	temp = myReader.getParamString("betaValues");
-	if(temp!=NULL)
-	{
-		betaValues = readDoublesVector(temp,betaValuesLength);
+	if (temp != NULL) {
+		betaValues = readDoublesVector(temp, betaValuesLength);
 	}
 
 	// Read in rho values (contribution to the reservoir by contact age group)
 	temp = myReader.getParamString("rhoValues");
-	if(temp!=NULL)
-	{
-		rhoValues = readDoublesVector(temp,rhoValuesLength);
+	if (temp != NULL) {
+		rhoValues = readDoublesVector(temp, rhoValuesLength);
 	}
 
 	// READ IN EPIDEMIOLOGICAL PARAMETERS
@@ -256,16 +256,14 @@ bool CSimulator::initialiseSimulation()
 
 	// Read in treatment age group breaks
 	temp = myReader.getParamString("treatmentBreaks");
-	if(temp!=NULL)
-	{
-		treatmentBreaks = readDoublesVector(temp,treatmentBreaksLength);
+	if (temp != NULL) {
+		treatmentBreaks = readDoublesVector(temp, treatmentBreaksLength);
 	}
 
 	// Read in coverages
 	temp = myReader.getParamString("coverage");
-	if(temp!=NULL)
-	{
-		coverage = readDoublesVector(temp,coverageLength);
+	if (temp != NULL) {
+		coverage = readDoublesVector(temp, coverageLength);
 	}
 
 	// Drug efficacy
@@ -281,32 +279,27 @@ bool CSimulator::initialiseSimulation()
 	treatInterval = atof(myReader.getParamString("treatInterval"));
 
 	// SET UP RESULTS COLLECTION
-
 	temp = myReader.getParamString("surveyTimes");
-	if(temp!=NULL)
-	{
-		// There are survey results to collect
-		surveyResultTimes = readDoublesVector(temp,surveyResultTimesLength);
+	if (temp != NULL) {
+		surveyResultTimes = readDoublesVector(temp, surveyResultTimesLength);
 	}
 
 	// TEST AREA
 
 	// Print some parameters of different types to log file to check if they are being read in correctly
 	logStream << "\nNumber of repetitions (int type): " << nRepetitions << "\n"
-				<< "Shape parameter of assumed negative binomial distribution of worms amongst host (k): " << k << "\n"
-				<< std::flush;
+			<< "Coverage: " << coverage << "\n" << "Coverage vector length: "
+			<< coverageLength << "\n" << std::flush;
 
 	// Set up a realisation
 	myRealization.initialize(this);
 	myRealization.run();
 
-
 	return true;
 }
 
 // Run simulation
-void CSimulator::runSimulation()
-{
+void CSimulator::runSimulation() {
 
 }
 
@@ -317,25 +310,47 @@ void CSimulator::runSimulation()
 // 4) Prevalence across time
 
 // Output simulation
-void CSimulator::outputSimulation()
-{
-	// Output survey-type results if there's any
-	// Create output stream
-	std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
-	std::ofstream surveyStream(surveyResultsOut.c_str());
+void CSimulator::outputSimulation() {
+	/*
+	 // Output survey-type results if there's any
+	 // Create output stream
+	 std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
+	 std::ofstream surveyStream(surveyResultsOut.c_str());
 
-	//  DEBUG: currently for only ONE realisation
-	for(int j=0;j<surveyResultTimesLength;j++)
-		surveyStream << surveyResultTimes[j] << "\t";
-	surveyStream << "\n";
-	// Loop through the hosts
-	for(int i=0;i<nHosts;i++)
-	{
-		for(int j=0;j<surveyResultTimesLength;j++)
-		{
-			surveyStream << myRealization.surveyResultsArray[j][i].age << "\t";
-		}
+	 //  DEBUG: currently for only ONE realisation
+	 for(int j=0;j<surveyResultTimesLength;j++)
+	 surveyStream << surveyResultTimes[j] << "\t";
+	 surveyStream << "\n";
+	 // Loop through the hosts
+	 for(int i=0;i<nHosts;i++)
+	 {
+	 for(int j=0;j<surveyResultTimesLength;j++)
+	 {
+	 surveyStream << myRealization.surveyResultsArray[j][i].age << "\t";
+	 }
+	 surveyStream << "\n";
+	 }
+	 */
+
+	// Output survey-type results if there's any
+	if (surveyResultTimes != NULL) {
+		// There's some survey results
+		// Create output stream
+		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
+		std::ofstream surveyStream(surveyResultsOut.c_str());
+
+		// DEBUG: currently only ONE realization, so...
+		for (int j = 0; j < surveyResultTimesLength; j++)
+			surveyStream << surveyResultTimes[j] << "\t";
 		surveyStream << "\n";
+		// Loop through the hosts
+		for (int i = 0; i < nHosts; i++) {
+			for (int j = 0; j < surveyResultTimesLength; j++) {
+				surveyStream << myRealization.surveyResultsArray[j][i].age
+						<< "\t";
+			}
+			surveyStream << "\n";
+		}
 	}
 }
 
@@ -344,21 +359,19 @@ void CSimulator::outputSimulation()
 
 // Creates a vector of doubles from string from param file
 // Allocates memory so need to delete
-double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
-{
+double* CSimulator::readDoublesVector(char* currentString, int& currentLength) {
 	char* endPointer; // endPointer for each call to strto_ type functions
 
 	// Read in the length of the vector
-	int length = strtol(currentString,&endPointer,10);
+	int length = strtol(currentString, &endPointer, 10);
 	currentLength = length;
 
-	if(length<0)
+	if (length < 0)
 		return NULL;
 
 	// Create array of doubles
 	double* vectorArray = new double[length];
-	for(int i=0;i<length;i++)
-	{
+	for (int i = 0; i < length; i++) {
 		vectorArray[i] = strtod(endPointer, &endPointer);
 	}
 
@@ -369,34 +382,30 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 // It then finds the smallest index that has an array value greater than the product above.
 // For a cumulative multinomial array, this will return the index of the event that occurred.
 // Also used for drawing a lifespan from the survival curve integral.
-int CSimulator::multiNomBasic(double* array, int length, double randNum)
-{
-	int loopMax = ceil(log(length)/log(2)+2);
+int CSimulator::multiNomBasic(double* array, int length, double randNum) {
+	int loopMax = ceil(log(length) / log(2) + 2);
 	int bottom = -1;
 	//double bottomVal;
-	int top = length-1;
+	int top = length - 1;
 	double topVal = array[top];
-	double target = topVal*randNum;
+	double target = topVal * randNum;
 	int count = 0;
 
-	while(++count<loopMax && (top-bottom>1))
-	{
-		int mid = (top+bottom)/2;
+	while (++count < loopMax && (top - bottom > 1)) {
+		int mid = (top + bottom) / 2;
 		double midVal = array[mid];
-		if(midVal>=target)
-		{
+		if (midVal >= target) {
 			top = mid;
 			topVal = midVal;
-		} else
-		{
+		} else {
 			bottom = mid;
 			//bottomVal = midVal;
 		}
 	}
 
-	if(count>=loopMax)
-	{
-		logStream << "Max iterations exceeded in multiNomBasic(...),\n" << std::flush;
+	if (count >= loopMax) {
+		logStream << "Max iterations exceeded in multiNomBasic(...),\n"
+				<< std::flush;
 		return -1;
 	}
 
@@ -404,22 +413,20 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 }
 
 // Uniform random number generator (should be using the <random> functions)
-double CSimulator::myRandUni()
-{
-	return (1.0*rand())/RAND_MAX;
+double CSimulator::myRandUni() {
+	return (1.0 * rand()) / RAND_MAX;
 }
 
 // Draw a life span from the survival curve from the population
-double CSimulator::drawLifespan()
-{
+double CSimulator::drawLifespan() {
 	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
 	//genunf(double low, double high) generates uniform real between low and high
 	double currentRand = myRandUni();
 
-	int index = multiNomBasic(probDeathIntegral, maxDtIntervals,currentRand);
+	int index = multiNomBasic(probDeathIntegral, maxDtIntervals, currentRand);
 
 	// Choose a point in the middle of the interval in which the person dies
-	double ans = (index+0.5)*demogDt;
+	double ans = (index + 0.5) * demogDt;
 
 	return ans;
 }

@@ -31,7 +31,7 @@ public:
 
 	// File input/output
 	std::ofstream logStream; // Output to log file
-	bool initialiseIO(char* logFileName, char* paramFileName, char* resultsFileName);
+	bool initialiseIO(char* run, char* path, char* paramFilePath);
 	int nRepetitions, nOutputsPerYear, nTimeSteps;
 	double dt;
 	std::string runName;
@@ -43,7 +43,7 @@ public:
 	double* hostMuData;  // Death rates
 	int hostMuDataLength;
 	double* muDataUpperBounds; // Upper bounds for death rates.
-	int muUpperBoundsLength;
+	int muDataUpperBoundsLength;
 	int maxDtIntervals;
 	double* survivalCurve;  // Survival to end of ith dt
 	double* survivalCurveCumul;  // Cumulative sum of the above
@@ -96,6 +96,7 @@ public:
 	double* readDoublesVector(char* valuesString, int& currentLength);
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
+	// A uniform random number generator (do better than this!)
 	double myRandUni();
 };
 
