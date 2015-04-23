@@ -3,7 +3,8 @@
 ### Make sure the parameters are typed in the format:
 ### Name (TAB) Values separated by spaces (TAB) ## Comments
 ### Any line starting with '#' is completely ignored
-### IMPORTANT: Write 0 values as 1e-10 (for the purposes of finding non-zero elements in an array), CSimulator.cpp will convert this back to 0 later
+### IMPORTANT: Write 0 values as 1e-10 in this parameter file (for the purposes of finding non-zero elements in an array)
+### CSimulator.cpp will convert 1e-10 values to 0 as soon as the non-zero entries counter is no longer required
 
 ### Model running parameters
 repNum	1		## Number of repetitions
