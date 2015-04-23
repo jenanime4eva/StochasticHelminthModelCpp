@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 	// Do we have the correct command line?
 	if(argc!=4)
 	{
-		std::cout << "Incorrect command line. 4 expected arguments: .exe file(space)Path for log file(space)Path for results file(space)Path for parameter file\n";
+		std::cout << "Incorrect command line. 4 expected arguments: .exe file(space)Run name e.g. Test(space)Path to output log and results files(space)Path of parameter file\n";
 		return 0; 
 	}
 

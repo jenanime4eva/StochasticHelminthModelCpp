@@ -121,7 +121,7 @@ bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 	thePath = path;
 
 	// Setting up all the files needed
-	std::string logFilePath = thePath + runName + ".log.txt";
+	std::string logFilePath = thePath + "/" + runName + ".log.txt";
 	logStream.open(logFilePath.c_str());
 	if (!logStream.is_open()) {
 		std::cout << "Couldn't open the log file: " << logFilePath
