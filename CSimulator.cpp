@@ -154,7 +154,7 @@ bool CSimulator::initialiseSimulation()
 
 	// READ IN MODEL RUNNING PARAMETERS
 
-	logStream << "\nPARAMETERS READ IN\n" << std::flush;
+	logStream << "\nTEST PARAMETERS READ IN\n\n" << std::flush;
 
 	// Number of repetitions
 	nRepetitions = atoi(myReader.getParamString("repNum"));
@@ -168,15 +168,13 @@ bool CSimulator::initialiseSimulation()
 	nHosts = atoi(myReader.getParamString("nHosts"));
 	logStream << "Number of hosts: " << nHosts << "\n" << std::flush; // Test flag
 
-	/*
 	/// SET UP DEMOGRAPHY
 
 	// Read in host death rates
-	temp = myReader.getParamString("hostMu");
+	temp = myReader.getParamString("hostMuData");
 	if (temp != NULL) {
 		hostMuData = readDoublesVector(temp, hostMuDataLength);
 	}
-	logStream << "hostMuData vector length: " << hostMuDataLength << "\n" << std::flush; // Test flag
 
 	// Read in host death rate upper bounds
 	temp = myReader.getParamString("upperBoundData");
@@ -241,7 +239,6 @@ bool CSimulator::initialiseSimulation()
 	if (temp != NULL) {
 		rhoValues = readDoublesVector(temp, rhoValuesLength);
 	}
-	*/
 
 	// READ IN EPIDEMIOLOGICAL PARAMETERS
 
@@ -271,7 +268,6 @@ bool CSimulator::initialiseSimulation()
 	if (temp != NULL) {
 		treatmentBreaks = readDoublesVector(temp, treatmentBreaksLength);
 	}
-	logStream << "treatmentBreaks vector length: " << treatmentBreaksLength << "\n" << std::flush; // Test flag
 
 	// Read in coverages
 	temp = myReader.getParamString("coverage");
