@@ -68,8 +68,6 @@ CSimulator::CSimulator() {
 	// Results
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
-
-	endPointer = NULL;
 }
 
 // Class Destructor
@@ -275,8 +273,10 @@ bool CSimulator::initialiseSimulation()
 		coverage = readDoublesVector(temp, coverageLength);
 	}
 	logStream << "Coverages vector length: " << coverageLength << "\n" << std::flush; // Test flag
+	logStream << "Infant coverage: " << coverage[0] << "\n" << std::flush; // Test flag
 	logStream << "pre-SAC coverage: " << coverage[1] << "\n" << std::flush; // Test flag
 	logStream << "SAC coverage: " << coverage[2] << "\n" << std::flush; // Test flag
+	logStream << "Adult coverage: " << coverage[3] << "\n" << std::flush; // Test flag
 
 	// Drug efficacy
 	drugEff = atof(myReader.getParamString("drugEff"));
@@ -350,46 +350,35 @@ void CSimulator::outputSimulation()
 double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 {
 	char* endPointer; // endPointer for each call to strto_ type functions
-	int counter;
+	int counter = 0;
 
-	// Read in the length of the vector
-	int length = strlen(currentString);
-	currentLength = length;
+	// Read in the length of the string
+	int stringLength = strlen(currentString);
 
-	if (length < 0)
-		return NULL;
+	// Create temporary array of doubles
+	double* tempVectorArray = new double[stringLength];
 
-	// Create array of doubles
-	double* vectorArray = new double[length];
-	vectorArray[0] = strtod(currentString,&endPointer);
+	// Split the currentString read in into tokens
+	// Get the first token
+	endPointer = strtok(currentString," ");
+	tempVectorArray[counter] = atof(endPointer);
 
-	// IMPORTANT: Make sure 0 entries are written as 1e-10 in the parameter file
-	// This is for the purposes of finding non-zero elements in an array
-	// 1e-10 values will be converted to 0 as soon as the non-zero entries counter is no longer required
-
-	// Change 1e-10 vector entry back into 0 if necessary
-	if(vectorArray[0]==1e-10)
+	//Walk through other tokens
+	while(endPointer!=NULL)
 	{
-		vectorArray[0] = 0;
+		counter = counter + 1;
+		endPointer = strtok(NULL," ");
+		tempVectorArray[counter] = atof(endPointer);
 	}
 
-	counter = 1;
-	for (int i = 1; i < length; i++)
+	// Create array of doubles that contains the actual number of valid entries
+	double* vectorArray = new double[counter];
+	for (int i=0;i<counter;i++)
 	{
-		vectorArray[i] = strtod(endPointer, &endPointer);
-		// Count non-zero entries in vector
-		if(vectorArray[i]!=0)
-		{
-			counter = counter + 1;
-		}
-		// Change any 1e-10 vector entries back into 0 now that we've finished using the counter
-		if(vectorArray[i]==1e-10)
-		{
-			vectorArray[i] = 0;
-		}
+		vectorArray[i] = tempVectorArray[i];
 	}
 
-	currentLength =  counter;  // Check number of elements in the vector
+	currentLength = counter; // Count number of elements in the vector
 
 	return vectorArray;
 }

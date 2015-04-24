@@ -92,7 +92,6 @@ public:
 
 	// AUXILIARY FUNCTIONS
 
-	char* endPointer;
 	// A function to read in a list of doubles into a vector
 	double* readDoublesVector(char* valuesString, int& currentLength);
 	// Return an index for the value that is just above a uniform random deviate

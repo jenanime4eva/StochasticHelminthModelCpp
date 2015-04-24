@@ -3,13 +3,11 @@
 ### Make sure the parameters are typed in the format:
 ### Name (TAB) Values separated by spaces (TAB) ## Comments
 ### Any line starting with '#' is completely ignored
-### IMPORTANT: Write 0 values as 1e-10 in this parameter file (for the purposes of finding non-zero elements in an array)
-### CSimulator.cpp will convert 1e-10 values to 0 as soon as the non-zero entries counter is no longer required
 
 ### Model running parameters
 repNum	1		## Number of repetitions
 nYears	150		## Number of years to run
-nHosts	1000	## Size of definitive host population (N)
+nHosts	10	## Size of definitive host population (N)
 surveyTimes	99 100 101 102 103 104 105 106 107 108 109 110 120 130 140 150	## Times to get data from all individuals in the population
 
 ### Demographic structure
@@ -19,7 +17,7 @@ upperBoundData	1 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110
 demogDt	1.0	## Age step for survival curve in years
 
 ### Social structure
-contactAgeBreaks	1e-10 2 5 15 70		## Contact age group breaks
+contactAgeBreaks	0 2 5 15 70		## Contact age group breaks
 betaValues	0.51 1.92 1 0.59		## Relative contact rates (Beta)
 rhoValues	0.51 1.92 1 0.59		## Contribution to the reservoir by contact age group (Rho)
 
@@ -32,8 +30,8 @@ sigma	1		## Worm death rate (sigma) i.e. 1/worm_life_span, same for all developm
 gamma	0.08	## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
 
 ### Treatment parameters 
-treatmentBreaks	1e-10 2 5 15 70		## Treatment age group breaks
-coverage	1e-10 1e-10 0.75 1e-10				## Coverages: Infants; Pre-SAC; SAC; Adults
+treatmentBreaks	0 2 5 15 70		## Treatment age group breaks
+coverage	0 0 0.75 0				## Coverages: Infants; Pre-SAC; SAC; Adults
 drugEff	0.9						## Drug efficacy
 treatStart	100					## Treatment year start
 nRounds	50						## Number of treatment rounds
