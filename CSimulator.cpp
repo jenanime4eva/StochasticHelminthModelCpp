@@ -171,6 +171,8 @@ bool CSimulator::initialiseSimulation()
 	demogDt = strtod(myReader.getParamString("demogDt"),&endPointer);
 
 
+	////////////////////////////////////////////////////////////////////////////////
+
 	// read in death rates.
 	temp = myReader.getParamString("hostMu");
 	if(temp!=NULL)
@@ -276,19 +278,32 @@ void CSimulator::outputSimulation()
 
 // creates a vector of doubles from string from param file.
 // Allocates memory, so need to delete.
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TO DO: Write this code so it doesn't need to know vector length, to match the format for the R code.
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
 {
 	// read in the length of the vector.
 	char* endPointer;
-	int length = strtol(currentString,&endPointer,10);
-	currentLength = length;
 
-	if(length<0)
-		return NULL;
+	//// Count the length of the vector. It's important for the string to not have trailing zeros.
+	// These are currently removed in the param reading function.
+	int count = 1;
+	double junk = strtod(currentString, &endPointer);
+	while(strlen(endPointer)>0)
+	{
+		junk = strtod(endPointer, &endPointer);
+		count++;
+	}
+
+	currentLength = count;
 
 	// create array of doubles.
-	double* vectorArray = new double[length];
-	for(int i=0;i<length;i++)
+	double* vectorArray = new double[currentLength];
+	vectorArray[0] = strtod(currentString, &endPointer);
+	for(int i=1;i<currentLength;i++)
 	{
 		vectorArray[i] = strtod(endPointer, &endPointer);
 	}

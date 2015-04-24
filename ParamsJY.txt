@@ -11,19 +11,20 @@ demog_eta	0.05	## params for survival curve. WAS 9.88
 demog_b	0.0045	## params for survival curve.
 demogDt	1.0	## age step for survival curve in years. 
 survivalMaxAge	100	## maximum age for survival curve and hence individuals. 
-hostMu	22 0.050 0.006 0.003 0.003 0.003 0.004 0.005 0.007 0.008 0.008 0.009 0.010 0.013 0.019 0.029 0.048 0.077 0.137 0.214 0.316 0.445 0.592		## host death rate by age range. 
-muUpperB	22 1 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110		## upper bounds for the above (bottom bound is zero).
+hostMu	0.050 0.006 0.003 0.003 0.003 0.004 0.005 0.007 0.008 0.008 0.009 0.010 0.013 0.019 0.029 0.048 0.077 0.137 0.214 0.316 0.445 0.592		## host death rate by age range. 
+muUpperB	1 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110		## upper bounds for the above (bottom bound is zero).
+vectorTest	0.5 0.4 1 5  		## TESTING OUT THE CODE. 
 
 
 nHosts	50		## number of hosts in population. 
 startYear	0	## year to start (this may be done more intelligently later). 
 nYears	100		## number of years to run for. 
 nReps	1		## number of independent realizations. 
-surveyTimes	2 1.0 50.0	## These are the times to get data from all individuals in the population. If absent, the code doesn't do it. 
+surveyTimes	1.0 50.0	## These are the times to get data from all individuals in the population. If absent, the code doesn't do it. 
 
 ############################################################
 
-demog	2 9.88 0.0045	## aasdasdasdasdasds 
+demog	9.88 0.0045	## aasdasdasdasdasds 
 testVector	2 1.0 2.0	## test vector. 
 
 param1	1	## Number of repetitions
