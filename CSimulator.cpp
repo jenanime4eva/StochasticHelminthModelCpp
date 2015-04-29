@@ -169,58 +169,6 @@ bool CSimulator::initialiseSimulation()
 	nHosts = atoi(myReader.getParamString("nHosts"));
 	logStream << "Number of hosts: " << nHosts << "\n" << std::flush; // Test flag
 
-	/// SET UP DEMOGRAPHY
-
-	// Read in host death rates
-	temp = myReader.getParamString("hostMuData");
-	if (temp != NULL) {
-		hostMuData = readDoublesVector(temp, hostMuDataLength);
-	}
-
-	// Read in host death rate upper bounds
-	temp = myReader.getParamString("upperBoundData");
-	if (temp != NULL) {
-		muDataUpperBounds = readDoublesVector(temp, muDataUpperBoundsLength);
-	}
-
-	// Age step for survival curve in years
-	demogDt = atof(myReader.getParamString("demogDt"));
-
-	// Construct mu, probability of death and survival vectors
-	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength - 1] / demogDt);
-	upperAgeBound = maxDtIntervals * demogDt;
-	int currentMuIndex = 0;
-	double currentSurvival = 1;
-	double currentSurvivalCumul = 0;
-	double currentProbDeathCumul = 0;
-	double currentMuDtCumul = 0;
-	double tinyIncrement = 0.01;
-	survivalCurve = new double[maxDtIntervals];
-	survivalCurveCumul = new double[maxDtIntervals];
-	hostMu = new double[maxDtIntervals];
-	probDeath = new double[maxDtIntervals];
-	probDeathIntegral = new double[maxDtIntervals];
-
-	for (int i=0;i<maxDtIntervals;i++)
-	{
-		double currentIntEnd = (i + 1) * demogDt;
-		// Is current dt interval within data upper bound?
-		if (muDataUpperBounds[currentMuIndex] + tinyIncrement < currentIntEnd)
-			currentMuIndex++;
-		hostMu[i] = hostMuData[currentMuIndex];
-		probDeath[i] = currentSurvival * hostMu[i] * demogDt;
-		currentMuDtCumul += hostMu[i] * demogDt;
-
-		probDeathIntegral[i] = currentProbDeathCumul + probDeath[i];
-		currentProbDeathCumul = probDeathIntegral[i];
-
-		survivalCurve[i] = exp(-currentMuDtCumul);
-		currentSurvival = survivalCurve[i];
-
-		survivalCurveCumul[i] = survivalCurve[i] + currentSurvivalCumul;
-		currentSurvivalCumul = survivalCurveCumul[i];
-	}
-
 	// SET UP SOCIAL STRUCTURE
 
 	// Read in contact age group breaks
@@ -239,6 +187,68 @@ bool CSimulator::initialiseSimulation()
 	temp = myReader.getParamString("rhoValues");
 	if (temp != NULL) {
 		rhoValues = readDoublesVector(temp, rhoValuesLength);
+	}
+
+	/// SET UP DEMOGRAPHY
+
+	// Read in host death rates
+	temp = myReader.getParamString("hostMuData");
+	if (temp != NULL) {
+		hostMuData = readDoublesVector(temp, hostMuDataLength);
+	}
+
+	// Read in host death rate upper bounds
+	temp = myReader.getParamString("upperBoundData");
+	if (temp != NULL) {
+		muDataUpperBounds = readDoublesVector(temp, muDataUpperBoundsLength);
+	}
+
+	// Age step for survival curve in years
+	demogDt = atof(myReader.getParamString("demogDt"));
+
+	// Construct mu, probability of death and survival vectors
+	int currentMuIndex = 0;
+	int maxHostAge = 0;
+	double currentSurvival = 1;
+	double currentSurvivalCumul = 0;
+	double currentProbDeathCumul = 0;
+	double currentMuDtCumul = 0;
+	double tinyIncrement = 0.01;
+
+	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength-1]/demogDt);
+	upperAgeBound = maxDtIntervals * demogDt;
+	double maxHostAgeCompare[] = {upperAgeBound,contactAgeBreaks[contactAgeBreaksLength-1]};
+	maxHostAge = (int) min(maxHostAgeCompare,2); 	// Get maximum host age
+	logStream << "maxHostAge: " << maxHostAge << "\n" << std::flush; // Test flag
+
+	survivalCurve = new double[maxDtIntervals];
+	survivalCurveCumul = new double[maxDtIntervals];
+	hostMu = new double[maxDtIntervals];
+	probDeath = new double[maxDtIntervals];
+	probDeathIntegral = new double[maxDtIntervals];
+
+	for (int i=0;i<maxDtIntervals;i++)
+	{
+		double currentIntEnd = (i + 1) * demogDt;
+		// Is current dt interval within data upper bound?
+		if (muDataUpperBounds[currentMuIndex] + tinyIncrement < currentIntEnd)
+		{
+			currentMuIndex++; // Add one to currentMuIndex
+		}
+		hostMu[i] = hostMuData[currentMuIndex];
+		probDeath[i] = currentSurvival * hostMu[i] * demogDt;
+		currentMuDtCumul += hostMu[i] * demogDt;
+
+		probDeathIntegral[i] = currentProbDeathCumul + probDeath[i];
+		currentProbDeathCumul = probDeathIntegral[i];
+
+		// First element gives probability of surviving to end of first year
+		survivalCurve[i] = exp(-currentMuDtCumul);
+		currentSurvival = survivalCurve[i];
+
+		// The cumulative proability of dying in the ith year
+		survivalCurveCumul[i] = survivalCurve[i] + currentSurvivalCumul;
+		currentSurvivalCumul = survivalCurveCumul[i];
 	}
 
 	// READ IN EPIDEMIOLOGICAL PARAMETERS
@@ -261,6 +271,10 @@ bool CSimulator::initialiseSimulation()
 
 	// Exponential density dependence of parasite adult stage (N.B. fecundity parameter z = exp(-gamma))
 	gamma = atof(myReader.getParamString("gamma"));
+	double z = exp(-gamma); // Fecundity parameter
+
+	// Dummy psi value prior to R0 calculation
+	double psi = 1.0;
 
 	// SET UP TREATMENT
 
@@ -275,7 +289,6 @@ bool CSimulator::initialiseSimulation()
 	logStream << "SAC treatment break: " << treatmentBreaks[2] << "\n" << std::flush; // Test flag
 	logStream << "Adult treatment break: " << treatmentBreaks[3] << "\n" << std::flush; // Test flag
 	logStream << "Maximum treatment age: " << treatmentBreaks[4] << "\n" << std::flush; // Test flag
-
 
 	// Read in coverages
 	temp = myReader.getParamString("coverage");
@@ -405,14 +418,13 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 
 	currentVectorLength = counter; // Count number of elements in the vector
 
-	return vectorArray;
-
-	// Delete allocated memory we don't need anymore
+	// Delete allocated memory we no longer require at this point
 	if (tempVectorArray != NULL)
 		delete[] tempVectorArray;
 
-	if (vectorArray != NULL)
-		delete[] vectorArray;
+	// TO DO: Fix vectorArray memory leak later
+
+	return vectorArray;
 }
 
 // This function takes a random number (0-1) and multiplies it by the max of the passed array.
@@ -471,3 +483,36 @@ double CSimulator::drawLifespan()
 
 	return ans;
 }
+
+// Function to find minimum of a list of values
+double CSimulator::min(double* Numbers, int Count)
+{
+	double Minimum = Numbers[0];
+
+	for(int i=0;i<Count;i++)
+	{
+		if(Minimum>Numbers[i])
+		{
+			Minimum = Numbers[i];
+		}
+	}
+
+	return Minimum;
+}
+
+// Function to find maximum of a list of values
+double CSimulator::max(double* Numbers, int Count)
+{
+	double Maximum = Numbers[0];
+
+	for(int i=0;i<Count;i++)
+	{
+		if(Maximum<Numbers[i])
+		{
+			Maximum = Numbers[i];
+		}
+	}
+
+	return Maximum;
+}
+

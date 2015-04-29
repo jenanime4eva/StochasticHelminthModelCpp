@@ -37,6 +37,14 @@ public:
 	std::string runName;
 	std::string thePath;
 
+	// Social structure
+	double* contactAgeBreaks;
+	int contactAgeBreaksLength;
+	double* betaValues;
+	int betaValuesLength;
+	double* rhoValues;
+	int rhoValuesLength;
+
 	// Demographic structure
 	double demogDt;
 	double drawLifespan();
@@ -51,14 +59,6 @@ public:
 	double* probDeath; // Probability of dying in the ith dt
 	double* probDeathIntegral; // Integral to end of ith dt
 	double upperAgeBound;
-
-	// Social structure
-	double* contactAgeBreaks;
-	int contactAgeBreaksLength;
-	double* betaValues;
-	int betaValuesLength;
-	double* rhoValues;
-	int rhoValuesLength;
 
 	// Epidemiological parameters
 	double k, R0, sigma, gamma;
@@ -101,6 +101,10 @@ public:
 	int multiNomBasic(double* array, int length, double randNum);
 	// A uniform random number generator (do better than this!)
 	double myRandUni();
+	// Find minimum of a list of values
+	double min(double* Numbers, int Count);
+	// Find maximum of a list of values
+	double max(double* Numbers, int Count);
 };
 
 #endif /* CSIMULATOR_H_ */
