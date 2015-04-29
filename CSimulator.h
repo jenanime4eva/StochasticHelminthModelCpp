@@ -86,6 +86,9 @@ public:
 
 	// Outputs
 	void outputSimulation();
+	int surveyTimesBegin;
+	int surveyTimesEnd;
+	double surveyTimesDt;
 	double* surveyResultTimes;
 	int surveyResultTimesLength;
 	std::string resultsStub;

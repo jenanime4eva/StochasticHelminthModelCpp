@@ -66,6 +66,9 @@ CSimulator::CSimulator() {
 	treatInterval = 0;
 
 	// Results
+	surveyTimesBegin = 0;
+	surveyTimesEnd = 0;
+	surveyTimesDt = 0;
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
 }
@@ -184,8 +187,7 @@ bool CSimulator::initialiseSimulation()
 	demogDt = atof(myReader.getParamString("demogDt"));
 
 	// Construct mu, probability of death and survival vectors
-	maxDtIntervals = (int) floor(
-			muDataUpperBounds[muDataUpperBoundsLength - 1] / demogDt);
+	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength - 1] / demogDt);
 	upperAgeBound = maxDtIntervals * demogDt;
 	int currentMuIndex = 0;
 	double currentSurvival = 1;
@@ -199,7 +201,8 @@ bool CSimulator::initialiseSimulation()
 	probDeath = new double[maxDtIntervals];
 	probDeathIntegral = new double[maxDtIntervals];
 
-	for (int i = 0; i < maxDtIntervals; i++) {
+	for (int i=0;i<maxDtIntervals;i++)
+	{
 		double currentIntEnd = (i + 1) * demogDt;
 		// Is current dt interval within data upper bound?
 		if (muDataUpperBounds[currentMuIndex] + tinyIncrement < currentIntEnd)
@@ -298,11 +301,25 @@ bool CSimulator::initialiseSimulation()
 	treatInterval = atof(myReader.getParamString("treatInterval"));
 
 	// SET UP RESULTS COLLECTION
-	temp = myReader.getParamString("surveyTimes");
-	if (temp != NULL) {
-		surveyResultTimes = readDoublesVector(temp, surveyResultTimesLength);
+
+	// Year to start getting data from all individuals in the population
+	surveyTimesBegin = atoi(myReader.getParamString("surveyTimesBegin"));
+	// Year to stop getting data from all individuals in the population
+	surveyTimesEnd = atoi(myReader.getParamString("surveyTimesEnd"));
+	// Time step for the survey times in years
+	surveyTimesDt = atof(myReader.getParamString("surveyTimesDt"));
+	// Now create a vector of survey result times
+	surveyResultTimesLength = ((surveyTimesEnd - surveyTimesBegin)/surveyTimesDt)+1;
+	surveyResultTimes = new double[surveyResultTimesLength];
+	surveyResultTimes[0] = surveyTimesBegin; // First vector entry
+	for (int i=1;i<surveyResultTimesLength;i++)
+	{
+		surveyResultTimes[i] = surveyResultTimes[i-1] + surveyTimesDt;
 	}
-	logStream << "surveyResultTimes vector length: " << surveyResultTimesLength << "\n" << std::flush; // Test flag
+	logStream << "surveyResultTimesLength: " << surveyResultTimesLength << "\n" << std::flush; // Test flag
+	logStream << "surveyResultTimes first entry: " << surveyResultTimes[0] << "\n" << std::flush; // Test flag
+	logStream << "surveyResultTimes second entry: " << surveyResultTimes[1] << "\n" << std::flush; // Test flag
+	logStream << "surveyResultTimes last entry: " << surveyResultTimes[surveyResultTimesLength-1] << "\n" << std::flush; // Test flag
 
 
 	// Set up a realisation
