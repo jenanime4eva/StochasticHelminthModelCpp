@@ -75,6 +75,13 @@ char* CParamReader::getParamString(const char* paramName)
 		}
 	}
 
+	// Remove any extra spaces from the end of the string (as long as the string isn't zero length)
+	int nullTerminal = strlen(paramString);
+	while(paramString[nullTerminal-1]==' ')
+		nullTerminal--;
+
+	paramString[nullTerminal] = '\0';
+
 	paramFileStream.close();
 
 	return paramString;

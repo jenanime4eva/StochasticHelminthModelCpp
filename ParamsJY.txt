@@ -1,37 +1,37 @@
 ### Parameter values for the stochastic model
 
 ### Make sure the parameters are typed in the format:
-### Name (TAB) Values separated by spaces (TAB) ## Comments
+### Name (TAB) Values separated by spaces (TABS) ## Comments
 ### Any line starting with '#' is completely ignored
 
 ### Model running parameters
-repNum	1		## Number of repetitions
-nYears	150		## Number of years to run
-nHosts	10	## Size of definitive host population (N)
+repNum	1						## Number of repetitions
+nYears	150						## Number of years to run
+nHosts	1000					## Size of definitive host population (N)
 surveyTimes	99 100 101 102 103 104 105 106 107 108 109 110 120 130 140 150	## Times to get data from all individuals in the population
 
 ### Demographic structure
 ## The following death rates are for Kenya 2012 and come from the WHO global observatory.
 hostMuData	0.05 0.006 0.003 0.003 0.003 0.004 0.005 0.007 0.008 0.008 0.009 0.01 0.013 0.019 0.029 0.048 0.077 0.137 0.214 0.316 0.445 0.592	## Host death rate by age range 
 upperBoundData	1 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110	## Upper bounds for the above (bottom bound is zero)
-demogDt	1.0	## Age step for survival curve in years
+demogDt	1.0						## Age step for survival curve in years
 
 ### Social structure
-contactAgeBreaks	0 2 5 15 70		## Contact age group breaks
-betaValues	0.51 1.92 1 0.59		## Relative contact rates (Beta)
-rhoValues	0.51 1.92 1 0.59		## Contribution to the reservoir by contact age group (Rho)
+contactAgeBreaks	0 2 5 15 70	## Contact age group breaks (minimum ages of each age group, last entry is the max age)
+betaValues	0.51 1.92 1 0.59	## Relative contact rates (Beta)
+rhoValues	0.51 1.92 1 0.59	## Contribution to the reservoir by contact age group (Rho)
 
 ### Epidemiological parameters 
-k	0.7			## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
-lambda	5470	## Eggs per gram (lambda)
-R0	2.0			## Basic reproductive number (R0) 
-ReservoirDecayRate	5	## Reservoir decay rate (decay rate of eggs in the environment)
-sigma	1		## Worm death rate (sigma) i.e. 1/worm_life_span, same for all development stages
-gamma	0.08	## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
+k	0.7							## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
+lambda	5470					## Eggs per gram (lambda)
+R0	2.0							## Basic reproductive number (R0) 
+ReservoirDecayRate	5			## Reservoir decay rate (decay rate of eggs in the environment)
+sigma	1						## Worm death rate (sigma) i.e. 1/worm_life_span, same for all development stages
+gamma	0.08					## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
 
 ### Treatment parameters 
-treatmentBreaks	0 2 5 15 70		## Treatment age group breaks
-coverage	0 0 0.75 0				## Coverages: Infants; Pre-SAC; SAC; Adults
+treatmentBreaks	0 2 5 15 70		## Treatment age group breaks (minimum ages of each age group, last entry is the max age)
+coverage	0 0 0.75 0			## Coverages: Infants; Pre-SAC; SAC; Adults
 drugEff	0.9						## Drug efficacy
 treatStart	100					## Treatment year start
 nRounds	50						## Number of treatment rounds

@@ -68,6 +68,10 @@ CSimulator::CSimulator() {
 	// Results
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
+
+	// Auxiliary function variables
+	tempVectorArray = NULL;
+	vectorArray = NULL;
 }
 
 // Class Destructor
@@ -110,6 +114,12 @@ CSimulator::~CSimulator() {
 
 	if (surveyResultTimes != NULL)
 		delete[] surveyResultTimes;
+
+	if (tempVectorArray != NULL)
+		delete[] tempVectorArray;
+
+	if (vectorArray != NULL)
+		delete[] vectorArray;
 }
 
 // Initialise the input/output aspects of the simulator
@@ -266,17 +276,24 @@ bool CSimulator::initialiseSimulation()
 	if (temp != NULL) {
 		treatmentBreaks = readDoublesVector(temp, treatmentBreaksLength);
 	}
+	logStream << "\ntreatmentBreaks vector length: " << treatmentBreaksLength << "\n" << std::flush; // Test flag
+	logStream << "Infant treatment break: " << treatmentBreaks[0] << "\n" << std::flush; // Test flag
+	logStream << "pre-SAC treatment break: " << treatmentBreaks[1] << "\n" << std::flush; // Test flag
+	logStream << "SAC treatment break: " << treatmentBreaks[2] << "\n" << std::flush; // Test flag
+	logStream << "Adult treatment break: " << treatmentBreaks[3] << "\n" << std::flush; // Test flag
+	logStream << "Maximum treatment age: " << treatmentBreaks[4] << "\n" << std::flush; // Test flag
+
 
 	// Read in coverages
 	temp = myReader.getParamString("coverage");
 	if (temp != NULL) {
 		coverage = readDoublesVector(temp, coverageLength);
 	}
-	logStream << "Coverages vector length: " << coverageLength << "\n" << std::flush; // Test flag
+	logStream << "\nCoverages vector length: " << coverageLength << "\n" << std::flush; // Test flag
 	logStream << "Infant coverage: " << coverage[0] << "\n" << std::flush; // Test flag
 	logStream << "pre-SAC coverage: " << coverage[1] << "\n" << std::flush; // Test flag
 	logStream << "SAC coverage: " << coverage[2] << "\n" << std::flush; // Test flag
-	logStream << "Adult coverage: " << coverage[3] << "\n" << std::flush; // Test flag
+	logStream << "Adult coverage: " << coverage[3] << "\n\n" << std::flush; // Test flag
 
 	// Drug efficacy
 	drugEff = atof(myReader.getParamString("drugEff"));
@@ -347,38 +364,39 @@ void CSimulator::outputSimulation()
 
 // Creates a vector of doubles from string from param file
 // Allocates memory so need to delete
-double* CSimulator::readDoublesVector(char* currentString, int& currentLength)
+double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLength)
 {
 	char* endPointer; // endPointer for each call to strto_ type functions
+
 	int counter = 0;
 
 	// Read in the length of the string
 	int stringLength = strlen(currentString);
 
 	// Create temporary array of doubles
-	double* tempVectorArray = new double[stringLength];
+	tempVectorArray = new double[stringLength];
 
 	// Split the currentString read in into tokens
 	// Get the first token
 	endPointer = strtok(currentString," ");
 	tempVectorArray[counter] = atof(endPointer);
 
-	//Walk through other tokens
+	// Walk through other tokens
 	while(endPointer!=NULL)
 	{
-		counter = counter + 1;
+		counter++; // Add one to counter
 		endPointer = strtok(NULL," ");
 		tempVectorArray[counter] = atof(endPointer);
 	}
 
 	// Create array of doubles that contains the actual number of valid entries
-	double* vectorArray = new double[counter];
+	vectorArray = new double[counter];
 	for (int i=0;i<counter;i++)
 	{
 		vectorArray[i] = tempVectorArray[i];
 	}
 
-	currentLength = counter; // Count number of elements in the vector
+	currentVectorLength = counter; // Count number of elements in the vector
 
 	return vectorArray;
 }

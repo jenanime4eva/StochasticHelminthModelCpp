@@ -16,12 +16,15 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+
 	// Do we have the correct command line?
 	if(argc!=4)
 	{
 		std::cout << "Incorrect command line. 4 expected arguments: .exe file(space)Run name e.g. Test(space)Path to output log and results files(space)Path of parameter file\n";
 		return 0; 
 	}
+
+	int t1 = time(NULL); // Start clock counter
 
 	// Set the seed
 	srand(time(NULL)); // Initialise random number generator
@@ -38,6 +41,10 @@ int main(int argc, char** argv)
 
 	simulator.initialiseSimulation(); // General initialisation
 	simulator.outputSimulation(); // Output simulation
+
+	int t2 = time(NULL); // Stop clock counter
+
+	printf ("Time = %d secs\n", t2 - t1); // Print time taken in seconds to run the program to the console
 
 	return 1; 
 }
