@@ -94,8 +94,6 @@ public:
 
 	// A function to read in a list of doubles into a vector
 	double* readDoublesVector(char* valuesString, int& currentVectorLength);
-	double* tempVectorArray = NULL;
-	double* vectorArray = NULL;
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
 	// A uniform random number generator (do better than this!)

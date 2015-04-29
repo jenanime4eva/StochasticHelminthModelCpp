@@ -68,10 +68,6 @@ CSimulator::CSimulator() {
 	// Results
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
-
-	// Auxiliary function variables
-	tempVectorArray = NULL;
-	vectorArray = NULL;
 }
 
 // Class Destructor
@@ -114,12 +110,6 @@ CSimulator::~CSimulator() {
 
 	if (surveyResultTimes != NULL)
 		delete[] surveyResultTimes;
-
-	if (tempVectorArray != NULL)
-		delete[] tempVectorArray;
-
-	if (vectorArray != NULL)
-		delete[] vectorArray;
 }
 
 // Initialise the input/output aspects of the simulator
@@ -374,7 +364,7 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 	int stringLength = strlen(currentString);
 
 	// Create temporary array of doubles
-	tempVectorArray = new double[stringLength];
+	double* tempVectorArray = new double[stringLength];
 
 	// Split the currentString read in into tokens
 	// Get the first token
@@ -390,7 +380,7 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 	}
 
 	// Create array of doubles that contains the actual number of valid entries
-	vectorArray = new double[counter];
+	double* vectorArray = new double[counter];
 	for (int i=0;i<counter;i++)
 	{
 		vectorArray[i] = tempVectorArray[i];
@@ -399,13 +389,21 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 	currentVectorLength = counter; // Count number of elements in the vector
 
 	return vectorArray;
+
+	// Delete allocated memory we don't need anymore
+	if (tempVectorArray != NULL)
+		delete[] tempVectorArray;
+
+	if (vectorArray != NULL)
+		delete[] vectorArray;
 }
 
 // This function takes a random number (0-1) and multiplies it by the max of the passed array.
 // It then finds the smallest index that has an array value greater than the product above.
 // For a cumulative multinomial array, this will return the index of the event that occurred.
 // Also used for drawing a lifespan from the survival curve integral.
-int CSimulator::multiNomBasic(double* array, int length, double randNum) {
+int CSimulator::multiNomBasic(double* array, int length, double randNum)
+{
 	int loopMax = ceil(log(length) / log(2) + 2);
 	int bottom = -1;
 	//double bottomVal;
@@ -444,7 +442,8 @@ double CSimulator::myRandUni()
 }
 
 // Draw a life span from the survival curve from the population
-double CSimulator::drawLifespan() {
+double CSimulator::drawLifespan()
+{
 	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
 	double currentRand = myRandUni();
 
