@@ -14,7 +14,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <vector.h>
 #include "randlib.h"
+
+using namespace std;
 
 // Class Constructor
 CSimulator::CSimulator() {
@@ -28,24 +31,19 @@ CSimulator::CSimulator() {
 	nTimeSteps = 0;
 	dt = 0;
 
+	// Social structure
+	contactAgeBreaksLength = 0;
+	betaValuesLength = 0;
+	rhoValuesLength = 0;
+
 	// Demographic structure
 	survivalCurve = survivalCurveCumul = NULL;
 	hostMu = probDeath = probDeathIntegral = NULL;
 	demogDt = 0;
-	hostMuData = NULL;
 	hostMuDataLength = 0;
-	muDataUpperBounds = NULL;
 	muDataUpperBoundsLength = 0;
 	upperAgeBound = 0;
 	maxDtIntervals = 0;
-
-	// Social structure
-	contactAgeBreaks = NULL;
-	contactAgeBreaksLength = 0;
-	betaValues = NULL;
-	betaValuesLength = 0;
-	rhoValues = NULL;
-	rhoValuesLength = 0;
 
 	// Epidemiological parameters
 	k = 0;
@@ -56,9 +54,7 @@ CSimulator::CSimulator() {
 	gamma = 0;
 
 	// Treatment parameters
-	treatmentBreaks = NULL;
 	treatmentBreaksLength = 0;
-	coverage = NULL;
 	coverageLength = 0;
 	drugEff = 0;
 	treatStart = 0;
@@ -81,12 +77,6 @@ CSimulator::~CSimulator() {
 	if (survivalCurveCumul != NULL)
 		delete[] survivalCurveCumul;
 
-	if (hostMuData != NULL)
-		delete[] hostMuData;
-
-	if (muDataUpperBounds != NULL)
-		delete[] muDataUpperBounds;
-
 	if (hostMu != NULL)
 		delete[] hostMu;
 
@@ -95,21 +85,6 @@ CSimulator::~CSimulator() {
 
 	if (probDeathIntegral != NULL)
 		delete[] probDeathIntegral;
-
-	if (contactAgeBreaks != NULL)
-		delete[] contactAgeBreaks;
-
-	if (betaValues != NULL)
-		delete[] betaValues;
-
-	if (rhoValues != NULL)
-		delete[] rhoValues;
-
-	if (treatmentBreaks != NULL)
-		delete[] treatmentBreaks;
-
-	if (coverage != NULL)
-		delete[] coverage;
 
 	if (surveyResultTimes != NULL)
 		delete[] surveyResultTimes;
@@ -217,8 +192,9 @@ bool CSimulator::initialiseSimulation()
 
 	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength-1]/demogDt);
 	upperAgeBound = maxDtIntervals * demogDt;
-	double maxHostAgeCompare[] = {upperAgeBound,contactAgeBreaks[contactAgeBreaksLength-1]};
-	maxHostAge = (int) min(maxHostAgeCompare,2); 	// Get maximum host age
+	double maxHostAgeCompare[] = {upperAgeBound,contactAgeBreaks[contactAgeBreaksLength-1]}; // Create comparison array
+	int maxHostAgeCompareLength = sizeof(maxHostAgeCompare)/sizeof(maxHostAgeCompare[0]); // Get length of list of values
+	maxHostAge = (int) min(maxHostAgeCompare,maxHostAgeCompareLength); 	// Get maximum host age
 	logStream << "maxHostAge: " << maxHostAge << "\n" << std::flush; // Test flag
 
 	survivalCurve = new double[maxDtIntervals];
@@ -339,6 +315,30 @@ bool CSimulator::initialiseSimulation()
 	myRealization.initialize(this);
 	myRealization.run();
 
+	/*// Leave this commented for now
+	// Delete memory related to the variables using the readDoublesVector function to avoid memory leaks
+	if (contactAgeBreaks != NULL)
+		delete[] contactAgeBreaks;
+
+	if (betaValues != NULL)
+		delete[] betaValues;
+
+	if (rhoValues != NULL)
+			delete[] rhoValues;
+
+	if (hostMuData != NULL)
+		delete[] hostMuData;
+
+	if (muDataUpperBounds != NULL)
+		delete[] muDataUpperBounds;
+
+	if (treatmentBreaks != NULL)
+		delete[] treatmentBreaks;
+
+	if (coverage != NULL)
+		delete[] coverage;
+	*/
+
 	return true;
 }
 
@@ -382,47 +382,36 @@ void CSimulator::outputSimulation()
 //////////////////////////////////////////////////////////////////////////////////
 /// Auxiliary function definitions
 
-// Creates a vector of doubles from string from param file
-// Allocates memory so need to delete
-double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLength)
+// Creates a vector of doubles from string from the parameter file
+vector<double> CSimulator::readDoublesVector(char* currentString, int& currentVectorLength)
 {
+	// IMPORTANT: Make sure the string read in does not have trailing zeros
+	// These are currently removed in the parameter reading function
+
 	char* endPointer; // endPointer for each call to strto_ type functions
 
-	int counter = 0;
-
-	// Read in the length of the string
-	int stringLength = strlen(currentString);
-
-	// Create temporary array of doubles
-	double* tempVectorArray = new double[stringLength];
-
-	// Split the currentString read in into tokens
-	// Get the first token
-	endPointer = strtok(currentString," ");
-	tempVectorArray[counter] = atof(endPointer);
-
-	// Walk through other tokens
-	while(endPointer!=NULL)
+	// This part is just to count the number of entries in the vector
+	int counter = 1;
+	double* tempVector = new double[strlen(currentString)]; // Create temporary vector
+	tempVector[0] = strtod(currentString, &endPointer);
+	while(strlen(endPointer)>0)
 	{
+		tempVector[counter] = strtod(endPointer, &endPointer);
 		counter++; // Add one to counter
-		endPointer = strtok(NULL," ");
-		tempVectorArray[counter] = atof(endPointer);
 	}
+	// Delete temp as we don't need it anymore
+	if (tempVector!=NULL)
+		delete[] tempVector;
 
-	// Create array of doubles that contains the actual number of valid entries
-	double* vectorArray = new double[counter];
-	for (int i=0;i<counter;i++)
+	// NOW create the vector of doubles of values we actually require
+	vector<double> vectorArray(counter);
+	vectorArray[0] = strtod(currentString, &endPointer);
+	for(int i=1;i<counter;i++)
 	{
-		vectorArray[i] = tempVectorArray[i];
+		vectorArray[i] = strtod(endPointer, &endPointer);
 	}
 
-	currentVectorLength = counter; // Count number of elements in the vector
-
-	// Delete allocated memory we no longer require at this point
-	if (tempVectorArray != NULL)
-		delete[] tempVectorArray;
-
-	// TO DO: Fix vectorArray memory leak later
+	currentVectorLength = vectorArray.size(); // Count number of elements in the vector
 
 	return vectorArray;
 }
@@ -515,4 +504,3 @@ double CSimulator::max(double* Numbers, int Count)
 
 	return Maximum;
 }
-

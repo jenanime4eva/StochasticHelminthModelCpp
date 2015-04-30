@@ -16,6 +16,8 @@
 #include "CHost.h"
 #include "CRealization.h"
 
+using namespace std;
+
 #define BUFFER_SIZE 1024 // Define buffer size
 
 struct wormBurden
@@ -30,27 +32,27 @@ public:
 	virtual ~CSimulator();
 
 	// File input/output
-	std::ofstream logStream; // Output to log file
+	ofstream logStream; // Output to log file
 	bool initialiseIO(char* run, char* path, char* paramFilePath);
 	int nRepetitions, nOutputsPerYear, nTimeSteps;
 	double dt;
-	std::string runName;
-	std::string thePath;
+	string runName;
+	string thePath;
 
 	// Social structure
-	double* contactAgeBreaks;
+	vector<double> contactAgeBreaks;
 	int contactAgeBreaksLength;
-	double* betaValues;
+	vector<double> betaValues;
 	int betaValuesLength;
-	double* rhoValues;
+	vector<double> rhoValues;
 	int rhoValuesLength;
 
 	// Demographic structure
 	double demogDt;
 	double drawLifespan();
-	double* hostMuData;  // Death rates
+	vector<double> hostMuData;  // Death rates
 	int hostMuDataLength;
-	double* muDataUpperBounds; // Upper bounds for death rates.
+	vector<double> muDataUpperBounds; // Upper bounds for death rates.
 	int muDataUpperBoundsLength;
 	int maxDtIntervals;
 	double* survivalCurve;  // Survival to end of ith dt
@@ -65,9 +67,9 @@ public:
 	int lambda, ReservoirDecayRate;
 
 	// Treatment
-	double* treatmentBreaks;
+	vector<double> treatmentBreaks;
 	int treatmentBreaksLength;
-	double* coverage;
+	vector<double> coverage;
 	int coverageLength;
 	double drugEff, treatInterval;
 	int treatStart, nRounds;
@@ -96,7 +98,7 @@ public:
 	// AUXILIARY FUNCTIONS
 
 	// A function to read in a list of doubles into a vector
-	double* readDoublesVector(char* valuesString, int& currentVectorLength);
+	vector<double> readDoublesVector(char* valuesString, int& currentVectorLength);
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
 	// A uniform random number generator (do better than this!)
