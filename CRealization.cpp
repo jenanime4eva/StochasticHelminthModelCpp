@@ -13,8 +13,12 @@
 CRealization::CRealization()
 {
 	hostPopulation = NULL;
+	femaleWormNumbers = NULL;
+	totalWormNumbers = NULL;
 	owner = NULL;
 	nHosts = 0;
+	femaleWorms = 0;
+	totalWorms = 0;
 	surveyResultsArray = NULL;
 }
 
@@ -28,6 +32,24 @@ CRealization::~CRealization()
 			delete hostPopulation[i];
 
 		delete[] hostPopulation;
+	}
+
+	if(femaleWormNumbers!=NULL)
+	{
+		// Female worms for each host
+		for(i=0;i<nHosts;i++)
+			delete femaleWormNumbers[i];
+
+		delete[] femaleWormNumbers;
+	}
+
+	if(totalWormNumbers!=NULL)
+	{
+		// Female worms for each host
+		for(i=0;i<nHosts;i++)
+			delete totalWormNumbers[i];
+
+		delete[] totalWormNumbers;
 	}
 
 	if(surveyResultsArray!=NULL)
@@ -60,6 +82,15 @@ bool CRealization::initialize(CSimulator* currentOwner)
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
 	}
 
+	// Set up female and total worm numbers array for each of the hosts
+	femaleWormNumbers = new CWorm* [nHosts];
+	totalWormNumbers = new CWorm* [nHosts];
+	for (int i=0;i<nHosts;i++)
+	{
+		femaleWormNumbers[i] = new CWorm;
+		totalWormNumbers[i] = new CWorm;
+	}
+
 	// Add run termination point
 	localEvents.addEvent(TERMINATE,owner->nYears,NULL);
 
@@ -88,6 +119,8 @@ bool CRealization::run()
 {
 	Event currentEvent;
 
+	//TODO: Add chemotherapy event
+
 	do
 	{
 		// Get next predetermined event
@@ -101,9 +134,9 @@ bool CRealization::run()
 			case HOST_DEATH:
 				hostDeathResponse(currentEvent);
 				break;
-			case DEBUG_EVENT:
-				debugEventResponse(currentEvent);
-				break;
+			//case DEBUG_EVENT:
+				//debugEventResponse(currentEvent);
+				//break;
 			case SURVEY_EVENT:
 				surveyResultResponse(currentEvent);
 				break;
@@ -131,21 +164,33 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	localEvents.addEvent(HOST_DEATH,currentHost->deathDate,currentHost);
 
 	return true;
-	}
+}
 
 bool CRealization::surveyResultResponse(Event& currentEvent)
 {
 	// Collect data from each host individual
 	surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
+
+	// For looking at the host ages across time
 	for(int i=0;i<nHosts;i++)
 	{
 		outputArray[i].age = currentEvent.time - hostPopulation[i]->birthDate;
 	}
 
+	/*
+	// For looking at female worm burdens for individual hosts across time
+	for(int i=0;i<nHosts;i++)
+	{
+		outputArray[i].nFemaleWorms = femaleWormNumbers[i]->femaleWorms;
+	}
+	*/
+
 	return true;
 }
 
+/*
 // Just for testing...
 void CRealization::debugEventResponse(Event& currentEvent)
 {
 }
+*/

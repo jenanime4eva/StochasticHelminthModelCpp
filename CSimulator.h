@@ -49,7 +49,6 @@ public:
 
 	// Demographic structure
 	double demogDt;
-	double drawLifespan();
 	vector<double> hostMuData;  // Death rates
 	int hostMuDataLength;
 	vector<double> muDataUpperBounds; // Upper bounds for death rates.
@@ -101,12 +100,16 @@ public:
 	vector<double> readDoublesVector(char* valuesString, int& currentVectorLength);
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
+	// Calculate the psi value
+	double calculatePsi();
+	// Draw a lifespan from the population survival curve
+	double drawLifespan();
 	// A uniform random number generator (do better than this!)
 	double myRandUni();
 	// Find minimum of a list of values
-	double min(double* Numbers, int Count);
+	double min(vector<double> Numbers, int Count);
 	// Find maximum of a list of values
-	double max(double* Numbers, int Count);
+	double max(vector<double> Numbers, int Count);
 };
 
 #endif /* CSIMULATOR_H_ */

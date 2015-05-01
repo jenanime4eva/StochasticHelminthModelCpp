@@ -192,10 +192,13 @@ bool CSimulator::initialiseSimulation()
 
 	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength-1]/demogDt);
 	upperAgeBound = maxDtIntervals * demogDt;
-	double maxHostAgeCompare[] = {upperAgeBound,contactAgeBreaks[contactAgeBreaksLength-1]}; // Create comparison array
-	int maxHostAgeCompareLength = sizeof(maxHostAgeCompare)/sizeof(maxHostAgeCompare[0]); // Get length of list of values
+
+	vector<double> maxHostAgeCompare = {upperAgeBound,contactAgeBreaks[contactAgeBreaksLength-1]}; // Create comparison array
+	int maxHostAgeCompareLength = maxHostAgeCompare.size(); // Get length of list of values
 	maxHostAge = (int) min(maxHostAgeCompare,maxHostAgeCompareLength); 	// Get maximum host age
-	logStream << "maxHostAge: " << maxHostAge << "\n" << std::flush; // Test flag
+
+	// Recalculate maxDtIntervals now that we know the maxHostAge value
+	maxDtIntervals = maxHostAge/demogDt;
 
 	survivalCurve = new double[maxDtIntervals];
 	survivalCurveCumul = new double[maxDtIntervals];
@@ -212,17 +215,15 @@ bool CSimulator::initialiseSimulation()
 			currentMuIndex++; // Add one to currentMuIndex
 		}
 		hostMu[i] = hostMuData[currentMuIndex];
+
 		probDeath[i] = currentSurvival * hostMu[i] * demogDt;
-		currentMuDtCumul += hostMu[i] * demogDt;
-
 		probDeathIntegral[i] = currentProbDeathCumul + probDeath[i];
-		currentProbDeathCumul = probDeathIntegral[i];
+		currentProbDeathCumul = probDeathIntegral[i]; // Cumulative probability of dying in the ith year
 
-		// First element gives probability of surviving to end of first year
+		currentMuDtCumul += hostMu[i] * demogDt;
 		survivalCurve[i] = exp(-currentMuDtCumul);
-		currentSurvival = survivalCurve[i];
+		currentSurvival = survivalCurve[i]; // Host survival curve
 
-		// The cumulative proability of dying in the ith year
 		survivalCurveCumul[i] = survivalCurve[i] + currentSurvivalCumul;
 		currentSurvivalCumul = survivalCurveCumul[i];
 	}
@@ -399,7 +400,7 @@ vector<double> CSimulator::readDoublesVector(char* currentString, int& currentVe
 		tempVector[counter] = strtod(endPointer, &endPointer);
 		counter++; // Add one to counter
 	}
-	// Delete temp as we don't need it anymore
+	// Delete tempVector as we don't need it anymore
 	if (tempVector!=NULL)
 		delete[] tempVector;
 
@@ -451,12 +452,11 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 	return top;
 }
 
-// Uniform random number generator (should be using the <random> functions)
-double CSimulator::myRandUni()
+// Calculate the psi value
+double CSimulator::calculatePsi()
 {
-	//genunf(double low, double high) generates uniform real between low and high
-	  return  genunf(0,1);
-
+	double psi = 1;
+	return 2*psi; // This 2 is here because it's infection with both male and female worms and only half of these are going to be female
 }
 
 // Draw a life span from the survival curve from the population
@@ -465,7 +465,7 @@ double CSimulator::drawLifespan()
 	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
 	double currentRand = myRandUni();
 
-	int index = multiNomBasic(probDeathIntegral, maxDtIntervals, currentRand);
+	int index = multiNomBasic(probDeathIntegral, maxDtIntervals, currentRand); // maxDtIntervals = maxHostAge here?
 
 	// Choose a point in the middle of the interval in which the person dies
 	double ans = (index + 0.5) * demogDt;
@@ -473,8 +473,16 @@ double CSimulator::drawLifespan()
 	return ans;
 }
 
+// Uniform random number generator (should be using the <random> functions)
+double CSimulator::myRandUni()
+{
+	//genunf(double low, double high) generates uniform real between low and high
+	  return  genunf(0,1);
+
+}
+
 // Function to find minimum of a list of values
-double CSimulator::min(double* Numbers, int Count)
+double CSimulator::min(vector<double> Numbers, int Count)
 {
 	double Minimum = Numbers[0];
 
@@ -490,7 +498,7 @@ double CSimulator::min(double* Numbers, int Count)
 }
 
 // Function to find maximum of a list of values
-double CSimulator::max(double* Numbers, int Count)
+double CSimulator::max(vector<double> Numbers, int Count)
 {
 	double Maximum = Numbers[0];
 

@@ -80,7 +80,7 @@ char* CParamReader::getParamString(const char* paramName)
 	while(paramString[nullTerminal-1]==' ')
 		nullTerminal--;
 
-	paramString[nullTerminal] = '\0';
+	paramString[nullTerminal] = '\0'; // "\0" is the NULL character (it has the value 0)
 
 	paramFileStream.close();
 
