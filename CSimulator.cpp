@@ -44,6 +44,8 @@ CSimulator::CSimulator() {
 	muDataUpperBoundsLength = 0;
 	upperAgeBound = 0;
 	maxDtIntervals = 0;
+	maxHostAge = 0;
+	tinyIncrement = 0.01;
 
 	// Epidemiological parameters
 	k = 0;
@@ -52,6 +54,8 @@ CSimulator::CSimulator() {
 	ReservoirDecayRate = 0;
 	sigma = 0;
 	gamma = 0;
+	z = 0;
+	psi = 0;
 
 	// Treatment parameters
 	treatmentBreaksLength = 0;
@@ -183,12 +187,10 @@ bool CSimulator::initialiseSimulation()
 
 	// Construct mu, probability of death and survival vectors
 	int currentMuIndex = 0;
-	int maxHostAge = 0;
 	double currentSurvival = 1;
 	double currentSurvivalCumul = 0;
 	double currentProbDeathCumul = 0;
 	double currentMuDtCumul = 0;
-	double tinyIncrement = 0.01;
 
 	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength-1]/demogDt);
 	upperAgeBound = maxDtIntervals * demogDt;
@@ -248,10 +250,11 @@ bool CSimulator::initialiseSimulation()
 
 	// Exponential density dependence of parasite adult stage (N.B. fecundity parameter z = exp(-gamma))
 	gamma = atof(myReader.getParamString("gamma"));
-	double z = exp(-gamma); // Fecundity parameter
+	z = exp(-gamma); // Fecundity parameter
 
 	// Dummy psi value prior to R0 calculation
-	double psi = 1.0;
+	psi = calculatePsi();
+	logStream << "\npsi: " << psi << "\n" << std::flush; // Test flag
 
 	// SET UP TREATMENT
 
@@ -306,39 +309,10 @@ bool CSimulator::initialiseSimulation()
 	{
 		surveyResultTimes[i] = surveyResultTimes[i-1] + surveyTimesDt;
 	}
-	logStream << "surveyResultTimesLength: " << surveyResultTimesLength << "\n" << std::flush; // Test flag
-	logStream << "surveyResultTimes first entry: " << surveyResultTimes[0] << "\n" << std::flush; // Test flag
-	logStream << "surveyResultTimes second entry: " << surveyResultTimes[1] << "\n" << std::flush; // Test flag
-	logStream << "surveyResultTimes last entry: " << surveyResultTimes[surveyResultTimesLength-1] << "\n" << std::flush; // Test flag
-
 
 	// Set up a realisation
 	myRealization.initialize(this);
 	myRealization.run();
-
-	/*// Leave this commented for now
-	// Delete memory related to the variables using the readDoublesVector function to avoid memory leaks
-	if (contactAgeBreaks != NULL)
-		delete[] contactAgeBreaks;
-
-	if (betaValues != NULL)
-		delete[] betaValues;
-
-	if (rhoValues != NULL)
-			delete[] rhoValues;
-
-	if (hostMuData != NULL)
-		delete[] hostMuData;
-
-	if (muDataUpperBounds != NULL)
-		delete[] muDataUpperBounds;
-
-	if (treatmentBreaks != NULL)
-		delete[] treatmentBreaks;
-
-	if (coverage != NULL)
-		delete[] coverage;
-	*/
 
 	return true;
 }
@@ -455,8 +429,80 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 // Calculate the psi value
 double CSimulator::calculatePsi()
 {
-	double psi = 1;
-	return 2*psi; // This 2 is here because it's infection with both male and female worms and only half of these are going to be female
+	// Higher resolution
+	double deltaT = 0.1;
+
+	// hostMu for the new age intervals
+	int currentHostMuGroupIndex = 0;
+	int currentModelAgeGroupCatIndex = 0;
+	double currentMeanDeathsCumul = 0;
+	double sumHostSurvival = 0;
+	double hostMuSigmaCumul = 0;
+	double sumRhoAgeCurrentMeanDeath = 0;
+	double sumBetaAgeHostSurvivalCurveK = 0;
+
+	int maxHostAgeInterval = (int) (maxHostAge/deltaT)+1;
+	vector<double> hostMuArray(maxHostAgeInterval);
+	vector<double> hostSurvivalCurve(maxHostAgeInterval);
+	vector<double> survivalCurveSum(maxHostAgeInterval);
+	vector<double> betaAge(maxHostAgeInterval);
+	vector<double> rhoAge(maxHostAgeInterval);
+	vector<double> intMeanWormDeathEvents(maxHostAgeInterval);
+	vector<double> K(maxHostAgeInterval);
+	for (int i=0;i<maxHostAgeInterval;i++)
+	{
+		double currentIntEnd = (i + 1)*deltaT*demogDt;
+		if (muDataUpperBounds[currentHostMuGroupIndex] + tinyIncrement < currentIntEnd)
+		{
+			currentHostMuGroupIndex++; // Add one to currentHostMuGroupIndex
+		}
+		hostMuArray[i] = hostMuData[currentHostMuGroupIndex];
+
+		currentMeanDeathsCumul += hostMuArray[i]*deltaT*demogDt;
+		hostSurvivalCurve[i] = exp(-currentMeanDeathsCumul);
+
+		survivalCurveSum[i] = hostSurvivalCurve[i] + sumHostSurvival;
+		sumHostSurvival = survivalCurveSum[i];
+
+		hostMuSigmaCumul += hostMuArray[i] + sigma;
+
+		// Calculate cumulative sum of host and worm death rates from which to calculate worm survival
+		intMeanWormDeathEvents[i] += hostMuSigmaCumul*deltaT;
+
+		// Need rho and beta at this age resolution as well
+		if (contactAgeBreaks[currentModelAgeGroupCatIndex] + tinyIncrement < currentIntEnd)
+		{
+			currentModelAgeGroupCatIndex++; // Add one to currentModelAgeGroupCatIndex
+		}
+		betaAge[i] = betaValues[currentModelAgeGroupCatIndex-1];
+		rhoAge[i] = rhoValues[currentModelAgeGroupCatIndex-1];
+	}
+
+	double hostSurvivalTotal = sumHostSurvival*deltaT;
+
+	for(int n=0;n<maxHostAgeInterval;n++)
+	{
+		vector<double> currentMeanDeath(maxHostAgeInterval-n);
+		vector<double> rhoAgeCurrentMeanDeath(maxHostAgeInterval-n);
+		int a = 0;
+		for(int j=0;j<maxHostAgeInterval-n;j++)
+		{
+			currentMeanDeath[j] = intMeanWormDeathEvents[maxHostAgeInterval-1-a] - intMeanWormDeathEvents[n];
+			rhoAgeCurrentMeanDeath[j] += rhoAge[maxHostAgeInterval-1-a]*exp(-currentMeanDeath[j]);
+			sumRhoAgeCurrentMeanDeath = rhoAgeCurrentMeanDeath[j];
+			a++;
+		}
+		K[n] = sumRhoAgeCurrentMeanDeath;
+		//logStream << "\nK[n]: " << K[n];
+		sumBetaAgeHostSurvivalCurveK += betaAge[n]*hostSurvivalCurve[n]*K[n];
+	}
+
+	double summation = sumBetaAgeHostSurvivalCurveK*deltaT;
+	//logStream << "\nsummation: " << summation;
+
+	psi = R0*hostSurvivalTotal*ReservoirDecayRate/(lambda*z*summation);
+
+	return (2*psi); // This 2 is here because it's infection with both male and female worms and only half of these are going to be female
 }
 
 // Draw a life span from the survival curve from the population

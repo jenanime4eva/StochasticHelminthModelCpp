@@ -82,6 +82,7 @@ bool CRealization::initialize(CSimulator* currentOwner)
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
 	}
 
+	/*
 	// Set up female and total worm numbers array for each of the hosts
 	femaleWormNumbers = new CWorm* [nHosts];
 	totalWormNumbers = new CWorm* [nHosts];
@@ -90,6 +91,7 @@ bool CRealization::initialize(CSimulator* currentOwner)
 		femaleWormNumbers[i] = new CWorm;
 		totalWormNumbers[i] = new CWorm;
 	}
+	*/
 
 	// Add run termination point
 	localEvents.addEvent(TERMINATE,owner->nYears,NULL);
@@ -134,9 +136,9 @@ bool CRealization::run()
 			case HOST_DEATH:
 				hostDeathResponse(currentEvent);
 				break;
-			//case DEBUG_EVENT:
-				//debugEventResponse(currentEvent);
-				//break;
+			case DEBUG_EVENT:
+				debugEventResponse(currentEvent);
+				break;
 			case SURVEY_EVENT:
 				surveyResultResponse(currentEvent);
 				break;
@@ -188,9 +190,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	return true;
 }
 
-/*
 // Just for testing...
 void CRealization::debugEventResponse(Event& currentEvent)
 {
 }
-*/

@@ -54,15 +54,17 @@ public:
 	vector<double> muDataUpperBounds; // Upper bounds for death rates.
 	int muDataUpperBoundsLength;
 	int maxDtIntervals;
+	int maxHostAge;
 	double* survivalCurve;  // Survival to end of ith dt
 	double* survivalCurveCumul;  // Cumulative sum of the above
 	double* hostMu;
 	double* probDeath; // Probability of dying in the ith dt
 	double* probDeathIntegral; // Integral to end of ith dt
 	double upperAgeBound;
+	double tinyIncrement;
 
 	// Epidemiological parameters
-	double k, R0, sigma, gamma;
+	double k, R0, sigma, gamma, z, psi;
 	int lambda, ReservoirDecayRate;
 
 	// Treatment

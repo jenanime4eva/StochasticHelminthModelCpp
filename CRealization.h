@@ -36,7 +36,7 @@ public:
 	// Predetermined event responses
 	bool hostDeathResponse(Event& currentEvent);
 	bool surveyResultResponse(Event& currentEvent);
-	//void debugEventResponse(Event& currentEvent);
+	void debugEventResponse(Event& currentEvent);
 
 	// MEMBERS
 	class CSimulator* owner;
