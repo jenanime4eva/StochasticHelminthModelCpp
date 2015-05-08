@@ -13,12 +13,12 @@
 CRealization::CRealization()
 {
 	hostPopulation = NULL;
-	femaleWormNumbers = NULL;
-	totalWormNumbers = NULL;
+	//femaleWormNumbers = NULL;
+	//totalWormNumbers = NULL;
 	owner = NULL;
 	nHosts = 0;
-	femaleWorms = 0;
-	totalWorms = 0;
+	//femaleWorms = 0;
+	//totalWorms = 0;
 	surveyResultsArray = NULL;
 }
 
@@ -34,6 +34,7 @@ CRealization::~CRealization()
 		delete[] hostPopulation;
 	}
 
+	/*
 	if(femaleWormNumbers!=NULL)
 	{
 		// Female worms for each host
@@ -51,6 +52,7 @@ CRealization::~CRealization()
 
 		delete[] totalWormNumbers;
 	}
+	*/
 
 	if(surveyResultsArray!=NULL)
 	{
@@ -74,13 +76,18 @@ bool CRealization::initialize(CSimulator* currentOwner)
 	for (int i=0;i<nHosts;i++)
 	{
 		hostPopulation[i] = new CHost;
+
 		// Host lifespans
 		double lifespan = owner->drawLifespan();
-		//genunf(double low, double high) generates uniform real between low and high
-		hostPopulation[i]->birthDate = -owner->myRandUni()*lifespan;
+		hostPopulation[i]->birthDate = -owner->myRandUniform()*lifespan;
 		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
+
+		// Total and female worms per individual host
+		hostPopulation[i]->totalWorms = owner->myRandPoisson();
+		hostPopulation[i]->femaleWorms = owner->myRandBinomial();
 	}
+
 
 	/*
 	// Set up female and total worm numbers array for each of the hosts
@@ -90,6 +97,9 @@ bool CRealization::initialize(CSimulator* currentOwner)
 	{
 		femaleWormNumbers[i] = new CWorm;
 		totalWormNumbers[i] = new CWorm;
+		// Total worms for each individual
+		totalWormNumbers[i]->totalWorms = owner->myRandPoisson();
+		femaleWormNumbers[i]->femaleWorms = owner->myRandBinomial();
 	}
 	*/
 
@@ -153,7 +163,7 @@ bool CRealization::run()
 	return true;
 }
 
-//Respond to host death
+// Respond to host death
 bool CRealization::hostDeathResponse(Event& currentEvent)
 {
 	// Rejuvenate host
@@ -173,19 +183,20 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	// Collect data from each host individual
 	surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
 
+	/*
 	// For looking at the host ages across time
 	for(int i=0;i<nHosts;i++)
 	{
 		outputArray[i].age = currentEvent.time - hostPopulation[i]->birthDate;
 	}
+	*/
 
-	/*
+	// 08/05/2015: THIS IS OUTPUTTING WRONG STUFF AT THE MOMENT, WILL FIX IT
 	// For looking at female worm burdens for individual hosts across time
 	for(int i=0;i<nHosts;i++)
 	{
-		outputArray[i].nFemaleWorms = femaleWormNumbers[i]->femaleWorms;
+		outputArray[i].nFemaleWorms = hostPopulation[i]->femaleWorms;
 	}
-	*/
 
 	return true;
 }

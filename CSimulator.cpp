@@ -509,7 +509,7 @@ double CSimulator::calculatePsi()
 double CSimulator::drawLifespan()
 {
 	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
-	double currentRand = myRandUni();
+	double currentRand = myRandUniform();
 
 	int index = multiNomBasic(probDeathIntegral, maxDtIntervals, currentRand); // maxDtIntervals = maxHostAge here?
 
@@ -519,12 +519,41 @@ double CSimulator::drawLifespan()
 	return ans;
 }
 
-// Uniform random number generator (should be using the <random> functions)
-double CSimulator::myRandUni()
+// Uniform distribution random number generator (generates real number between 0 to 1)
+double CSimulator::myRandUniform()
 {
-	//genunf(double low, double high) generates uniform real between low and high
+	//genunf(double low, double high) generates uniform real between low and high (see randlib files)
 	  return  genunf(0,1);
+}
 
+// Gamma distribution random number generator (for returning the value of si, see myRandPoisson function)
+double CSimulator::myRandGamma()
+{
+	// double gengam(double a,double r) generates random deviates from gamma distribution (see randlib files)
+	// a is location parameter, r is the shape parameter
+	return gengam(k,k);
+}
+
+// Poisson distribution random number generator (for returning total worm numbers)
+double CSimulator::myRandPoisson()
+{
+	double initialWormNumber = 11.5; // Choose this number such that initial conditions are at the equilibrium
+	double si = myRandGamma();
+	double mu = 2*initialWormNumber*si;
+
+    // long ignpoi(double mu) generates a single random deviate from a poisson distribution with mean mu (see randlib files)
+	return ignpoi(mu);
+}
+
+// Binomial distribution random number generator (for returning female worm numbers)
+double CSimulator::myRandBinomial()
+{
+    // long ignbin(long n,double p) generates a single random deviate from a binomial distribution (see randlib files)
+	// n is the number of trials, p is probability of event
+	long n = myRandPoisson();
+	double p = 0.5; // Half of worm population should be female
+
+	return ignbin(n,p);
 }
 
 // Function to find minimum of a list of values

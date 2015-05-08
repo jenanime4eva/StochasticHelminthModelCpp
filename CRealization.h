@@ -13,15 +13,14 @@
 #define CREALIZATION_H_
 
 #include "CHost.h"
-#include "CWorm.h"
 #include "CPreDetEventQueue.h"
 
 // Structure to contain data from individuals in survey results
 struct surveyResultData
 {
 	double age;
-	int nFemaleWorms;
-	int NtotalWorms;
+	double nFemaleWorms;
+	double ntotalWorms;
 };
 
 class CRealization
@@ -41,10 +40,9 @@ public:
 	// MEMBERS
 	class CSimulator* owner;
 	int nHosts;
-	int femaleWorms, totalWorms;
 	CHost** hostPopulation; // Array of host population
-	CWorm** femaleWormNumbers; // Array of female worm numbers for each host
-	CWorm** totalWormNumbers; // Array of total worm numbers for each host
+	//CWorm** femaleWormNumbers; // Array of female worm numbers for each host
+	//CWorm** totalWormNumbers; // Array of total worm numbers for each host
 
 	surveyResultData** surveyResultsArray;
 

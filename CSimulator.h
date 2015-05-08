@@ -106,8 +106,14 @@ public:
 	double calculatePsi();
 	// Draw a lifespan from the population survival curve
 	double drawLifespan();
-	// A uniform random number generator (do better than this!)
-	double myRandUni();
+	// A uniform random number generator
+	double myRandUniform();
+	// A gamma distribution random number generator
+	double myRandGamma();
+	// A poisson distribution random number generator
+	double myRandPoisson();
+	// A binomial distribution random number generator
+	double myRandBinomial();
 	// Find minimum of a list of values
 	double min(vector<double> Numbers, int Count);
 	// Find maximum of a list of values

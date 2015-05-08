@@ -15,6 +15,7 @@ public:
 
 	// Members.
 	double birthDate, deathDate;
+	double femaleWorms, totalWorms;
 };
 
 #endif /* CHOST_H_ */

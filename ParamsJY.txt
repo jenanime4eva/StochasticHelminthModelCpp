@@ -7,10 +7,10 @@
 ### Model running parameters
 repNum	1						## Number of repetitions
 nYears	150						## Number of years to run
-nHosts	1000					## Size of definitive host population (N)
+nHosts	10					## Size of definitive host population (N)
 surveyTimesBegin	99			## Year to start getting data from all individuals in the population
-surveyTimesEnd	105				## Year to stop getting data from all individuals in the population
-surveyTimesDt	1.0				## Time step for the survey times in years
+surveyTimesEnd	150				## Year to stop getting data from all individuals in the population
+surveyTimesDt	1.0				## Time step for the survey times in years e.g. 1 is annual, 0.5 is biannual
 
 ### Demographic structure
 ## The following death rates are for Kenya 2012 and come from the WHO global observatory.
