@@ -13,6 +13,7 @@ CHost::CHost()
 	// Default values
 	birthDate = deathDate = 0;
 	femaleWorms = totalWorms = 0;
+	wormTotalDeathRate = hostInfectionRate = 0;
 }
 
 // Class destructor

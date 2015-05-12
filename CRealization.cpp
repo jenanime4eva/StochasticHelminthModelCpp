@@ -13,12 +13,8 @@
 CRealization::CRealization()
 {
 	hostPopulation = NULL;
-	//femaleWormNumbers = NULL;
-	//totalWormNumbers = NULL;
 	owner = NULL;
 	nHosts = 0;
-	//femaleWorms = 0;
-	//totalWorms = 0;
 	surveyResultsArray = NULL;
 }
 
@@ -33,26 +29,6 @@ CRealization::~CRealization()
 
 		delete[] hostPopulation;
 	}
-
-	/*
-	if(femaleWormNumbers!=NULL)
-	{
-		// Female worms for each host
-		for(i=0;i<nHosts;i++)
-			delete femaleWormNumbers[i];
-
-		delete[] femaleWormNumbers;
-	}
-
-	if(totalWormNumbers!=NULL)
-	{
-		// Female worms for each host
-		for(i=0;i<nHosts;i++)
-			delete totalWormNumbers[i];
-
-		delete[] totalWormNumbers;
-	}
-	*/
 
 	if(surveyResultsArray!=NULL)
 	{
@@ -121,7 +97,7 @@ bool CRealization::initialize(CSimulator* currentOwner)
 	}
 
 	// DEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUG
-	localEvents.addEvent(DEBUG_EVENT,145.0,NULL);
+	localEvents.addEvent(DEBUG_EVENT,owner->nYears - 5.0,NULL);
 
 	return true;
 }
@@ -130,8 +106,6 @@ bool CRealization::initialize(CSimulator* currentOwner)
 bool CRealization::run()
 {
 	Event currentEvent;
-
-	//TODO: Add chemotherapy event
 
 	do
 	{
@@ -143,8 +117,20 @@ bool CRealization::run()
 		// Do the event
 		switch (currentEvent.type)
 		{
+			case RATE_EVENT:
+				calculateEventRatesResponse(currentEvent);
+				break;
 			case HOST_DEATH:
 				hostDeathResponse(currentEvent);
+				break;
+			case WORM_BIRTH_DEATH:
+				wormBirthDeathResponse(currentEvent);
+				break;
+			case WORM_FREELIVING:
+				wormFreelivingResponse(currentEvent);
+				break;
+			case TREATMENT_EVENT:
+				chemotherapyResponse(currentEvent);
 				break;
 			case DEBUG_EVENT:
 				debugEventResponse(currentEvent);
@@ -163,14 +149,35 @@ bool CRealization::run()
 	return true;
 }
 
+// Calculate the event rates
+bool CRealization::calculateEventRatesResponse(Event& currentEvent)
+{
+
+	CHost* currentHost = (CHost*) currentEvent.subject;
+
+	// INSERT DEATHRATE AND HOSTINFECTIONRATE STUFF HERE
+
+	// Assign rate events
+	localEvents.addEvent(RATE_EVENT,currentHost->wormTotalDeathRate,currentHost);
+	localEvents.addEvent(RATE_EVENT,currentHost->hostInfectionRate,currentHost);
+
+	return true;
+}
+
 // Respond to host death
 bool CRealization::hostDeathResponse(Event& currentEvent)
 {
 	// Rejuvenate host
 	CHost* currentHost = (CHost*) currentEvent.subject;
+	// Set birth date to now
 	currentHost->birthDate = currentEvent.time;
 	double lifespan = owner->drawLifespan();
+	// Calculate death dates
 	currentHost->deathDate = currentEvent.time + lifespan;
+
+	// Kill off all their worms
+	currentHost->totalWorms = 0;
+	currentHost->femaleWorms = 0;
 
 	// Assign death event
 	localEvents.addEvent(HOST_DEATH,currentHost->deathDate,currentHost);
@@ -178,6 +185,34 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	return true;
 }
 
+// Is it a new worm or dead worm?
+bool CRealization::wormBirthDeathResponse(Event& currentEvent)
+{
+
+	// INSERT WORM BIRTH AND DEATH STUFF HERE
+
+	return true;
+}
+
+// Update the freeliving worm populations deterministically
+bool CRealization::wormFreelivingResponse(Event& currentEvent)
+{
+
+	// INSERT WORM FREELIVING STUFF HERE
+
+	return true;
+}
+
+// Apply chemotherapy
+bool CRealization::chemotherapyResponse(Event& currentEvent)
+{
+
+	// INSERT CHEMOTHERAPY STUFF HERE
+
+	return true;
+}
+
+// What to output from the simulation
 bool CRealization::surveyResultResponse(Event& currentEvent)
 {
 	// Collect data from each host individual

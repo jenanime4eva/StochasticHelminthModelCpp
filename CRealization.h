@@ -33,7 +33,11 @@ public:
 	bool run();
 
 	// Predetermined event responses
+	bool calculateEventRatesResponse(Event& currentEvent);
 	bool hostDeathResponse(Event& currentEvent);
+	bool wormBirthDeathResponse(Event& currentEvent);
+	bool wormFreelivingResponse(Event& currentEvent);
+	bool chemotherapyResponse(Event& currentEvent);
 	bool surveyResultResponse(Event& currentEvent);
 	void debugEventResponse(Event& currentEvent);
 
@@ -41,8 +45,6 @@ public:
 	class CSimulator* owner;
 	int nHosts;
 	CHost** hostPopulation; // Array of host population
-	//CWorm** femaleWormNumbers; // Array of female worm numbers for each host
-	//CWorm** totalWormNumbers; // Array of total worm numbers for each host
 
 	surveyResultData** surveyResultsArray;
 
