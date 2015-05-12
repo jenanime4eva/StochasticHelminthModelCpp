@@ -333,23 +333,52 @@ void CSimulator::runSimulation()
 void CSimulator::outputSimulation()
 {
 	// Output survey-type results if there's any
-	if (surveyResultTimes != NULL) {
+	if (surveyResultTimes != NULL)
+	{
 		// There's some survey results
 		// Create output stream
 		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
 		// DEBUG: currently only ONE realization, so...
+
+		// Print times on first line
 		for (int j = 0; j < surveyResultTimesLength; j++)
+		{
 			surveyStream << surveyResultTimes[j] << "\t";
-		surveyStream << "\n";
+		}
+		surveyStream << "\n\n" << std::flush;
+
 		// Loop through the hosts
-		for (int i = 0; i < nHosts; i++) {
-			for (int j = 0; j < surveyResultTimesLength; j++) {
-				surveyStream << myRealization.surveyResultsArray[j][i].age
-						<< "\t";
+		for (int i = 0; i < nHosts; i++)
+		{
+			// CHOOSE WHAT OUTPUT YOU WANT (UNCOMMENT ACCORDINGLY)
+
+			/*
+			// Look at the ages across time
+			for (int j = 0; j < surveyResultTimesLength; j++)
+			{
+				surveyStream << myRealization.surveyResultsArray[j][i].age << "\t";
 			}
-			surveyStream << "\n";
+			surveyStream << "\n" << std::flush;
+			*/
+			/*
+			// Look at total worms for each individual
+			for (int j = 0; j < surveyResultTimesLength; j++)
+			{
+				surveyStream << myRealization.surveyResultsArray[j][i].nTotalWorms << "\t";
+
+			}
+			surveyStream << "\n" << std::flush;
+			*/
+
+			// Look at female worms for each individual
+			for (int j = 0; j < surveyResultTimesLength; j++)
+			{
+				surveyStream << myRealization.surveyResultsArray[j][i].nFemaleWorms << "\t";
+			}
+			surveyStream << "\n" << std::flush;
+
 		}
 	}
 }

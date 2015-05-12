@@ -20,7 +20,7 @@ struct surveyResultData
 {
 	double age;
 	double nFemaleWorms;
-	double ntotalWorms;
+	double nTotalWorms;
 };
 
 class CRealization

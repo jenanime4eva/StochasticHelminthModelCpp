@@ -64,21 +64,6 @@ bool CRealization::initialize(CSimulator* currentOwner)
 		hostPopulation[i]->femaleWorms = owner->myRandBinomial();
 	}
 
-
-	/*
-	// Set up female and total worm numbers array for each of the hosts
-	femaleWormNumbers = new CWorm* [nHosts];
-	totalWormNumbers = new CWorm* [nHosts];
-	for (int i=0;i<nHosts;i++)
-	{
-		femaleWormNumbers[i] = new CWorm;
-		totalWormNumbers[i] = new CWorm;
-		// Total worms for each individual
-		totalWormNumbers[i]->totalWorms = owner->myRandPoisson();
-		femaleWormNumbers[i]->femaleWorms = owner->myRandBinomial();
-	}
-	*/
-
 	// Add run termination point
 	localEvents.addEvent(TERMINATE,owner->nYears,NULL);
 
@@ -149,7 +134,7 @@ bool CRealization::run()
 	return true;
 }
 
-// Calculate the event rates
+// Calculate the event rates (worm total death rate and host infection rate)
 bool CRealization::calculateEventRatesResponse(Event& currentEvent)
 {
 
@@ -218,15 +203,18 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	// Collect data from each host individual
 	surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
 
-	/*
 	// For looking at the host ages across time
 	for(int i=0;i<nHosts;i++)
 	{
 		outputArray[i].age = currentEvent.time - hostPopulation[i]->birthDate;
 	}
-	*/
 
-	// 08/05/2015: THIS IS OUTPUTTING WRONG STUFF AT THE MOMENT, WILL FIX IT
+	// For looking at total worm burdens for individual hosts across time
+	for(int i=0;i<nHosts;i++)
+	{
+		outputArray[i].nTotalWorms = hostPopulation[i]->totalWorms;
+	}
+
 	// For looking at female worm burdens for individual hosts across time
 	for(int i=0;i<nHosts;i++)
 	{
