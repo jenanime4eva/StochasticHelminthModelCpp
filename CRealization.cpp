@@ -8,6 +8,13 @@
 
 #include "CRealization.h"
 #include "CSimulator.h"
+#include <iostream>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
+#include <vector.h>
+#include "randlib.h"
 
 // Class constructor
 CRealization::CRealization()
@@ -15,6 +22,8 @@ CRealization::CRealization()
 	hostPopulation = NULL;
 	owner = NULL;
 	nHosts = 0;
+	tinyIncrement = 0.01;
+	sumTotalWorms = 0;
 	surveyResultsArray = NULL;
 }
 
@@ -47,6 +56,10 @@ bool CRealization::initialize(CSimulator* currentOwner)
 
 	nHosts = owner->nHosts;
 
+	// Set up some vectors
+	vector<double> hostContactAgeGroupIndex(nHosts);
+	vector<double> hostTreatmentAgeGroupIndex(nHosts);
+
 	// Set up host population array
 	hostPopulation = new CHost* [nHosts];
 	for (int i=0;i<nHosts;i++)
@@ -59,9 +72,27 @@ bool CRealization::initialize(CSimulator* currentOwner)
 		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
 
+		int currentContactIndex = 0;
+		int currentTreatmentIndex = 0;
+
+		// Contact age group index for each host
+		while (owner->contactAgeBreaks[currentContactIndex] + tinyIncrement < -hostPopulation[i]->birthDate)
+		{
+			currentContactIndex++;
+		}
+		hostContactAgeGroupIndex[i] = currentContactIndex-1;
+
+		// Treatment age group index for each host
+		while (owner->treatmentBreaks[currentTreatmentIndex] + tinyIncrement < -hostPopulation[i]->birthDate)
+		{
+			currentTreatmentIndex++;
+		}
+		hostTreatmentAgeGroupIndex[i] = currentTreatmentIndex-1;
+
 		// Total and female worms per individual host
 		hostPopulation[i]->totalWorms = owner->myRandPoisson();
 		hostPopulation[i]->femaleWorms = owner->myRandBinomial();
+		sumTotalWorms += hostPopulation[i]->femaleWorms;
 	}
 
 	// Add run termination point
@@ -102,9 +133,6 @@ bool CRealization::run()
 		// Do the event
 		switch (currentEvent.type)
 		{
-			case RATE_EVENT:
-				calculateEventRatesResponse(currentEvent);
-				break;
 			case HOST_DEATH:
 				hostDeathResponse(currentEvent);
 				break;
@@ -134,19 +162,21 @@ bool CRealization::run()
 	return true;
 }
 
-// Calculate the event rates (worm total death rate and host infection rate)
-bool CRealization::calculateEventRatesResponse(Event& currentEvent)
+// Calculate the event rates (host infection rate and worm total death rate)
+vector<double> CRealization::calculateEventRates()
 {
+	vector<double> hostInfectionRate(nHosts);
+	vector<double> rates(nHosts+1);
+	double wormTotalDeathRate = owner->sigma*sumTotalWorms;
+	double freeliving = 4; // REMOVE LATER WHEN FINISHED WRITING FREELIVING FUNCTION
+	for(int i=0;i<nHosts;i++)
+	{
+		hostInfectionRate[i] = freeliving*owner->myRandGamma()*owner->betaValues[hostContactAgeGroupIndex[i]];
+		rates[i] = hostInfectionRate[i];
+	}
+	rates[nHosts] = wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array
 
-	CHost* currentHost = (CHost*) currentEvent.subject;
-
-	// INSERT DEATHRATE AND HOSTINFECTIONRATE STUFF HERE
-
-	// Assign rate events
-	localEvents.addEvent(RATE_EVENT,currentHost->wormTotalDeathRate,currentHost);
-	localEvents.addEvent(RATE_EVENT,currentHost->hostInfectionRate,currentHost);
-
-	return true;
+	return rates;
 }
 
 // Respond to host death
@@ -183,7 +213,7 @@ bool CRealization::wormBirthDeathResponse(Event& currentEvent)
 bool CRealization::wormFreelivingResponse(Event& currentEvent)
 {
 
-	// INSERT WORM FREELIVING STUFF HERE
+	//double freeliving = 4; // Don't know what this number should be
 
 	return true;
 }

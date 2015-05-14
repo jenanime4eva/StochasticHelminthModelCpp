@@ -8,6 +8,8 @@
 #ifndef CHOST_H_
 #define CHOST_H_
 
+using namespace std;
+
 class CHost {
 public:
 	CHost();
@@ -16,7 +18,6 @@ public:
 	// Members.
 	double birthDate, deathDate;
 	double femaleWorms, totalWorms;
-	double wormTotalDeathRate, hostInfectionRate;
 };
 
 #endif /* CHOST_H_ */

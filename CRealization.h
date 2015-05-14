@@ -14,6 +14,11 @@
 
 #include "CHost.h"
 #include "CPreDetEventQueue.h"
+#include <fstream>
+#include <random>
+#include <string>
+
+using namespace std;
 
 // Structure to contain data from individuals in survey results
 struct surveyResultData
@@ -32,8 +37,9 @@ public:
 	bool initialize(class CSimulator* currentOwner);
 	bool run();
 
+	vector<double> calculateEventRates();
+
 	// Predetermined event responses
-	bool calculateEventRatesResponse(Event& currentEvent);
 	bool hostDeathResponse(Event& currentEvent);
 	bool wormBirthDeathResponse(Event& currentEvent);
 	bool wormFreelivingResponse(Event& currentEvent);
@@ -45,6 +51,10 @@ public:
 	class CSimulator* owner;
 	int nHosts;
 	CHost** hostPopulation; // Array of host population
+	double tinyIncrement;
+	double sumTotalWorms;
+	vector<double> hostContactAgeGroupIndex;
+	vector<double> hostTreatmentAgeGroupIndex;
 
 	surveyResultData** surveyResultsArray;
 
