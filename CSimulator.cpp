@@ -341,6 +341,7 @@ void CSimulator::outputSimulation()
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
 		// DEBUG: currently only ONE realization, so...
+		// TODO: OUTPUT MEAN WORMS ACROSS TIME FOR EACH RUN (CURRENTLY WORMS FOR EACH INDIVIDUAL FOR ONE REALIZATION)
 
 		// Print times on first line
 		for (int j = 0; j < surveyResultTimesLength; j++)
@@ -363,7 +364,7 @@ void CSimulator::outputSimulation()
 			surveyStream << "\n" << std::flush;
 			*/
 			/*
-			// Look at total worms for each individual
+			// Look at total worms for each individual across time
 			for (int j = 0; j < surveyResultTimesLength; j++)
 			{
 				surveyStream << myRealization.surveyResultsArray[j][i].nTotalWorms << "\t";
@@ -372,7 +373,7 @@ void CSimulator::outputSimulation()
 			surveyStream << "\n" << std::flush;
 			*/
 
-			// Look at female worms for each individual
+			// Look at female worms for each individual across time
 			for (int j = 0; j < surveyResultTimesLength; j++)
 			{
 				surveyStream << myRealization.surveyResultsArray[j][i].nFemaleWorms << "\t";
@@ -466,20 +467,26 @@ double CSimulator::calculatePsi()
 	int currentModelAgeGroupCatIndex = 0;
 	double currentMeanDeathsCumul = 0;
 	double sumHostSurvival = 0;
-	double hostMuSigmaCumul = 0;
-	double sumRhoAgeCurrentMeanDeath = 0;
+	double meanLifespan = 0;
 	double sumBetaAgeHostSurvivalCurveK = 0;
 
 	int maxHostAgeInterval = (int) (maxHostAge/deltaT)+1;
+	vector<double> modelAges(maxHostAgeInterval);
 	vector<double> hostMuArray(maxHostAgeInterval);
 	vector<double> hostSurvivalCurve(maxHostAgeInterval);
 	vector<double> survivalCurveSum(maxHostAgeInterval);
 	vector<double> betaAge(maxHostAgeInterval);
 	vector<double> rhoAge(maxHostAgeInterval);
-	vector<double> intMeanWormDeathEvents(maxHostAgeInterval);
+	vector<double> wSurvival(maxHostAgeInterval);
 	vector<double> K(maxHostAgeInterval);
+
+	double ADD = 0;
 	for (int i=0;i<maxHostAgeInterval;i++)
 	{
+		// Interval-centered ages for the age intervals
+		modelAges[i] = min(contactAgeBreaks,contactAgeBreaks.size()) + 0.5*deltaT + ADD;
+		ADD = ADD + deltaT;
+
 		double currentIntEnd = (i + 1)*deltaT*demogDt;
 		if (muDataUpperBounds[currentHostMuGroupIndex] + tinyIncrement < currentIntEnd)
 		{
@@ -493,11 +500,6 @@ double CSimulator::calculatePsi()
 		survivalCurveSum[i] = hostSurvivalCurve[i] + sumHostSurvival;
 		sumHostSurvival = survivalCurveSum[i];
 
-		hostMuSigmaCumul += hostMuArray[i] + sigma;
-
-		// Calculate cumulative sum of host and worm death rates from which to calculate worm survival
-		intMeanWormDeathEvents[i] += hostMuSigmaCumul*deltaT;
-
 		// Need rho and beta at this age resolution as well
 		if (contactAgeBreaks[currentModelAgeGroupCatIndex] + tinyIncrement < currentIntEnd)
 		{
@@ -505,31 +507,29 @@ double CSimulator::calculatePsi()
 		}
 		betaAge[i] = betaValues[currentModelAgeGroupCatIndex-1];
 		rhoAge[i] = rhoValues[currentModelAgeGroupCatIndex-1];
+
+		wSurvival[i] = exp(-sigma*modelAges[i]);
 	}
 
-	double hostSurvivalTotal = sumHostSurvival*deltaT;
+	meanLifespan = sumHostSurvival*deltaT;
 
-	for(int n=0;n<maxHostAgeInterval;n++)
+	K[0] = betaAge[0]*wSurvival[0]*deltaT; // First K array entry
+	for(int n=1;n<maxHostAgeInterval;n++)
 	{
-		vector<double> currentMeanDeath(maxHostAgeInterval-n);
-		vector<double> rhoAgeCurrentMeanDeath(maxHostAgeInterval-n);
-		int a = 0;
-		for(int j=0;j<maxHostAgeInterval-n;j++)
+		double sumBetaAgewSurvival = 0;
+		int a = n;
+		for(int j=0;j<=n;j++)
 		{
-			currentMeanDeath[j] = intMeanWormDeathEvents[maxHostAgeInterval-1-a] - intMeanWormDeathEvents[n];
-			rhoAgeCurrentMeanDeath[j] += rhoAge[maxHostAgeInterval-1-a]*exp(-currentMeanDeath[j]);
-			sumRhoAgeCurrentMeanDeath = rhoAgeCurrentMeanDeath[j];
-			a++;
+			sumBetaAgewSurvival += betaAge[j]*wSurvival[a];
+			a = a-1;
 		}
-		K[n] = sumRhoAgeCurrentMeanDeath;
-		//logStream << "\nK[n]: " << K[n];
-		sumBetaAgeHostSurvivalCurveK += betaAge[n]*hostSurvivalCurve[n]*K[n];
+		K[n] = sumBetaAgewSurvival*deltaT;
+		sumBetaAgeHostSurvivalCurveK += rhoAge[n]*hostSurvivalCurve[n]*K[n];
 	}
 
 	double summation = sumBetaAgeHostSurvivalCurveK*deltaT;
-	//logStream << "\nsummation: " << summation;
 
-	psi = R0*hostSurvivalTotal*ReservoirDecayRate/(lambda*z*summation);
+	psi = R0*meanLifespan*ReservoirDecayRate/(lambda*z*summation);
 
 	return (2*psi); // This 2 is here because it's infection with both male and female worms and only half of these are going to be female
 }
