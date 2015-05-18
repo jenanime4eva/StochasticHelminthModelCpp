@@ -36,5 +36,5 @@ treatmentBreaks	0 2 5 15 70		## Treatment age group breaks (minimum ages of each
 coverage	0 0 0.75 0			## Coverages: Infants; Pre-SAC; SAC; Adults
 drugEff	0.9						## Drug efficacy
 treatStart	100					## Treatment year start
-nRounds	50						## Number of treatment rounds
+treatEnd	150					## Treatment year end
 treatInterval	1				## Interval between treatments in years 

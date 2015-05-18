@@ -32,15 +32,21 @@ CSimulator::CSimulator() {
 	dt = 0;
 
 	// Social structure
+	contactAgeBreaks = NULL;
 	contactAgeBreaksLength = 0;
+	betaValues = NULL;
 	betaValuesLength = 0;
+	rhoValues = NULL;
 	rhoValuesLength = 0;
 
 	// Demographic structure
 	survivalCurve = survivalCurveCumul = NULL;
 	hostMu = probDeath = probDeathIntegral = NULL;
+	maxHostAgeCompare = NULL;
 	demogDt = 0;
+	hostMuData = NULL;
 	hostMuDataLength = 0;
+	muDataUpperBounds = NULL;
 	muDataUpperBoundsLength = 0;
 	upperAgeBound = 0;
 	maxDtIntervals = 0;
@@ -58,11 +64,13 @@ CSimulator::CSimulator() {
 	psi = 0;
 
 	// Treatment parameters
+	treatmentBreaks = 0;
 	treatmentBreaksLength = 0;
+	coverage = NULL;
 	coverageLength = 0;
 	drugEff = 0;
 	treatStart = 0;
-	nRounds = 0;
+	treatEnd = 0;
 	treatInterval = 0;
 
 	// Results
@@ -75,6 +83,24 @@ CSimulator::CSimulator() {
 
 // Class Destructor
 CSimulator::~CSimulator() {
+	if (contactAgeBreaks != NULL)
+		delete[] contactAgeBreaks;
+
+	if (betaValues != NULL)
+		delete[] betaValues;
+
+	if (rhoValues != NULL)
+		delete[] rhoValues;
+
+	if (hostMuData != NULL)
+		delete[] hostMuData;
+
+	if (muDataUpperBounds != NULL)
+		delete[] muDataUpperBounds;
+
+	if (maxHostAgeCompare != NULL)
+		delete[] maxHostAgeCompare;
+
 	if (survivalCurve != NULL)
 		delete[] survivalCurve;
 
@@ -89,6 +115,12 @@ CSimulator::~CSimulator() {
 
 	if (probDeathIntegral != NULL)
 		delete[] probDeathIntegral;
+
+	if (treatmentBreaks != NULL)
+		delete[] treatmentBreaks;
+
+	if (coverage != NULL)
+		delete[] coverage;
 
 	if (surveyResultTimes != NULL)
 		delete[] surveyResultTimes;
@@ -195,9 +227,11 @@ bool CSimulator::initialiseSimulation()
 	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength-1]/demogDt);
 	upperAgeBound = maxDtIntervals * demogDt;
 
-	vector<double> maxHostAgeCompare = {upperAgeBound,contactAgeBreaks[contactAgeBreaksLength-1]}; // Create comparison array
-	int maxHostAgeCompareLength = maxHostAgeCompare.size(); // Get length of list of values
-	maxHostAge = (int) min(maxHostAgeCompare,maxHostAgeCompareLength); 	// Get maximum host age
+	maxHostAgeCompare = new double[1];
+	maxHostAgeCompare[0] = upperAgeBound;
+	maxHostAgeCompare[1] = contactAgeBreaks[contactAgeBreaksLength-1];
+	maxHostAge = (int) min(maxHostAgeCompare,2); 	// Get maximum host age
+	logStream << "\nmaxHostAge: " << maxHostAge << "\n";
 
 	// Recalculate maxDtIntervals now that we know the maxHostAge value
 	maxDtIntervals = maxHostAge/demogDt;
@@ -240,7 +274,7 @@ bool CSimulator::initialiseSimulation()
 
 	// Basic reproductive number
 	R0 = atof(myReader.getParamString("R0"));
-	logStream << "R0: " << R0 << "\n" << std::flush; // Test flag
+	logStream << "\nR0: " << R0 << "\n" << std::flush; // Test flag
 
 	// Decay rate of eggs in the environment
 	ReservoirDecayRate = atoi(myReader.getParamString("ReservoirDecayRate"));
@@ -287,8 +321,8 @@ bool CSimulator::initialiseSimulation()
 	// Treatment year start
 	treatStart = atoi(myReader.getParamString("treatStart"));
 
-	// Number of treatment rounds
-	nRounds = atoi(myReader.getParamString("nRounds"));
+	// Treatment year end
+	treatEnd = atoi(myReader.getParamString("treatEnd"));
 
 	// Interval between treatments in years
 	treatInterval = atof(myReader.getParamString("treatInterval"));
@@ -388,7 +422,7 @@ void CSimulator::outputSimulation()
 /// Auxiliary function definitions
 
 // Creates a vector of doubles from string from the parameter file
-vector<double> CSimulator::readDoublesVector(char* currentString, int& currentVectorLength)
+double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLength)
 {
 	// IMPORTANT: Make sure the string read in does not have trailing zeros
 	// These are currently removed in the parameter reading function
@@ -409,14 +443,14 @@ vector<double> CSimulator::readDoublesVector(char* currentString, int& currentVe
 		delete[] tempVector;
 
 	// NOW create the vector of doubles of values we actually require
-	vector<double> vectorArray(counter);
+	double* vectorArray = new double[counter];
 	vectorArray[0] = strtod(currentString, &endPointer);
 	for(int i=1;i<counter;i++)
 	{
 		vectorArray[i] = strtod(endPointer, &endPointer);
 	}
 
-	currentVectorLength = vectorArray.size(); // Count number of elements in the vector
+	currentVectorLength = counter; // Count number of elements in the vector
 
 	return vectorArray;
 }
@@ -471,20 +505,20 @@ double CSimulator::calculatePsi()
 	double sumBetaAgeHostSurvivalCurveK = 0;
 
 	int maxHostAgeInterval = (int) (maxHostAge/deltaT)+1;
-	vector<double> modelAges(maxHostAgeInterval);
-	vector<double> hostMuArray(maxHostAgeInterval);
-	vector<double> hostSurvivalCurve(maxHostAgeInterval);
-	vector<double> survivalCurveSum(maxHostAgeInterval);
-	vector<double> betaAge(maxHostAgeInterval);
-	vector<double> rhoAge(maxHostAgeInterval);
-	vector<double> wSurvival(maxHostAgeInterval);
-	vector<double> K(maxHostAgeInterval);
+	double* modelAges = new double[maxHostAgeInterval];
+	double* hostMuArray = new double[maxHostAgeInterval];
+	double* hostSurvivalCurve = new double[maxHostAgeInterval];
+	double* survivalCurveSum = new double[maxHostAgeInterval];
+	double* betaAge = new double[maxHostAgeInterval];
+	double* rhoAge = new double[maxHostAgeInterval];
+	double* wSurvival = new double[maxHostAgeInterval];
+	double* K = new double[maxHostAgeInterval];
 
 	double ADD = 0;
 	for (int i=0;i<maxHostAgeInterval;i++)
 	{
 		// Interval-centered ages for the age intervals
-		modelAges[i] = min(contactAgeBreaks,contactAgeBreaks.size()) + 0.5*deltaT + ADD;
+		modelAges[i] = min(contactAgeBreaks,sizeof(contactAgeBreaks)/sizeof(contactAgeBreaks[0])) + 0.5*deltaT + ADD;
 		ADD = ADD + deltaT;
 
 		double currentIntEnd = (i + 1)*deltaT*demogDt;
@@ -530,6 +564,31 @@ double CSimulator::calculatePsi()
 	double summation = sumBetaAgeHostSurvivalCurveK*deltaT;
 
 	psi = R0*meanLifespan*ReservoirDecayRate/(lambda*z*summation);
+
+	// Delete arrays we don't need anymore to free up memory
+	if (modelAges!=NULL)
+		delete[] modelAges;
+
+	if (hostMuArray!=NULL)
+		delete[] hostMuArray;
+
+	if (hostSurvivalCurve!=NULL)
+		delete[] hostSurvivalCurve;
+
+	if (survivalCurveSum!=NULL)
+		delete[] survivalCurveSum;
+
+	if (betaAge!=NULL)
+		delete[] betaAge;
+
+	if (rhoAge!=NULL)
+		delete[] rhoAge;
+
+	if (wSurvival!=NULL)
+		delete[] wSurvival;
+
+	if (K!=NULL)
+		delete[] K;
 
 	return (2*psi); // This 2 is here because it's infection with both male and female worms and only half of these are going to be female
 }
@@ -585,8 +644,33 @@ double CSimulator::myRandBinomial()
 	return ignbin(n,p);
 }
 
+/*
+// Find the cumsum of a vector
+vector<double> CSimulator::cumsum(vector<double> x)
+{
+    vector<double> ans(x.size());
+    ans[0] = x[0];
+    for(unsigned int i = 1;i<x.size();i++)
+    	ans[i] = ans[i-1] + x[i];
+
+    return ans;
+}
+
+// Find the sum of a vector
+double CSimulator::sum(vector<double> x)
+{
+	int sum = 0;
+	for(unsigned int n=0;n<x.size();n++)
+	{
+	  sum += x[n];
+	}
+
+	return sum;
+}
+*/
+
 // Function to find minimum of a list of values
-double CSimulator::min(vector<double> Numbers, int Count)
+double CSimulator::min(double* Numbers, int Count)
 {
 	double Minimum = Numbers[0];
 
@@ -602,7 +686,7 @@ double CSimulator::min(vector<double> Numbers, int Count)
 }
 
 // Function to find maximum of a list of values
-double CSimulator::max(vector<double> Numbers, int Count)
+double CSimulator::max(double* Numbers, int Count)
 {
 	double Maximum = Numbers[0];
 

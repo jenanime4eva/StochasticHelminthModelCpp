@@ -37,13 +37,8 @@ public:
 	bool initialize(class CSimulator* currentOwner);
 	bool run();
 
-	vector<double> calculateEventRates();
-
 	// Predetermined event responses
 	bool hostDeathResponse(Event& currentEvent);
-	bool wormBirthDeathResponse(Event& currentEvent);
-	bool wormFreelivingResponse(Event& currentEvent);
-	bool chemotherapyResponse(Event& currentEvent);
 	bool surveyResultResponse(Event& currentEvent);
 	void debugEventResponse(Event& currentEvent);
 
@@ -53,8 +48,14 @@ public:
 	CHost** hostPopulation; // Array of host population
 	double tinyIncrement;
 	double sumTotalWorms;
-	vector<double> hostContactAgeGroupIndex;
-	vector<double> hostTreatmentAgeGroupIndex;
+	double sumFemaleWorms;
+	double* hostContactAgeGroupIndex;
+	double* hostTreatmentAgeGroupIndex;
+	double* productiveFemaleWorms;
+	double* freelivingWorms;
+	double* hostInfectionRate;
+	double* rates;
+	double* individualCoverage;
 
 	surveyResultData** surveyResultsArray;
 

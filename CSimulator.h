@@ -40,21 +40,22 @@ public:
 	string thePath;
 
 	// Social structure
-	vector<double> contactAgeBreaks;
+	double* contactAgeBreaks;
 	int contactAgeBreaksLength;
-	vector<double> betaValues;
+	double* betaValues;
 	int betaValuesLength;
-	vector<double> rhoValues;
+	double* rhoValues;
 	int rhoValuesLength;
 
 	// Demographic structure
 	double demogDt;
-	vector<double> hostMuData;  // Death rates
+	double* hostMuData;  // Death rates
 	int hostMuDataLength;
-	vector<double> muDataUpperBounds; // Upper bounds for death rates.
+	double* muDataUpperBounds; // Upper bounds for death rates.
 	int muDataUpperBoundsLength;
 	int maxDtIntervals;
 	int maxHostAge;
+	double* maxHostAgeCompare;
 	double* survivalCurve;  // Survival to end of ith dt
 	double* survivalCurveCumul;  // Cumulative sum of the above
 	double* hostMu;
@@ -68,12 +69,12 @@ public:
 	int lambda, ReservoirDecayRate;
 
 	// Treatment
-	vector<double> treatmentBreaks;
+	double* treatmentBreaks;
 	int treatmentBreaksLength;
-	vector<double> coverage;
+	double* coverage;
 	int coverageLength;
 	double drugEff, treatInterval;
-	int treatStart, nRounds;
+	int treatStart, treatEnd;
 
 	// General initialisation
 	char buffer[BUFFER_SIZE];
@@ -99,7 +100,7 @@ public:
 	// AUXILIARY FUNCTIONS
 
 	// A function to read in a list of doubles into a vector
-	vector<double> readDoublesVector(char* valuesString, int& currentVectorLength);
+	double* readDoublesVector(char* valuesString, int& currentVectorLength);
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
 	// Calculate the psi value
@@ -114,10 +115,14 @@ public:
 	double myRandPoisson();
 	// A binomial distribution random number generator
 	double myRandBinomial();
+	// Find the cumsum of a vector
+	//vector<double> cumsum(vector<double> x);
+	// Find the sum of a vector
+	//double sum(vector<double> x);
 	// Find minimum of a list of values
-	double min(vector<double> Numbers, int Count);
+	double min(double* Numbers, int Count);
 	// Find maximum of a list of values
-	double max(vector<double> Numbers, int Count);
+	double max(double* Numbers, int Count);
 };
 
 #endif /* CSIMULATOR_H_ */
