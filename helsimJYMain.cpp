@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
 	int t2 = time(NULL); // Stop clock counter
 
-	printf ("Time = %d secs\n", t2 - t1); // Print time taken in seconds to run the program to the console
+	printf ("\nTime = %d secs\n", t2 - t1); // Print time taken in seconds to run the program to the console
 
 	return 1; 
 }

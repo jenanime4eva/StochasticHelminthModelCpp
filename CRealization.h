@@ -49,13 +49,17 @@ public:
 	double tinyIncrement;
 	double sumTotalWorms;
 	double sumFemaleWorms;
-	double* hostContactAgeGroupIndex;
-	double* hostTreatmentAgeGroupIndex;
-	double* productiveFemaleWorms;
-	double* freelivingWorms;
+	int* hostContactAgeGroupIndex;
+	int* hostTreatmentAgeGroupIndex;
+	double* currentHostTotalWorms;
+	double* currentHostFemaleWorms;
 	double* hostInfectionRate;
 	double* rates;
+	double sumRates;
 	double* individualCoverage;
+
+	// Functions
+	double freelivingWorms(double* totalWormArray, double* femaleWormArray, double ts);
 
 	surveyResultData** surveyResultsArray;
 

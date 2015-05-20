@@ -79,6 +79,9 @@ CSimulator::CSimulator() {
 	surveyTimesDt = 0;
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
+
+	// Auxiliary functions
+	vectorArray = NULL;
 }
 
 // Class Destructor
@@ -124,6 +127,9 @@ CSimulator::~CSimulator() {
 
 	if (surveyResultTimes != NULL)
 		delete[] surveyResultTimes;
+
+	if (vectorArray != NULL)
+		delete[] vectorArray;
 }
 
 // Initialise the input/output aspects of the simulator
@@ -346,6 +352,7 @@ bool CSimulator::initialiseSimulation()
 
 	// Set up a realisation
 	myRealization.initialize(this);
+	// Run a realisation
 	myRealization.run();
 
 	return true;
@@ -443,7 +450,7 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 		delete[] tempVector;
 
 	// NOW create the vector of doubles of values we actually require
-	double* vectorArray = new double[counter];
+	vectorArray = new double[counter];
 	vectorArray[0] = strtod(currentString, &endPointer);
 	for(int i=1;i<counter;i++)
 	{

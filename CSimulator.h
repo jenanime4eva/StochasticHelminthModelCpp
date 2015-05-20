@@ -101,6 +101,7 @@ public:
 
 	// A function to read in a list of doubles into a vector
 	double* readDoublesVector(char* valuesString, int& currentVectorLength);
+	double* vectorArray;
 	// Return an index for the value that is just above a uniform random deviate
 	int multiNomBasic(double* array, int length, double randNum);
 	// Calculate the psi value
