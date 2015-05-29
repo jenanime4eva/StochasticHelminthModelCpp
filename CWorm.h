@@ -14,7 +14,7 @@ public:
 	virtual ~CWorm();
 
 	// Members.
-	int femaleWorms, totalWorms;
+	double femaleWorms, totalWorms;
 };
 
 #endif /* CWORM_H_ */

@@ -21,11 +21,10 @@ struct Event
 #define PreDetEvent_CHUNK 20
 #define UNUSED_EVENT 0
 #define HOST_DEATH 1
-#define TREATMENT_START 2
-#define TREATMENT_END 3
-#define TERMINATE 4
-#define DEBUG_EVENT 5
-#define SURVEY_EVENT 6
+#define CHEMOTHERAPY 2
+#define TERMINATE 3
+#define DEBUG_EVENT 4
+#define SURVEY_EVENT 5
 
 class CPreDetEventQueue
 {

@@ -381,46 +381,38 @@ void CSimulator::outputSimulation()
 		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
-		// DEBUG: currently only ONE realization, so...
-		// TODO: OUTPUT MEAN WORMS ACROSS TIME FOR EACH RUN (CURRENTLY WORMS FOR EACH INDIVIDUAL FOR ONE REALIZATION)
-
-		// Print times on first line
+		// Print times in the first column
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
 			surveyStream << surveyResultTimes[j] << "\t";
-		}
-		surveyStream << "\n\n" << std::flush;
 
-		// Loop through the hosts
-		for (int i = 0; i < nHosts; i++)
-		{
-			// CHOOSE WHAT OUTPUT YOU WANT (UNCOMMENT ACCORDINGLY)
-
-			/*
-			// Look at the ages across time
-			for (int j = 0; j < surveyResultTimesLength; j++)
+			// Loop through the runs
+			for (int repNo = 0; repNo < nRepetitions; repNo++)
 			{
-				surveyStream << myRealization.surveyResultsArray[j][i].age << "\t";
+
+				// CHOOSE WHAT OUTPUT YOU WANT (UNCOMMENT ACCORDINGLY)
+
+				// Look at mean female worms for each individual run across time
+				surveyStream << myRealization.surveyResultsArray[j][repNo].meanFemaleWormsPerRun << "\t";
+
+				/*
+				// Look at total worms for each individual across time
+				surveyStream << myRealization.surveyResultsArray[j][repNo].meanTotalWormsPerRun << "\t";
+				*/
+
+				/*
+				// Loop through the hosts
+				for (int i = 0; i < nHosts; i++)
+				{
+					// Look at the ages across time
+					for (int j = 0; j < surveyResultTimesLength; j++)
+					{
+						surveyStream << myRealization.surveyResultsArray[j][i].age << "\t" << std::flush;;
+					}
+				}
+				*/
 			}
 			surveyStream << "\n" << std::flush;
-			*/
-			/*
-			// Look at total worms for each individual across time
-			for (int j = 0; j < surveyResultTimesLength; j++)
-			{
-				surveyStream << myRealization.surveyResultsArray[j][i].nTotalWorms << "\t";
-
-			}
-			surveyStream << "\n" << std::flush;
-			*/
-
-			// Look at female worms for each individual across time
-			for (int j = 0; j < surveyResultTimesLength; j++)
-			{
-				surveyStream << myRealization.surveyResultsArray[j][i].nFemaleWorms << "\t";
-			}
-			surveyStream << "\n" << std::flush;
-
 		}
 	}
 }
@@ -462,11 +454,11 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 	return vectorArray;
 }
 
-// This function takes a random number (0-1) and multiplies it by the max of the passed array.
+// This function takes a random number (0-1) and multiplies it by the MAX of the passed array.
 // It then finds the smallest index that has an array value greater than the product above.
 // For a cumulative multinomial array, this will return the index of the event that occurred.
 // Also used for drawing a lifespan from the survival curve integral.
-int CSimulator::multiNomBasic(double* array, int length, double randNum)
+int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 {
 	int loopMax = ceil(log(length) / log(2) + 2);
 	int bottom = -1;
@@ -489,7 +481,39 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 	}
 
 	if (count >= loopMax) {
-		logStream << "Max iterations exceeded in multiNomBasic(...),\n"
+		logStream << "Max iterations exceeded in multiNomBasic1(...),\n"
+				<< std::flush;
+		return -1;
+	}
+
+	return top;
+}
+
+// This function takes a random number (0-1) and multiplies it by the SUM of the passed array.
+// It then finds the smallest index that has an array value greater than the product above.
+// For a cumulative multinomial array, this will return the index of the event that occurred.
+int CSimulator::multiNomBasic2(double* array, double arraySum, int length, double randNum)
+{
+	int loopMax = ceil(log(length) / log(2) + 2);
+	int bottom = -1;
+	int top = length - 1;
+	double topVal = arraySum;
+	double target = topVal * randNum;
+	int count = 0;
+
+	while (++count < loopMax && (top - bottom > 1)) {
+		int mid = (top + bottom) / 2;
+		double midVal = array[mid];
+		if (midVal >= target) {
+			top = mid;
+			topVal = midVal;
+		} else {
+			bottom = mid;
+		}
+	}
+
+	if (count >= loopMax) {
+		logStream << "Max iterations exceeded in multiNomBasic2(...),\n"
 				<< std::flush;
 		return -1;
 	}
@@ -606,7 +630,7 @@ double CSimulator::drawLifespan()
 	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
 	double currentRand = myRandUniform();
 
-	int index = multiNomBasic(probDeathIntegral, maxDtIntervals, currentRand); // maxDtIntervals = maxHostAge here?
+	int index = multiNomBasic1(probDeathIntegral, maxDtIntervals, currentRand); // maxDtIntervals = maxHostAge here?
 
 	// Choose a point in the middle of the interval in which the person dies
 	double ans = (index + 0.5) * demogDt;
@@ -640,39 +664,36 @@ double CSimulator::myRandPoisson()
 	return ignpoi(mu);
 }
 
-// Binomial distribution random number generator (for returning female worm numbers)
-double CSimulator::myRandBinomial()
+// Binomial distribution random number generator
+double CSimulator::myRandBinomial(long n, double p)
 {
     // long ignbin(long n,double p) generates a single random deviate from a binomial distribution (see randlib files)
 	// n is the number of trials, p is probability of event
-	long n = myRandPoisson();
-	double p = 0.5; // Half of worm population should be female
-
 	return ignbin(n,p);
 }
 
 /*
-// Find the cumsum of a vector
-vector<double> CSimulator::cumsum(vector<double> x)
-{
-    vector<double> ans(x.size());
-    ans[0] = x[0];
-    for(unsigned int i = 1;i<x.size();i++)
-    	ans[i] = ans[i-1] + x[i];
-
-    return ans;
-}
-
-// Find the sum of a vector
-double CSimulator::sum(vector<double> x)
+// Find the sum of an array
+double CSimulator::sumArray(double* array,int arrayLength)
 {
 	int sum = 0;
-	for(unsigned int n=0;n<x.size();n++)
+	for(int n=0;n<arrayLength;n++)
 	{
-	  sum += x[n];
+	  sum += array[n];
 	}
 
 	return sum;
+}
+
+// Find the cumsum of a vector
+double* CSimulator::cumsum(double* array,int arrayLength)
+{
+    double* ans = new double[arrayLength];
+    ans[0] = array[0];
+    for(unsigned int i = 1;i<arrayLength;i++)
+    	ans[i] = ans[i-1] + array[i];
+
+    return ans;
 }
 */
 

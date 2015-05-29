@@ -102,8 +102,10 @@ public:
 	// A function to read in a list of doubles into a vector
 	double* readDoublesVector(char* valuesString, int& currentVectorLength);
 	double* vectorArray;
-	// Return an index for the value that is just above a uniform random deviate
-	int multiNomBasic(double* array, int length, double randNum);
+	// Return an index for the value that is just above a uniform random deviate (for drawing lifespans)
+	int multiNomBasic1(double* array, int length, double randNum);
+	// Return an index for the value that is just above a uniform random deviate (for enacting an event in CRealization)
+	int multiNomBasic2(double* array, double arraySum,int length, double randNum);
 	// Calculate the psi value
 	double calculatePsi();
 	// Draw a lifespan from the population survival curve
@@ -115,11 +117,11 @@ public:
 	// A poisson distribution random number generator
 	double myRandPoisson();
 	// A binomial distribution random number generator
-	double myRandBinomial();
+	double myRandBinomial(long n, double p);
+	// Find the sum of an array
+	//double sumArray(double* array,int arrayLength);
 	// Find the cumsum of a vector
-	//vector<double> cumsum(vector<double> x);
-	// Find the sum of a vector
-	//double sum(vector<double> x);
+	//double* cumsum(double* array,int arrayLength);
 	// Find minimum of a list of values
 	double min(double* Numbers, int Count);
 	// Find maximum of a list of values

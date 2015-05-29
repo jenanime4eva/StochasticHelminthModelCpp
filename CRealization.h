@@ -26,6 +26,8 @@ struct surveyResultData
 	double age;
 	double nFemaleWorms;
 	double nTotalWorms;
+	double meanFemaleWormsPerRun;
+	double meanTotalWormsPerRun;
 };
 
 class CRealization
@@ -39,6 +41,7 @@ public:
 
 	// Predetermined event responses
 	bool hostDeathResponse(Event& currentEvent);
+	bool treatmentResponse(Event& currentEvent);
 	bool surveyResultResponse(Event& currentEvent);
 	void debugEventResponse(Event& currentEvent);
 
@@ -49,17 +52,13 @@ public:
 	double tinyIncrement;
 	double sumTotalWorms;
 	double sumFemaleWorms;
-	int* hostContactAgeGroupIndex;
-	int* hostTreatmentAgeGroupIndex;
-	double* currentHostTotalWorms;
-	double* currentHostFemaleWorms;
-	double* hostInfectionRate;
-	double* rates;
-	double sumRates;
-	double* individualCoverage;
+	int* contactAgeGroupIndex;
+	int* treatmentAgeGroupIndex;
 
 	// Functions
 	double freelivingWorms(double* totalWormArray, double* femaleWormArray, double ts);
+	int* hostContactAgeGroupIndex();
+	int* hostTreatmentAgeGroupIndex();
 
 	surveyResultData** surveyResultsArray;
 
