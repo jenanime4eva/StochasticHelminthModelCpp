@@ -20,12 +20,6 @@ using namespace std;
 
 #define BUFFER_SIZE 1024 // Define buffer size
 
-struct wormBurden
-{
-	double time;
-	int nWorms;
-};
-
 class CSimulator {
 public:
 	CSimulator();
@@ -81,9 +75,8 @@ public:
 	bool initialiseSimulation();
 	CParamReader myReader;
 	int nHosts;
-	//wormBurden** results; // Array of worm burdens
 	double nYears;
-	CRealization myRealization; // DEBUG: just one at the moment
+	CRealization myRealization;
 
 	// Simulation
 	void runSimulation();
@@ -105,21 +98,29 @@ public:
 	// Return an index for the value that is just above a uniform random deviate (for drawing lifespans)
 	int multiNomBasic1(double* array, int length, double randNum);
 	// Return an index for the value that is just above a uniform random deviate (for enacting an event in CRealization)
-	int multiNomBasic2(double* array, double arraySum,int length, double randNum);
+	int multiNomBasic2(double* array, int length, double randNum);
 	// Calculate the psi value
 	double calculatePsi();
 	// Draw a lifespan from the population survival curve
 	double drawLifespan();
+	// Contact index array
+	int* contactAgeGroupIndex();
+	int* contactIndices;
+	// Coverage level index array
+	int* treatmentAgeGroupIndex();
+	int* treatmentIndices;
 	// A uniform random number generator
 	double myRandUniform();
 	// A gamma distribution random number generator
-	double myRandGamma();
+	double myRandGamma(double l, double s);
 	// A poisson distribution random number generator
-	double myRandPoisson();
+	double myRandPoisson(double mu);
 	// A binomial distribution random number generator
 	double myRandBinomial(long n, double p);
+	// An exponential distribution random number generator
+	double myRandExponential(double a);
 	// Find the sum of an array
-	//double sumArray(double* array,int arrayLength);
+	double sumArray(double* array,int arrayLength);
 	// Find the cumsum of a vector
 	//double* cumsum(double* array,int arrayLength);
 	// Find minimum of a list of values

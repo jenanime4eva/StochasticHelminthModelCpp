@@ -82,6 +82,8 @@ CSimulator::CSimulator() {
 
 	// Auxiliary functions
 	vectorArray = NULL;
+	contactIndices = NULL;
+	treatmentIndices = NULL;
 }
 
 // Class Destructor
@@ -130,6 +132,12 @@ CSimulator::~CSimulator() {
 
 	if (vectorArray != NULL)
 		delete[] vectorArray;
+
+	if (contactIndices != NULL)
+		delete[] contactIndices;
+
+	if (treatmentIndices != NULL)
+		delete[] treatmentIndices;
 }
 
 // Initialise the input/output aspects of the simulator
@@ -233,7 +241,7 @@ bool CSimulator::initialiseSimulation()
 	maxDtIntervals = (int) floor(muDataUpperBounds[muDataUpperBoundsLength-1]/demogDt);
 	upperAgeBound = maxDtIntervals * demogDt;
 
-	maxHostAgeCompare = new double[1];
+	maxHostAgeCompare = new double[2];
 	maxHostAgeCompare[0] = upperAgeBound;
 	maxHostAgeCompare[1] = contactAgeBreaks[contactAgeBreaksLength-1];
 	maxHostAge = (int) min(maxHostAgeCompare,2); 	// Get maximum host age
@@ -350,10 +358,11 @@ bool CSimulator::initialiseSimulation()
 		surveyResultTimes[i] = surveyResultTimes[i-1] + surveyTimesDt;
 	}
 
-	// Set up a realisation
-	myRealization.initialize(this);
-	// Run a realisation
-	myRealization.run();
+	// Set up realisations
+	for (int repNo=0;repNo<nRepetitions;repNo++)
+	{
+		myRealization.initialize(this,repNo);
+	}
 
 	return true;
 }
@@ -361,14 +370,13 @@ bool CSimulator::initialiseSimulation()
 // Run simulation
 void CSimulator::runSimulation()
 {
-
+	// Loop through the runs
+	for (int repNo=0;repNo<nRepetitions;repNo++)
+	{
+		// Run a realisation
+		myRealization.run(repNo);
+	}
 }
-
-// What simulation outputs do we want to see?
-// 1) Frequency vs Number of worms
-// 2) Individual runs of worm burden across time (FOCUS ON THIS ONE FIRST)
-// 3) Mean worm burden across time
-// 4) Prevalence across time
 
 // Output simulation
 void CSimulator::outputSimulation()
@@ -395,12 +403,9 @@ void CSimulator::outputSimulation()
 				// Look at mean female worms for each individual run across time
 				surveyStream << myRealization.surveyResultsArray[j][repNo].meanFemaleWormsPerRun << "\t";
 
-				/*
-				// Look at total worms for each individual across time
-				surveyStream << myRealization.surveyResultsArray[j][repNo].meanTotalWormsPerRun << "\t";
-				*/
 
 				/*
+				// Only uncomment this if looking at one repetition
 				// Loop through the hosts
 				for (int i = 0; i < nHosts; i++)
 				{
@@ -492,11 +497,12 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 // This function takes a random number (0-1) and multiplies it by the SUM of the passed array.
 // It then finds the smallest index that has an array value greater than the product above.
 // For a cumulative multinomial array, this will return the index of the event that occurred.
-int CSimulator::multiNomBasic2(double* array, double arraySum, int length, double randNum)
+int CSimulator::multiNomBasic2(double* array, int length, double randNum)
 {
 	int loopMax = ceil(log(length) / log(2) + 2);
 	int bottom = -1;
 	int top = length - 1;
+	double arraySum = sumArray(array,length);
 	double topVal = arraySum;
 	double target = topVal * randNum;
 	int count = 0;
@@ -638,6 +644,42 @@ double CSimulator::drawLifespan()
 	return ans;
 }
 
+// Contact index array
+int* CSimulator::contactAgeGroupIndex()
+{
+	contactIndices = new int[maxHostAge];
+
+	int currentContactIndex = 1;
+	for(int i=0;i<maxHostAge;i++)
+	{
+		contactIndices[i] = currentContactIndex-1;
+		if(i >= contactAgeBreaks[currentContactIndex])
+		{
+			currentContactIndex++;
+		}
+	}
+
+	return contactIndices;
+}
+
+// Coverage level index array
+int* CSimulator::treatmentAgeGroupIndex()
+{
+	treatmentIndices = new int[maxHostAge];
+
+	int currentTreatIndex = 1;
+	for(int i=0;i<maxHostAge;i++)
+	{
+		contactIndices[i] = currentTreatIndex-1;
+		if(i >= treatmentBreaks[currentTreatIndex])
+		{
+			currentTreatIndex++;
+		}
+	}
+
+	return treatmentIndices;
+}
+
 // Uniform distribution random number generator (generates real number between 0 to 1)
 double CSimulator::myRandUniform()
 {
@@ -646,20 +688,16 @@ double CSimulator::myRandUniform()
 }
 
 // Gamma distribution random number generator (for returning the value of si, see myRandPoisson function)
-double CSimulator::myRandGamma()
+double CSimulator::myRandGamma(double l, double s)
 {
-	// double gengam(double a,double r) generates random deviates from gamma distribution (see randlib files)
-	// a is location parameter, r is the shape parameter
-	return gengam(k,k);
+	// double gengam(double l,double s) generates random deviates from gamma distribution (see randlib files)
+	// l is location parameter, s is the shape parameter
+	return gengam(l,s);
 }
 
 // Poisson distribution random number generator (for returning total worm numbers)
-double CSimulator::myRandPoisson()
+double CSimulator::myRandPoisson(double mu)
 {
-	double initialWormNumber = 11.5; // Choose this number such that initial conditions are at the equilibrium
-	double si = myRandGamma();
-	double mu = 2*initialWormNumber*si;
-
     // long ignpoi(double mu) generates a single random deviate from a poisson distribution with mean mu (see randlib files)
 	return ignpoi(mu);
 }
@@ -672,11 +710,17 @@ double CSimulator::myRandBinomial(long n, double p)
 	return ignbin(n,p);
 }
 
-/*
+// Exponential distribution random number generator
+double CSimulator::myRandExponential(double a)
+{
+    // double genexp(double a) generates a single random deviate from an exponential distribution with mean a (see randlib files)
+	return genexp(a);
+}
+
 // Find the sum of an array
 double CSimulator::sumArray(double* array,int arrayLength)
 {
-	int sum = 0;
+	double sum = 0;
 	for(int n=0;n<arrayLength;n++)
 	{
 	  sum += array[n];
@@ -685,6 +729,7 @@ double CSimulator::sumArray(double* array,int arrayLength)
 	return sum;
 }
 
+/*
 // Find the cumsum of a vector
 double* CSimulator::cumsum(double* array,int arrayLength)
 {

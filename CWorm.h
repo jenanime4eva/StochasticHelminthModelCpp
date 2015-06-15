@@ -15,6 +15,7 @@ public:
 
 	// Members.
 	double femaleWorms, totalWorms;
+	double freeliving;
 };
 
 #endif /* CWORM_H_ */

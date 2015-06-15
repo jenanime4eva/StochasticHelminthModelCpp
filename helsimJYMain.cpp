@@ -27,7 +27,9 @@ int main(int argc, char** argv)
 	int t1 = time(NULL); // Start clock counter
 
 	// Set the seed
-	srand(time(NULL)); // Initialise random number generator
+	// Initialise random number generator
+	//srand(time(NULL));
+	srand(1); // For testing
 
 	// Create a CSimulator object
 	CSimulator simulator;
@@ -40,6 +42,7 @@ int main(int argc, char** argv)
 	}
 
 	simulator.initialiseSimulation(); // General initialisation
+	simulator.runSimulation(); // Run simulation
 	simulator.outputSimulation(); // Output simulation
 
 	int t2 = time(NULL); // Stop clock counter
