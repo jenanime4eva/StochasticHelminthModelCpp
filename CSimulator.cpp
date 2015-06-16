@@ -409,22 +409,21 @@ void CSimulator::outputSimulation()
 			// Loop through the realisations
 			for (int repNo = 0; repNo < nRepetitions; repNo++)
 			{
+				surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanFemaleWormsPerRun << "\t" << std::flush;;
 				// Loop through the hosts
-				for (int i = 0; i < nHosts; i++)
-				{
+				//for (int i = 0; i < nHosts; i++)
+				//{
 					// Look at female worms for each host across time
-					surveyStream << myRealization[repNo]->surveyResultsArray[i][j].nFemaleWorms << "\t";
-				}
-				surveyStream << "\n" << std::flush;
-
+					//surveyStream << myRealization[repNo]->surveyResultsArrayPerHost[j][i].nFemaleWorms << "\t";
+				//}
 				// Only uncomment this if looking at one repetition
 				// Loop through the hosts
 				//for (int i = 0; i < nHosts; i++)
 				//{
-					//surveyStream << myRealization.surveyResultsArray[i][j].age << "\t" << std::flush;;
+					//surveyStream << myRealization.surveyResultsArrayPerHost[i][j].age << "\t" << std::flush;;
 				//}
-				//surveyStream << "\n" << std::flush;
 			}
+			surveyStream << "\n" << std::flush;
 		}
 	}
 }

@@ -23,7 +23,6 @@ using namespace std;
 // Structure to contain data from individuals in survey results
 struct surveyResultData
 {
-	double runIndex;
 	double age;
 	double nFemaleWorms;
 	double nTotalWorms;
@@ -66,7 +65,8 @@ public:
 	// Other functions
 	double* calculateRates(double timeNow);
 
-	surveyResultData** surveyResultsArray;
+	surveyResultData** surveyResultsArrayPerHost;
+	surveyResultData** surveyResultsArrayPerRun;
 
 	// Realization event queue
 	CPreDetEventQueue localEvents;

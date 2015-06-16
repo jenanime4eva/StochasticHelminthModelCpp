@@ -25,7 +25,8 @@ CRealization::CRealization()
 	tinyIncrement = 0.01;
 	sumTotalWorms = 0;
 	sumFemaleWorms = 0;
-	surveyResultsArray = NULL;
+	surveyResultsArrayPerHost = NULL;
+	surveyResultsArrayPerRun = NULL;
 	hostTotalWorms = NULL;
 	hostFemaleWorms = NULL;
 	productiveFemaleWorms = NULL;
@@ -76,12 +77,20 @@ CRealization::~CRealization()
 	if (rates != NULL)
 		delete[] rates;
 
-	if(surveyResultsArray!=NULL)
+	if(surveyResultsArrayPerHost!=NULL)
 	{
 		for(i=0;i<owner->surveyResultTimesLength;i++)
-			delete[] surveyResultsArray[i];
+			delete[] surveyResultsArrayPerHost[i];
 
-		delete[] surveyResultsArray;
+		delete[] surveyResultsArrayPerHost;
+	}
+
+	if(surveyResultsArrayPerRun!=NULL)
+	{
+		for(i=0;i<owner->surveyResultTimesLength;i++)
+			delete[] surveyResultsArrayPerRun[i];
+
+		delete[] surveyResultsArrayPerRun;
 	}
 }
 
@@ -147,12 +156,16 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	{
 		// There are survey results to collect
 		// For each time point set up an array of surveyResultData structures the length of the population size
-		surveyResultsArray = new surveyResultData*[owner->surveyResultTimesLength];
+		//surveyResultsArrayPerHost = new surveyResultData*[owner->surveyResultTimesLength];
+		// For each time point set up an array of surveyResultData structures the length of the number of realisations
+		surveyResultsArrayPerRun = new surveyResultData*[owner->surveyResultTimesLength];
 		for(int i=0;i<owner->surveyResultTimesLength;i++)
 		{
-			surveyResultsArray[i] = new surveyResultData[nHosts];
-			// Add a pointer to the array that's going to hold the data
-			localEvents.addEvent(SURVEY_EVENT,owner->surveyResultTimes[i],surveyResultsArray[i]);
+			//surveyResultsArrayPerHost[i] = new surveyResultData[nHosts];
+			surveyResultsArrayPerRun[i] = new surveyResultData[owner->nRepetitions];
+			// Add a pointer to the arrays that are going to hold the data
+			//localEvents.addEvent(SURVEY_EVENT,owner->surveyResultTimes[i],surveyResultsArrayPerHost[i]);
+			localEvents.addEvent(SURVEY_EVENT,owner->surveyResultTimes[i],surveyResultsArrayPerRun[i]);
 		}
 	}
 
@@ -396,8 +409,11 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 // What to output from the simulation
 bool CRealization::surveyResultResponse(Event& currentEvent)
 {
-	// Collect data from each host individual
+	// Collect data from each run
 	surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
+
+	// Collect data from each host individual
+	//surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
 
 	/*
 	// For looking at the host ages across time
@@ -407,9 +423,16 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	}
 	*/
 
+	double sumFemaleWormsPerRun = 0;
+	// Female worms for each host
 	for(int i=0;i<nHosts;i++)
 	{
-		outputArray[i].nFemaleWorms += hostPopulation[i]->femaleWorms;
+		sumFemaleWormsPerRun += hostPopulation[i]->femaleWorms;
+	}
+	// For each realisation
+	for(int rIndex=0;rIndex<owner->nRepetitions;rIndex++)
+	{
+		outputArray[rIndex].meanFemaleWormsPerRun = sumFemaleWormsPerRun/nHosts;
 	}
 
 	return true;
