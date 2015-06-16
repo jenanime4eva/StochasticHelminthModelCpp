@@ -20,6 +20,12 @@ using namespace std;
 
 #define BUFFER_SIZE 1024 // Define buffer size
 
+struct resultsCollection
+{
+	double time;
+	double meanFemaleWormsPerRun;
+};
+
 class CSimulator {
 public:
 	CSimulator();
@@ -28,8 +34,7 @@ public:
 	// File input/output
 	ofstream logStream; // Output to log file
 	bool initialiseIO(char* run, char* path, char* paramFilePath);
-	int nRepetitions, nOutputsPerYear, nTimeSteps;
-	double dt;
+	int nRepetitions;
 	string runName;
 	string thePath;
 
@@ -76,7 +81,7 @@ public:
 	CParamReader myReader;
 	int nHosts;
 	double nYears;
-	CRealization myRealization;
+	CRealization** myRealization; // Array of realisations
 
 	// Simulation
 	void runSimulation();

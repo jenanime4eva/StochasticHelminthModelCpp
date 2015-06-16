@@ -27,9 +27,6 @@ CSimulator::CSimulator() {
 	nRepetitions = 0;
 	nYears = 0;
 	nHosts = 0;
-	nOutputsPerYear = 0;
-	nTimeSteps = 0;
-	dt = 0;
 
 	// Social structure
 	contactAgeBreaks = NULL;
@@ -84,6 +81,8 @@ CSimulator::CSimulator() {
 	vectorArray = NULL;
 	contactIndices = NULL;
 	treatmentIndices = NULL;
+
+	myRealization = NULL;
 }
 
 // Class Destructor
@@ -138,6 +137,15 @@ CSimulator::~CSimulator() {
 
 	if (treatmentIndices != NULL)
 		delete[] treatmentIndices;
+
+	int r;
+	if(myRealization!=NULL)
+	{
+		for(r=0;r<nRepetitions;r++)
+			delete myRealization[r];
+
+		delete[] myRealization;
+	}
 }
 
 // Initialise the input/output aspects of the simulator
@@ -358,10 +366,14 @@ bool CSimulator::initialiseSimulation()
 		surveyResultTimes[i] = surveyResultTimes[i-1] + surveyTimesDt;
 	}
 
+	// Set up realisation array
+	myRealization = new CRealization*[nRepetitions];
+
 	// Set up realisations
 	for (int repNo=0;repNo<nRepetitions;repNo++)
 	{
-		myRealization.initialize(this,repNo);
+		myRealization[repNo] = new CRealization;
+		myRealization[repNo]->initialize(this,repNo);
 	}
 
 	return true;
@@ -374,7 +386,7 @@ void CSimulator::runSimulation()
 	for (int repNo=0;repNo<nRepetitions;repNo++)
 	{
 		// Run a realisation
-		myRealization.run(repNo);
+		myRealization[repNo]->run(repNo);
 	}
 }
 
@@ -394,30 +406,25 @@ void CSimulator::outputSimulation()
 		{
 			surveyStream << surveyResultTimes[j] << "\t";
 
-			// Loop through the runs
+			// Loop through the realisations
 			for (int repNo = 0; repNo < nRepetitions; repNo++)
 			{
-
-				// CHOOSE WHAT OUTPUT YOU WANT (UNCOMMENT ACCORDINGLY)
-
-				// Look at mean female worms for each individual run across time
-				surveyStream << myRealization.surveyResultsArray[j][repNo].meanFemaleWormsPerRun << "\t";
-
-
-				/*
-				// Only uncomment this if looking at one repetition
 				// Loop through the hosts
 				for (int i = 0; i < nHosts; i++)
 				{
-					// Look at the ages across time
-					for (int j = 0; j < surveyResultTimesLength; j++)
-					{
-						surveyStream << myRealization.surveyResultsArray[j][i].age << "\t" << std::flush;;
-					}
+					// Look at female worms for each host across time
+					surveyStream << myRealization[repNo]->surveyResultsArray[i][j].nFemaleWorms << "\t";
 				}
-				*/
+				surveyStream << "\n" << std::flush;
+
+				// Only uncomment this if looking at one repetition
+				// Loop through the hosts
+				//for (int i = 0; i < nHosts; i++)
+				//{
+					//surveyStream << myRealization.surveyResultsArray[i][j].age << "\t" << std::flush;;
+				//}
+				//surveyStream << "\n" << std::flush;
 			}
-			surveyStream << "\n" << std::flush;
 		}
 	}
 }

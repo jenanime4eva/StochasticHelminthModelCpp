@@ -407,14 +407,10 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	}
 	*/
 
-	// For looking at mean female worm burdens for individual runs across time
-	double sumFemaleWormsPerRun = 0;
 	for(int i=0;i<nHosts;i++)
 	{
 		outputArray[i].nFemaleWorms += hostPopulation[i]->femaleWorms;
-		sumFemaleWormsPerRun = outputArray[i].nFemaleWorms + sumFemaleWormsPerRun; // Get sum of female worms per run
 	}
-	outputArray->meanFemaleWormsPerRun = sumFemaleWormsPerRun/nHosts;
 
 	return true;
 }
