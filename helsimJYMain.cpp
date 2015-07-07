@@ -20,7 +20,8 @@ int main(int argc, char** argv)
 	// Do we have the correct command line?
 	if(argc!=4)
 	{
-		std::cout << "Incorrect command line. 4 expected arguments: .exe file(space)Run name e.g. Test(space)Path to output log and results files(space)Path of parameter file\n";
+		std::cout << "Incorrect command line. 4 expected arguments: .exe file(space)Run name(space)Path to output log and results files(space)Path of parameter file\n";
+		std::cout << "Example: NAME.exe TEST C:/FOLDER/ C:/PARAMETER.txt\n";
 		return 0; 
 	}
 
@@ -42,12 +43,15 @@ int main(int argc, char** argv)
 	}
 
 	simulator.initialiseSimulation(); // General initialisation
+	//printf ("Initialisation completed"); // Test flag
 	simulator.runSimulation(); // Run simulation
+	//printf ("\nRun simulation completed"); // Test flag
 	simulator.outputSimulation(); // Output simulation
+	//printf ("\nOutput simulation completed"); // Test flag
 
 	int t2 = time(NULL); // Stop clock counter
 
-	printf ("\nTime taken = %d secs\n", t2 - t1); // Print time taken in seconds to run the program to the console
+	printf ("\n\nTime taken = %d secs", t2 - t1); // Print time taken in seconds to run the program to the console
 
 	return 1; 
 }

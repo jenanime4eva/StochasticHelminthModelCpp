@@ -69,6 +69,8 @@ CSimulator::CSimulator() {
 	treatStart = 0;
 	treatEnd = 0;
 	treatInterval = 0;
+	treatmentTimes = NULL;
+	treatmentTimesLength = 0;
 
 	// Results
 	surveyTimesBegin = 0;
@@ -125,6 +127,9 @@ CSimulator::~CSimulator() {
 
 	if (coverage != NULL)
 		delete[] coverage;
+
+	if (treatmentTimes != NULL)
+		delete[] treatmentTimes;
 
 	if (surveyResultTimes != NULL)
 		delete[] surveyResultTimes;
@@ -292,14 +297,14 @@ bool CSimulator::initialiseSimulation()
 	k = atof(myReader.getParamString("k"));
 
 	// Eggs per gram
-	lambda = atoi(myReader.getParamString("lambda"));
+	lambda = atof(myReader.getParamString("lambda"));
 
 	// Basic reproductive number
 	R0 = atof(myReader.getParamString("R0"));
 	logStream << "\nR0: " << R0 << "\n" << std::flush; // Test flag
 
 	// Decay rate of eggs in the environment
-	ReservoirDecayRate = atoi(myReader.getParamString("ReservoirDecayRate"));
+	ReservoirDecayRate = atof(myReader.getParamString("ReservoirDecayRate"));
 
 	// Worm death rate i.e. 1/worm life span, same for all development stages
 	sigma = atof(myReader.getParamString("sigma"));
@@ -342,12 +347,18 @@ bool CSimulator::initialiseSimulation()
 
 	// Treatment year start
 	treatStart = atoi(myReader.getParamString("treatStart"));
-
 	// Treatment year end
 	treatEnd = atoi(myReader.getParamString("treatEnd"));
-
 	// Interval between treatments in years
 	treatInterval = atof(myReader.getParamString("treatInterval"));
+	// Now create a vector of treatment times
+	treatmentTimesLength = (int) ((treatEnd - treatStart)/treatInterval)+1;
+	treatmentTimes = new double[treatmentTimesLength];
+	treatmentTimes[0] = treatStart; // First vector entry
+	for (int i=1;i<treatmentTimesLength;i++)
+	{
+		treatmentTimes[i] = treatmentTimes[i-1] + treatInterval;
+	}
 
 	// SET UP RESULTS COLLECTION
 
@@ -358,13 +369,17 @@ bool CSimulator::initialiseSimulation()
 	// Time step for the survey times in years
 	surveyTimesDt = atof(myReader.getParamString("surveyTimesDt"));
 	// Now create a vector of survey result times
-	surveyResultTimesLength = ((surveyTimesEnd - surveyTimesBegin)/surveyTimesDt)+1;
+	surveyResultTimesLength = (int) ((surveyTimesEnd - surveyTimesBegin)/surveyTimesDt)+1;
 	surveyResultTimes = new double[surveyResultTimesLength];
 	surveyResultTimes[0] = surveyTimesBegin; // First vector entry
 	for (int i=1;i<surveyResultTimesLength;i++)
 	{
 		surveyResultTimes[i] = surveyResultTimes[i-1] + surveyTimesDt;
 	}
+
+	// Set up arrays to be used later
+	contactIndices = new int[maxHostAge];
+	treatmentIndices = new int[maxHostAge];
 
 	// Set up realisation array
 	myRealization = new CRealization*[nRepetitions];
@@ -387,6 +402,7 @@ void CSimulator::runSimulation()
 	{
 		// Run a realisation
 		myRealization[repNo]->run(repNo);
+		//printf ("\nrepNo = %d",repNo); // Test flag
 	}
 }
 
@@ -653,8 +669,6 @@ double CSimulator::drawLifespan()
 // Contact index array
 int* CSimulator::contactAgeGroupIndex()
 {
-	contactIndices = new int[maxHostAge];
-
 	int currentContactIndex = 1;
 	for(int i=0;i<maxHostAge;i++)
 	{
@@ -668,15 +682,13 @@ int* CSimulator::contactAgeGroupIndex()
 	return contactIndices;
 }
 
-// Coverage level index array
+// Treatment level index array
 int* CSimulator::treatmentAgeGroupIndex()
 {
-	treatmentIndices = new int[maxHostAge];
-
 	int currentTreatIndex = 1;
 	for(int i=0;i<maxHostAge;i++)
 	{
-		contactIndices[i] = currentTreatIndex-1;
+		treatmentIndices[i] = currentTreatIndex-1;
 		if(i >= treatmentBreaks[currentTreatIndex])
 		{
 			currentTreatIndex++;
@@ -717,10 +729,11 @@ double CSimulator::myRandBinomial(long n, double p)
 }
 
 // Exponential distribution random number generator
-double CSimulator::myRandExponential(double a)
+double CSimulator::myRandExponential(double rateValue)
 {
     // double genexp(double a) generates a single random deviate from an exponential distribution with mean a (see randlib files)
-	return genexp(a);
+	// N.B. Mean = 1/rateValue
+	return genexp(1/rateValue);
 }
 
 // Find the sum of an array
@@ -734,19 +747,6 @@ double CSimulator::sumArray(double* array,int arrayLength)
 
 	return sum;
 }
-
-/*
-// Find the cumsum of a vector
-double* CSimulator::cumsum(double* array,int arrayLength)
-{
-    double* ans = new double[arrayLength];
-    ans[0] = array[0];
-    for(unsigned int i = 1;i<arrayLength;i++)
-    	ans[i] = ans[i-1] + array[i];
-
-    return ans;
-}
-*/
 
 // Function to find minimum of a list of values
 double CSimulator::min(double* Numbers, int Count)
@@ -779,3 +779,22 @@ double CSimulator::max(double* Numbers, int Count)
 
 	return Maximum;
 }
+
+// Return index of smallest element in an array
+int CSimulator::indexSmallestElement(double* array, int size)
+{
+    int smallestIndex = 0;
+    double temp=array[0];
+    int i;
+    for(i=0;i<size;i++)
+    {
+        if(array[i]<temp)
+        {
+            smallestIndex = i;
+            temp=array[i];
+        }
+    }
+
+    return smallestIndex;
+}
+

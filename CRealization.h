@@ -60,10 +60,20 @@ public:
 	double* hostInfectionRate;
 	int* contactAgeGroupIndex;
 	int* treatmentAgeGroupIndex;
+	double hostAge;
+	int* q;
 	double* rates;
-
-	// Other functions
-	double* calculateRates(double timeNow);
+	double* nextStepCompare;
+	int nextStepCompareLength;
+	double* newNextStepCompare;
+	int newNextStepCompareLength;
+	double* chemoTimes;
+	double* outTimes;
+	double timeNow;
+	int surveyLength;
+	int treatLength;
+	double ageingInterval;
+	double maxStep;
 
 	surveyResultData** surveyResultsArrayPerHost;
 	surveyResultData** surveyResultsArrayPerRun;

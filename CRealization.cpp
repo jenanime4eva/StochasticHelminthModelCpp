@@ -35,7 +35,20 @@ CRealization::CRealization()
 	hostInfectionRate = NULL;
 	contactAgeGroupIndex = NULL;
 	treatmentAgeGroupIndex = NULL;
+	q = NULL;
+	hostAge = 0;
 	rates = NULL;
+	nextStepCompare = NULL;
+	nextStepCompareLength = 4;
+	newNextStepCompare = NULL;
+	newNextStepCompareLength = 4;
+	chemoTimes = NULL;
+	outTimes = NULL;
+	timeNow = 0;
+	surveyLength = 0;
+	treatLength = 0;
+	ageingInterval = 0.25; // Checks ages every quarter year
+	maxStep = (double) 1/52; // Time steps never exceed this for deterministic update of freeliving populations
 }
 
 // Class destructor
@@ -74,8 +87,23 @@ CRealization::~CRealization()
 	if (treatmentAgeGroupIndex != NULL)
 		delete[] treatmentAgeGroupIndex;
 
+	if (q != NULL)
+		delete[] q;
+
 	if (rates != NULL)
 		delete[] rates;
+
+	if (nextStepCompare != NULL)
+		delete[] nextStepCompare;
+
+	if (newNextStepCompare != NULL)
+		delete[] newNextStepCompare;
+
+	if (chemoTimes != NULL)
+		delete[] chemoTimes;
+
+	if (outTimes != NULL)
+		delete[] outTimes;
 
 	if(surveyResultsArrayPerHost!=NULL)
 	{
@@ -111,6 +139,18 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	eggsProductionRate = new double[nHosts];
 	hostInfectionRate = new double[nHosts];
 
+	// Set up some variables for use later
+	surveyLength = owner->surveyResultTimesLength;
+	treatLength = owner->treatmentTimesLength;
+
+	// Set up some arrays for use later
+	rates = new double[nHosts+1];
+	nextStepCompare = new double[nextStepCompareLength];
+	newNextStepCompare = new double[newNextStepCompareLength];
+	q = new int[nHosts];
+	chemoTimes = new double[owner->treatmentTimesLength];
+	outTimes = new double[owner->surveyResultTimesLength];
+
 	// Set up host population array
 	hostPopulation = new CHost* [nHosts];
 	for (int i=0;i<nHosts;i++)
@@ -140,23 +180,19 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	}
 
 	// Add treatment events
-	double treatmentTimeElapsed = 0;
-	while((owner->treatEnd - owner->treatStart) != treatmentTimeElapsed)
+	for(int i=0;i<owner->treatmentTimesLength;i++)
 	{
-		localEvents.addEvent(CHEMOTHERAPY,owner->treatStart+treatmentTimeElapsed,NULL);
-		treatmentTimeElapsed = treatmentTimeElapsed + owner->treatInterval;
+		localEvents.addEvent(CHEMOTHERAPY,owner->treatmentTimes[i],NULL);
 	}
-	localEvents.addEvent(CHEMOTHERAPY,owner->treatEnd,NULL); // Last treatment time
-
-	// Add run termination point
-	localEvents.addEvent(TERMINATE,owner->nYears,NULL);
 
 	// Set up results collection for this realisation
 	if(owner->surveyResultTimes!=NULL)
 	{
 		// There are survey results to collect
+
 		// For each time point set up an array of surveyResultData structures the length of the population size
 		//surveyResultsArrayPerHost = new surveyResultData*[owner->surveyResultTimesLength];
+
 		// For each time point set up an array of surveyResultData structures the length of the number of realisations
 		surveyResultsArrayPerRun = new surveyResultData*[owner->surveyResultTimesLength];
 		for(int i=0;i<owner->surveyResultTimesLength;i++)
@@ -172,44 +208,71 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	// DEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUGDEBUG
 	localEvents.addEvent(DEBUG_EVENT,owner->nYears - 5.0,NULL);
 
+	//printf ("\nrepNo = %d",repNo); // Test flag
+
 	return true;
 }
 
 // Run the realisation
 bool CRealization::run(int repNo)
 {
-	Event currentEvent;
-
-	// Set some defaults
-	double maxStep = 1/52; // Time steps never exceed this for deterministic update of freeliving populations
+	printf("\nrepNo: %d\n",repNo); // Test flag
 
 	// Some initial time-related variables
 	double timeNow = 0;
 	double FLlast = timeNow;
-	int nextOutIndex = 0;
-	double nextOutTime = owner->surveyResultTimes[nextOutIndex]; // First survey output time
-	double ageingInterval = 0.25; // Checks ages every quarter year
+
+	for(int i=0;i<surveyLength;i++)
+	{
+		outTimes[i] = owner->surveyResultTimes[i];
+	}
+
+	int nextOutIndex = owner->indexSmallestElement(outTimes,surveyLength);
+	double nextOutTime = outTimes[nextOutIndex]; // First survey output time
 	double nextAgeTime = ageingInterval;
-	double chemoTimeElapsed = 0;
-	double nextChemoTime = owner->treatStart; // First chemotherapy time
-	double* nextStepCompare = new double[4];
+
+	for(int j=0;j<treatLength;j++)
+	{
+		chemoTimes[j] = owner->treatmentTimes[j];
+	}
+
+	int nextChemoIndex = owner->indexSmallestElement(chemoTimes,treatLength);
+	double nextChemoTime = chemoTimes[nextChemoIndex]; // First chemotherapy time
+
 	nextStepCompare[0] = nextOutTime;
 	nextStepCompare[1] = timeNow+maxStep;
 	nextStepCompare[2] = nextChemoTime;
 	nextStepCompare[3] = nextAgeTime;
-	double nextStep = owner->min(nextStepCompare,4); 	// Get minimum value of the nextStepCompare array
-
-
-	// Delete any arrays no longer required
-	if (nextStepCompare != NULL)
-		delete[] nextStepCompare;
+	 // Get minimum value of the nextStepCompare array
+	double nextStep = owner->min(nextStepCompare,4);
 
 	//double elimTime = -1; // Default elimination time
 
+	int outCount = 1;
+
+	Event currentEvent;
+
 	do
 	{
+		// Calculate the event rates (host infection rate and worm total death rate)
+		for (int i=0;i<nHosts;i++)
+		{
+			// Work out q array
+			hostAge = (int) (floor(abs(timeNow - hostPopulation[i]->birthDate))/owner->demogDt);
+			q[i] = hostAge;
+			if (q[i] >= owner->maxHostAge)
+			{
+				q[i] = owner->maxHostAge - 1;
+			}
+
+			hostInfectionRate[i] = hostPopulation[i]->freeliving*owner->myRandGamma(owner->k,owner->k)*owner->betaValues[owner->contactAgeGroupIndex()[q[i]]];
+			rates[i] = hostInfectionRate[i];
+		}
+		double wormTotalDeathRate = owner->sigma*sumTotalWorms;
+		rates[nHosts] = wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
+
 		// Calculate sum of rates
-		double sumRates = owner->sumArray(calculateRates(timeNow),nHosts+1);
+		double sumRates = owner->sumArray(rates,nHosts+1);
 
 		/*
 		if(sumRates < 1)
@@ -220,16 +283,14 @@ bool CRealization::run(int repNo)
 
 		double tstep = owner->myRandExponential(sumRates);
 
-		// Do stochastic events up to the time of the next event
-
 		if( (timeNow+tstep) < nextStep )
 		{
 			timeNow = timeNow + tstep;
 
 			// Enact an event
 			// Determine if dead worm or new worm
-			int ratesLength = nHosts+1;
-			int event = owner->multiNomBasic2(calculateRates(timeNow),ratesLength,owner->myRandUniform());
+			int ratesLength = nHosts; // Remember in C++, array counts start from 0
+			int event = owner->multiNomBasic2(rates,ratesLength,owner->myRandUniform());
 
 			for(int i=0;i<nHosts;i++)
 			{
@@ -260,8 +321,11 @@ bool CRealization::run(int repNo)
 				}
 			}
 		}
-		else
+		else // (timeNow+tstep) >= nextStep
 		{
+			// Time step
+			double ts = nextStep - FLlast;
+
 			// Update the freeliving worm populations (worms found in the environment) deterministically
 			for(int i=0;i<nHosts;i++)
 			{
@@ -273,23 +337,17 @@ bool CRealization::run(int repNo)
 				}
 
 				eggsOutputPerHost[i] = owner->lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*owner->gamma);
-				int q = (int) floor(abs(timeNow - hostPopulation[i]->birthDate)/owner->demogDt);
-				if (q >= owner->maxHostAge)
-				{
-					q = owner->maxHostAge - 1;
-				}
-				eggsProductionRate[i] = owner->psi*eggsOutputPerHost[i]*owner->rhoValues[owner->contactAgeGroupIndex()[q]];
-
-				// Time step
-				double ts = nextStep - FLlast;
+				eggsProductionRate[i] = owner->psi*eggsOutputPerHost[i]*owner->rhoValues[owner->contactAgeGroupIndex()[q[i]]];
 				double expo = exp(-owner->ReservoirDecayRate*ts);
-				hostPopulation[i]->freeliving = hostPopulation[i]->freeliving*expo + eggsProductionRate[i]*(1-expo)/(owner->ReservoirDecayRate);
+				hostPopulation[i]->freeliving = hostPopulation[i]->freeliving*expo + eggsProductionRate[i]*(1.0-expo)/(owner->ReservoirDecayRate);
 			}
 
 			FLlast = nextStep;
 
 			// Get next predetermined event
 			localEvents.popEvent(currentEvent);
+
+			//double timeBarrier = nextStep + 0.001;
 
 			// Do the event
 			switch (currentEvent.type)
@@ -302,37 +360,31 @@ bool CRealization::run(int repNo)
 
 				// Apply treatment
 				case CHEMOTHERAPY:
+					for(int i=0;i<nHosts;i++)
 					{
-						for(int i=0;i<nHosts;i++)
+						int hostContactIndex = owner->contactAgeGroupIndex()[q[i]];
+						double individualCoverage = owner->coverage[hostContactIndex];
+
+						bool individualTreated = owner->myRandUniform()<individualCoverage;
+
+						// If individualTreated is TRUE
+						if (individualTreated)
 						{
-							int q = (int) floor(abs(currentEvent.time - hostPopulation[i]->birthDate)/owner->demogDt);
-							if (q >= owner->maxHostAge)
-							{
-								q = owner->maxHostAge - 1;
-							}
-							int hostContactIndex = owner->contactAgeGroupIndex()[q];
-							double individualCoverage = owner->coverage[hostContactIndex];
+							// How many worms to die?
+							double totalW = hostPopulation[i]->totalWorms;
+							double femaleW = hostPopulation[i]->femaleWorms;
+							double maleW = totalW - femaleW;
 
-							bool individualTreated = owner->myRandUniform()<individualCoverage;
+							double maleToDie = owner->myRandBinomial(maleW,owner->drugEff);
+							double femaleToDie = owner->myRandBinomial(femaleW,owner->drugEff);
 
-							// If individualTreated is TRUE
-							if (individualTreated)
-							{
-								// How many worms to die?
-								double totalW = hostPopulation[i]->totalWorms;
-								double femaleW = hostPopulation[i]->femaleWorms;
-								double maleW = totalW - femaleW;
-
-								double maleToDie = owner->myRandBinomial(maleW,owner->drugEff);
-								double femaleToDie = owner->myRandBinomial(femaleW,owner->drugEff);
-
-								hostPopulation[i]->totalWorms = totalW - maleToDie - femaleToDie;
-								hostPopulation[i]->femaleWorms = femaleW - femaleToDie;
-							}
+							hostPopulation[i]->totalWorms = totalW - maleToDie - femaleToDie;
+							hostPopulation[i]->femaleWorms = femaleW - femaleToDie;
 						}
 					}
-					chemoTimeElapsed += owner->treatInterval;
-					nextChemoTime = owner->treatStart + chemoTimeElapsed;
+					chemoTimes[nextChemoIndex] = owner->nYears + 10; // The 10 is to make sure chemo isn't been done at maxTime
+					nextChemoIndex = owner->indexSmallestElement(chemoTimes,owner->treatmentTimesLength);
+					nextChemoTime = chemoTimes[nextChemoIndex];
 					break;
 
 				// Any events to debug?
@@ -343,34 +395,31 @@ bool CRealization::run(int repNo)
 				// What to output from the simulation
 				case SURVEY_EVENT:
 					surveyResultResponse(currentEvent);
-					nextOutIndex++;
-					nextOutTime = owner->surveyResultTimes[nextOutIndex];
-					break;
-
-				// Stop simulation when maximum number of years reached
-				case TERMINATE:
+					outCount++;
+					outTimes[nextOutIndex] = owner->nYears + 10;
+					nextOutIndex = owner->indexSmallestElement(outTimes,owner->surveyResultTimesLength);
+					nextOutTime = outTimes[nextOutIndex];
 					break;
 
 				default:
 					owner->logStream << "Event number " << currentEvent.type << " not known.\n"
 					<< "Look at #define values in CPreDetEventQueue.h for definition.\n" << std::flush;
 					break;
-
-				timeNow = nextStep;
-
-				double* newNextStepCompare = new double[4];
-				newNextStepCompare[0] = nextOutTime;
-				newNextStepCompare[1] = timeNow+maxStep;
-				newNextStepCompare[2] = nextChemoTime;
-				newNextStepCompare[3] = nextAgeTime;
-				nextStep = owner->min(newNextStepCompare,4); 	// Get new minimum value of the nextStepCompare array
-
-				// Delete any arrays no longer required
-				if (newNextStepCompare != NULL)
-					delete[] newNextStepCompare;
 			}
+
+			timeNow = nextStep;
+			newNextStepCompare[0] = nextOutTime;
+			newNextStepCompare[1] = timeNow+maxStep;
+			newNextStepCompare[2] = nextChemoTime;
+			newNextStepCompare[3] = nextAgeTime;
+			// Get new minimum value of the nextStepCompare array
+			nextStep = owner->min(newNextStepCompare,4);
+			//printf("\nnextOutTime is %f",newNextStepCompare[0]); // Test flag
+			//printf("\ntimeNow+maxStep is %f",newNextStepCompare[1]); // Test flag
+			//printf("\nnextChemoTime is %f",newNextStepCompare[2]); // Test flag
+			//printf("\nnextAgeTime is %f\n",newNextStepCompare[3]); // Test flag
 		}
-	} while(currentEvent.type!=TERMINATE); // Do events until the last survey year is reached
+	} while((timeNow<owner->nYears) && (outCount<=surveyLength)); // Do events until the last survey year is reached
 
 	return true;
 }
@@ -444,30 +493,3 @@ void CRealization::debugEventResponse(Event& currentEvent)
 
 }
 
-
-//////////////////////////////////////////////////////////////////////////////////
-/// OTHER FUNCTIONS
-
-// Calculate the event rates
-double* CRealization::calculateRates(double timeNow)
-{
-	// Set up some arrays
-	rates = new double[nHosts+1];
-
-	for (int i=0;i<nHosts;i++)
-	{
-		int q = (int) floor(abs(timeNow - hostPopulation[i]->birthDate)/owner->demogDt);
-		if (q >= owner->maxHostAge)
-		{
-			q = owner->maxHostAge - 1;
-		}
-		hostInfectionRate[i] = hostPopulation[i]->freeliving*owner->myRandGamma(owner->k,owner->k)*owner->betaValues[owner->contactAgeGroupIndex()[q]];
-		rates[i] = hostInfectionRate[i];
-	}
-
-	// Calculate the event rates (host infection rate and worm total death rate)
-	double wormTotalDeathRate = owner->sigma*sumTotalWorms;
-	rates[nHosts] = wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
-
-	return rates;
-}

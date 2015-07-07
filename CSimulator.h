@@ -65,15 +65,19 @@ public:
 
 	// Epidemiological parameters
 	double k, R0, sigma, gamma, z, psi;
-	int lambda, ReservoirDecayRate;
+	double lambda, ReservoirDecayRate;
 
 	// Treatment
 	double* treatmentBreaks;
 	int treatmentBreaksLength;
 	double* coverage;
 	int coverageLength;
-	double drugEff, treatInterval;
-	int treatStart, treatEnd;
+	double drugEff;
+	int treatStart;
+	int treatEnd;
+	double treatInterval;
+	double* treatmentTimes;
+	int treatmentTimesLength;
 
 	// General initialisation
 	char buffer[BUFFER_SIZE];
@@ -111,7 +115,7 @@ public:
 	// Contact index array
 	int* contactAgeGroupIndex();
 	int* contactIndices;
-	// Coverage level index array
+	//Treatment index array
 	int* treatmentAgeGroupIndex();
 	int* treatmentIndices;
 	// A uniform random number generator
@@ -126,12 +130,12 @@ public:
 	double myRandExponential(double a);
 	// Find the sum of an array
 	double sumArray(double* array,int arrayLength);
-	// Find the cumsum of a vector
-	//double* cumsum(double* array,int arrayLength);
 	// Find minimum of a list of values
 	double min(double* Numbers, int Count);
 	// Find maximum of a list of values
 	double max(double* Numbers, int Count);
+	// Return index of smallest element in an array
+	int indexSmallestElement(double* array, int size);
 };
 
 #endif /* CSIMULATOR_H_ */
