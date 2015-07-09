@@ -29,6 +29,15 @@ struct surveyResultData
 	double meanFemaleWormsPerRun;
 	double meanTotalWormsPerRun;
 	double nFreeliving;
+	double meanInfantFemaleWormsPerRun;
+	double meanPreSACFemaleWormsPerRun;
+	double meanSACFemaleWormsPerRun;
+	double meanAdultFemaleWormsPerRun;
+	double meanFemaleWorms;
+	double meanInfantFemaleWorms;
+	double meanPreSACFemaleWorms;
+	double meanSACFemaleWorms;
+	double meanAdultFemaleWorms;
 };
 
 class CRealization
@@ -77,6 +86,7 @@ public:
 
 	surveyResultData** surveyResultsArrayPerHost;
 	surveyResultData** surveyResultsArrayPerRun;
+
 
 	// Realization event queue
 	CPreDetEventQueue localEvents;

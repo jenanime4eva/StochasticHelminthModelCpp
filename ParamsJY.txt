@@ -7,7 +7,7 @@
 ### Model running parameters
 repNum	10								## Number of repetitions
 nYears	120								## Number of years to run
-nHosts	50								## Size of definitive host population (N)
+nHosts	20								## Size of definitive host population (N)
 surveyTimesBegin	0					## Year to start getting data from all individuals in the population
 surveyTimesEnd	120						## Year to stop getting data from all individuals in the population
 surveyTimesDt	1.0						## Time step for the survey times in years e.g. 1 is annual, 0.5 is biannual

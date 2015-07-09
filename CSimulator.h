@@ -24,6 +24,15 @@ struct resultsCollection
 {
 	double time;
 	double meanFemaleWormsPerRun;
+	double meanInfantFemaleWormsPerRun;
+	double meanPreSACFemaleWormsPerRun;
+	double meanSACFemaleWormsPerRun;
+	double meanAdultFemaleWormsPerRun;
+	double meanFemaleWorms;
+	double meanInfantFemaleWorms;
+	double meanPreSACFemaleWorms;
+	double meanSACFemaleWorms;
+	double meanAdultFemaleWorms;
 };
 
 class CSimulator {
@@ -97,6 +106,11 @@ public:
 	double surveyTimesDt;
 	double* surveyResultTimes;
 	int surveyResultTimesLength;
+	double meanFemaleWorms;
+	double meanInfantFemaleWorms;
+	double meanPreSACFemaleWorms;
+	double meanSACFemaleWorms;
+	double meanAdultFemaleWorms;
 	std::string resultsStub;
 
 	// AUXILIARY FUNCTIONS

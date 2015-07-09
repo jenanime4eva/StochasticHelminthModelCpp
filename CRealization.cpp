@@ -185,13 +185,13 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		localEvents.addEvent(CHEMOTHERAPY,owner->treatmentTimes[i],NULL);
 	}
 
+	// Add run termination point
+	localEvents.addEvent(TERMINATE,owner->nYears,NULL);
+
 	// Set up results collection for this realisation
 	if(owner->surveyResultTimes!=NULL)
 	{
 		// There are survey results to collect
-
-		// For each time point set up an array of surveyResultData structures the length of the population size
-		//surveyResultsArrayPerHost = new surveyResultData*[owner->surveyResultTimesLength];
 
 		// For each time point set up an array of surveyResultData structures the length of the number of realisations
 		surveyResultsArrayPerRun = new surveyResultData*[owner->surveyResultTimesLength];
@@ -200,7 +200,6 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 			//surveyResultsArrayPerHost[i] = new surveyResultData[nHosts];
 			surveyResultsArrayPerRun[i] = new surveyResultData[owner->nRepetitions];
 			// Add a pointer to the arrays that are going to hold the data
-			//localEvents.addEvent(SURVEY_EVENT,owner->surveyResultTimes[i],surveyResultsArrayPerHost[i]);
 			localEvents.addEvent(SURVEY_EVENT,owner->surveyResultTimes[i],surveyResultsArrayPerRun[i]);
 		}
 	}
@@ -401,6 +400,10 @@ bool CRealization::run(int repNo)
 					nextOutTime = outTimes[nextOutIndex];
 					break;
 
+				// Stop simulation when maximum number of years reached
+				case TERMINATE:
+					break;
+
 				default:
 					owner->logStream << "Event number " << currentEvent.type << " not known.\n"
 					<< "Look at #define values in CPreDetEventQueue.h for definition.\n" << std::flush;
@@ -414,12 +417,8 @@ bool CRealization::run(int repNo)
 			newNextStepCompare[3] = nextAgeTime;
 			// Get new minimum value of the nextStepCompare array
 			nextStep = owner->min(newNextStepCompare,4);
-			//printf("\nnextOutTime is %f",newNextStepCompare[0]); // Test flag
-			//printf("\ntimeNow+maxStep is %f",newNextStepCompare[1]); // Test flag
-			//printf("\nnextChemoTime is %f",newNextStepCompare[2]); // Test flag
-			//printf("\nnextAgeTime is %f\n",newNextStepCompare[3]); // Test flag
-		}
-	} while((timeNow<owner->nYears) && (outCount<=surveyLength)); // Do events until the last survey year is reached
+		} // End of predetermined event block
+	} while((currentEvent.type!=TERMINATE) && (outCount<=surveyLength)); // Do events until both nYears and the last survey year is reached
 
 	return true;
 }
@@ -461,27 +460,101 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	// Collect data from each run
 	surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
 
-	// Collect data from each host individual
-	//surveyResultData* outputArray = (surveyResultData*) currentEvent.subject;
-
-	/*
-	// For looking at the host ages across time
-	for(int i=0;i<nHosts;i++)
-	{
-		outputArray[i].age = currentEvent.time - hostPopulation[i]->birthDate;
-	}
-	*/
-
+	// Set up some variables
+	int reps = owner->nRepetitions;
 	double sumFemaleWormsPerRun = 0;
+	double sumInfantFemaleWormsPerRun = 0;
+	double sumPreSACFemaleWormsPerRun = 0;
+	double sumSACFemaleWormsPerRun = 0;
+	double sumAdultFemaleWormsPerRun = 0;
+	int infantCount = 0;
+	int preSACCount = 0;
+	int SACCount = 0;
+	int adultCount = 0;
+
+	// Treatment age cutoffs
+	double birthCutoff = owner->treatmentBreaks[0];
+	double infantCutoff = owner->treatmentBreaks[1];
+	double preSACCutoff = owner->treatmentBreaks[2];
+	double SACCutoff = owner->treatmentBreaks[3];
+	double adultCutoff = owner->treatmentBreaks[4];
+
 	// Female worms for each host
 	for(int i=0;i<nHosts;i++)
 	{
+		// Looks at whole population
 		sumFemaleWormsPerRun += hostPopulation[i]->femaleWorms;
+
+		// Look at infants
+		if((q[i] >= birthCutoff) && (q[i] < infantCutoff) )
+		{
+			sumInfantFemaleWormsPerRun += hostPopulation[i]->femaleWorms;
+			infantCount++;
+		}
+
+		// Look at pre-SAC
+		if((q[i] >= infantCutoff) && (q[i] < preSACCutoff) )
+		{
+			sumPreSACFemaleWormsPerRun += hostPopulation[i]->femaleWorms;
+			preSACCount++;
+		}
+
+		// Look at SAC
+		if((q[i] >= preSACCutoff) && (q[i] < SACCutoff) )
+		{
+			sumSACFemaleWormsPerRun += hostPopulation[i]->femaleWorms;
+			SACCount++;
+		}
+
+		// Look at adults
+		if((q[i] >= SACCutoff) && (q[i] < adultCutoff) )
+		{
+			sumAdultFemaleWormsPerRun += hostPopulation[i]->femaleWorms;
+			adultCount++;
+		}
+
 	}
+
 	// For each realisation
-	for(int rIndex=0;rIndex<owner->nRepetitions;rIndex++)
+	for(int rIndex=0;rIndex<reps;rIndex++)
 	{
-		outputArray[rIndex].meanFemaleWormsPerRun = sumFemaleWormsPerRun/nHosts;
+		outputArray[rIndex].meanFemaleWormsPerRun = (double) sumFemaleWormsPerRun/nHosts;
+
+		if(infantCount!=0)
+		{
+			outputArray[rIndex].meanInfantFemaleWormsPerRun = (double) sumInfantFemaleWormsPerRun/infantCount;
+		}
+		else
+		{
+			outputArray[rIndex].meanInfantFemaleWormsPerRun = 0;
+		}
+
+		if (preSACCount!=0)
+		{
+			outputArray[rIndex].meanPreSACFemaleWormsPerRun = (double) sumPreSACFemaleWormsPerRun/preSACCount;
+		}
+		else
+		{
+			outputArray[rIndex].meanPreSACFemaleWormsPerRun = 0;
+		}
+
+		if (SACCount!=0)
+		{
+			outputArray[rIndex].meanSACFemaleWormsPerRun = (double) sumSACFemaleWormsPerRun/SACCount;
+		}
+		else
+		{
+			outputArray[rIndex].meanSACFemaleWormsPerRun = 0;
+		}
+
+		if (adultCount!=0)
+		{
+			outputArray[rIndex].meanAdultFemaleWormsPerRun = (double) sumAdultFemaleWormsPerRun/adultCount;
+		}
+		else
+		{
+			outputArray[rIndex].meanAdultFemaleWormsPerRun = 0;
+		}
 	}
 
 	return true;

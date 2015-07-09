@@ -78,6 +78,11 @@ CSimulator::CSimulator() {
 	surveyTimesDt = 0;
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
+	meanFemaleWorms = 0;
+	meanInfantFemaleWorms = 0;
+	meanPreSACFemaleWorms = 0;
+	meanSACFemaleWorms = 0;
+	meanAdultFemaleWorms = 0;
 
 	// Auxiliary functions
 	vectorArray = NULL;
@@ -417,28 +422,59 @@ void CSimulator::outputSimulation()
 		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
-		// Print times in the first column
+		// UNCOMMENT THE RELEVANT OUTPUTS FROM THE FOLLOWING
+
+		// For printing values for each realisation
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
+			// Print times in the first column
 			surveyStream << surveyResultTimes[j] << "\t";
 
-			// Loop through the realisations
+			double sumFemaleWorms = 0;
+			double sumInfantFemaleWorms = 0;
+			double sumPreSACFemaleWorms = 0;
+			double sumSACFemaleWorms = 0;
+			double sumAdultFemaleWorms = 0;
+
 			for (int repNo = 0; repNo < nRepetitions; repNo++)
 			{
-				surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanFemaleWormsPerRun << "\t" << std::flush;;
-				// Loop through the hosts
-				//for (int i = 0; i < nHosts; i++)
-				//{
-					// Look at female worms for each host across time
-					//surveyStream << myRealization[repNo]->surveyResultsArrayPerHost[j][i].nFemaleWorms << "\t";
-				//}
-				// Only uncomment this if looking at one repetition
-				// Loop through the hosts
-				//for (int i = 0; i < nHosts; i++)
-				//{
-					//surveyStream << myRealization.surveyResultsArrayPerHost[i][j].age << "\t" << std::flush;;
-				//}
+				// Do some calculations
+				sumInfantFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanInfantFemaleWormsPerRun;
+				sumPreSACFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanPreSACFemaleWormsPerRun;
+				sumSACFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanSACFemaleWormsPerRun;
+				sumAdultFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanAdultFemaleWormsPerRun;
+				sumFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanFemaleWormsPerRun;
+
+				// Print out mean female worms each run over time for infant hosts
+				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanInfantFemaleWormsPerRun << "\t" << std::flush;
+
+				// Print out mean female worms each run over time for pre-SAC hosts
+				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanPreSACFemaleWormsPerRun << "\t" << std::flush;
+
+				// Print out mean female worms each run over time for SAC hosts
+				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanSACFemaleWormsPerRun << "\t" << std::flush;
+
+				// Print out mean female worms each run over time for adult hosts
+				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanAdultFemaleWormsPerRun << "\t" << std::flush;
+
+				// Print out mean female worms each run over time for whole host population
+				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanFemaleWormsPerRun << "\t" << std::flush;
 			}
+
+			// Mean of the realisations
+			meanInfantFemaleWorms = sumInfantFemaleWorms/nRepetitions;
+			meanPreSACFemaleWorms = sumPreSACFemaleWorms/nRepetitions;
+			meanSACFemaleWorms = sumSACFemaleWorms/nRepetitions;
+			meanAdultFemaleWorms = sumAdultFemaleWorms/nRepetitions;
+			meanFemaleWorms = sumFemaleWorms/nRepetitions;
+
+			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
+			surveyStream << meanInfantFemaleWorms << "\t" << std::flush;
+			surveyStream << meanPreSACFemaleWorms << "\t" << std::flush;
+			surveyStream << meanSACFemaleWorms << "\t" << std::flush;
+			surveyStream << meanAdultFemaleWorms << "\t" << std::flush;
+			surveyStream << "\t" << meanFemaleWorms << "\t" << std::flush;
+
 			surveyStream << "\n" << std::flush;
 		}
 	}
