@@ -28,11 +28,6 @@ struct resultsCollection
 	double meanPreSACFemaleWormsPerRun;
 	double meanSACFemaleWormsPerRun;
 	double meanAdultFemaleWormsPerRun;
-	double meanFemaleWorms;
-	double meanInfantFemaleWorms;
-	double meanPreSACFemaleWorms;
-	double meanSACFemaleWorms;
-	double meanAdultFemaleWorms;
 };
 
 class CSimulator {
@@ -101,8 +96,6 @@ public:
 
 	// Outputs
 	void outputSimulation();
-	int surveyTimesBegin;
-	int surveyTimesEnd;
 	double surveyTimesDt;
 	double* surveyResultTimes;
 	int surveyResultTimesLength;

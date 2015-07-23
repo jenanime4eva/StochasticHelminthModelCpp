@@ -73,8 +73,6 @@ CSimulator::CSimulator() {
 	treatmentTimesLength = 0;
 
 	// Results
-	surveyTimesBegin = 0;
-	surveyTimesEnd = 0;
 	surveyTimesDt = 0;
 	surveyResultTimes = NULL;
 	surveyResultTimesLength = 0;
@@ -367,16 +365,12 @@ bool CSimulator::initialiseSimulation()
 
 	// SET UP RESULTS COLLECTION
 
-	// Year to start getting data from all individuals in the population
-	surveyTimesBegin = atoi(myReader.getParamString("surveyTimesBegin"));
-	// Year to stop getting data from all individuals in the population
-	surveyTimesEnd = atoi(myReader.getParamString("surveyTimesEnd"));
 	// Time step for the survey times in years
 	surveyTimesDt = atof(myReader.getParamString("surveyTimesDt"));
 	// Now create a vector of survey result times
-	surveyResultTimesLength = (int) ((surveyTimesEnd - surveyTimesBegin)/surveyTimesDt)+1;
+	surveyResultTimesLength = (int) (nYears/surveyTimesDt)+1;
 	surveyResultTimes = new double[surveyResultTimesLength];
-	surveyResultTimes[0] = surveyTimesBegin; // First vector entry
+	surveyResultTimes[0] = 0; // First vector entry
 	for (int i=1;i<surveyResultTimesLength;i++)
 	{
 		surveyResultTimes[i] = surveyResultTimes[i-1] + surveyTimesDt;
@@ -407,7 +401,6 @@ void CSimulator::runSimulation()
 	{
 		// Run a realisation
 		myRealization[repNo]->run(repNo);
-		//printf ("\nrepNo = %d",repNo); // Test flag
 	}
 }
 
@@ -422,9 +415,7 @@ void CSimulator::outputSimulation()
 		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
-		// UNCOMMENT THE RELEVANT OUTPUTS FROM THE FOLLOWING
-
-		// For printing values for each realisation
+		// For printing values of the means of the four age groups over time
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
 			// Print times in the first column
@@ -444,21 +435,6 @@ void CSimulator::outputSimulation()
 				sumSACFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanSACFemaleWormsPerRun;
 				sumAdultFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanAdultFemaleWormsPerRun;
 				sumFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanFemaleWormsPerRun;
-
-				// Print out mean female worms each run over time for infant hosts
-				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanInfantFemaleWormsPerRun << "\t" << std::flush;
-
-				// Print out mean female worms each run over time for pre-SAC hosts
-				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanPreSACFemaleWormsPerRun << "\t" << std::flush;
-
-				// Print out mean female worms each run over time for SAC hosts
-				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanSACFemaleWormsPerRun << "\t" << std::flush;
-
-				// Print out mean female worms each run over time for adult hosts
-				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanAdultFemaleWormsPerRun << "\t" << std::flush;
-
-				// Print out mean female worms each run over time for whole host population
-				//surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanFemaleWormsPerRun << "\t" << std::flush;
 			}
 
 			// Mean of the realisations
@@ -468,7 +444,7 @@ void CSimulator::outputSimulation()
 			meanAdultFemaleWorms = sumAdultFemaleWorms/nRepetitions;
 			meanFemaleWorms = sumFemaleWorms/nRepetitions;
 
-			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
+			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over survey time intervals
 			surveyStream << meanInfantFemaleWorms << "\t" << std::flush;
 			surveyStream << meanPreSACFemaleWorms << "\t" << std::flush;
 			surveyStream << meanSACFemaleWorms << "\t" << std::flush;
@@ -597,7 +573,7 @@ double CSimulator::calculatePsi()
 	double currentMeanDeathsCumul = 0;
 	double sumHostSurvival = 0;
 	double meanLifespan = 0;
-	double sumBetaAgeHostSurvivalCurveK = 0;
+	double sumRhoAgeHostSurvivalCurveK = 0;
 
 	int maxHostAgeInterval = (int) (maxHostAge/deltaT)+1;
 	double* modelAges = new double[maxHostAgeInterval];
@@ -653,10 +629,10 @@ double CSimulator::calculatePsi()
 			a = a-1;
 		}
 		K[n] = sumBetaAgewSurvival*deltaT;
-		sumBetaAgeHostSurvivalCurveK += rhoAge[n]*hostSurvivalCurve[n]*K[n];
+		sumRhoAgeHostSurvivalCurveK += rhoAge[n]*hostSurvivalCurve[n]*K[n];
 	}
 
-	double summation = sumBetaAgeHostSurvivalCurveK*deltaT;
+	double summation = sumRhoAgeHostSurvivalCurveK*deltaT;
 
 	psi = R0*meanLifespan*ReservoirDecayRate/(lambda*z*summation);
 

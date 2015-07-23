@@ -24,20 +24,11 @@ using namespace std;
 struct surveyResultData
 {
 	double age;
-	double nFemaleWorms;
-	double nTotalWorms;
 	double meanFemaleWormsPerRun;
-	double meanTotalWormsPerRun;
-	double nFreeliving;
 	double meanInfantFemaleWormsPerRun;
 	double meanPreSACFemaleWormsPerRun;
 	double meanSACFemaleWormsPerRun;
 	double meanAdultFemaleWormsPerRun;
-	double meanFemaleWorms;
-	double meanInfantFemaleWorms;
-	double meanPreSACFemaleWorms;
-	double meanSACFemaleWorms;
-	double meanAdultFemaleWorms;
 };
 
 class CRealization
@@ -58,9 +49,10 @@ public:
 	class CSimulator* owner;
 	int nHosts;
 	CHost** hostPopulation; // Array of host population
+	double initialWormNumber;
 	double tinyIncrement;
-	double sumTotalWorms;
-	double sumFemaleWorms;
+	int sumTotalWorms;
+	int sumFemaleWorms;
 	double* hostTotalWorms;
 	double* hostFemaleWorms;
 	double* productiveFemaleWorms;
@@ -84,7 +76,6 @@ public:
 	double ageingInterval;
 	double maxStep;
 
-	surveyResultData** surveyResultsArrayPerHost;
 	surveyResultData** surveyResultsArrayPerRun;
 
 

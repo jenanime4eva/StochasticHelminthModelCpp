@@ -17,8 +17,8 @@ public:
 
 	// Members.
 	double birthDate, deathDate;
-	double femaleWorms, totalWorms;
-	double freeliving;
+	int femaleWorms, totalWorms;
+	int freeliving;
 };
 
 #endif /* CHOST_H_ */
