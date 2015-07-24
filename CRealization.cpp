@@ -160,7 +160,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		sumFemaleWorms += hostPopulation[i]->totalWorms; // Sum of female worms for all hosts
 
 		// Initial freeliving worms, don't know what this number should be
-		hostPopulation[i]->freeliving = 4;
+		hostPopulation[i]->freeliving = 4.0;
 
 		// Distribute birth dates such that at time zero have the right distribution of ages
 		// Give a sample of ages at the start of the simulation
@@ -187,14 +187,14 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		hostAge = (int) (floor(-hostPopulation[i]->birthDate));
 		q[i] = hostAge;
 
-		// Add host death event
+		// Add host death events
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
 	}
 
 	// Add treatment events
-	for(int i=0;i<treatLength;i++)
+	for(int j=0;j<treatLength;j++)
 	{
-		localEvents.addEvent(CHEMOTHERAPY,owner->treatmentTimes[i],hostPopulation[i]);
+		localEvents.addEvent(CHEMOTHERAPY,owner->treatmentTimes[j],NULL);
 	}
 
 	// Add run termination point
@@ -254,7 +254,7 @@ bool CRealization::run(int repNo)
 	nextStepCompare[3] = nextAgeTime;
 	double nextStep = owner->min(nextStepCompare,4); // Get minimum value of the nextStepCompare array
 
-	int outCount = 1;
+	int outCount = 0;
 
 	Event currentEvent;
 	do
@@ -288,8 +288,8 @@ bool CRealization::run(int repNo)
 			{
 				for (int i=0;i<nHosts;i++)
 				{
-					hostTotalWorms[i] = (double) hostPopulation[i]->totalWorms;
-					hostFemaleWorms[i] = (double) hostPopulation[i]->femaleWorms;
+					hostTotalWorms[i] = hostPopulation[i]->totalWorms;
+					hostFemaleWorms[i] = hostPopulation[i]->femaleWorms;
 				}
 
 				// Dead worm
@@ -323,7 +323,7 @@ bool CRealization::run(int repNo)
 			{
 				productiveFemaleWorms[i] = hostPopulation[i]->femaleWorms;
 				// Female worms produce fertilised eggs only if there is a male worm around
-				if ( hostPopulation[i]->totalWorms == hostPopulation[i]->femaleWorms )
+				if (hostPopulation[i]->totalWorms == hostPopulation[i]->femaleWorms)
 				{
 					productiveFemaleWorms[i] = 0;
 				}
@@ -347,19 +347,6 @@ bool CRealization::run(int repNo)
 					hostDeathResponse(currentEvent);
 					for(int i=0;i<nHosts;i++)
 					{
-						if(hostPopulation[i]->deathDate < currentEvent.time)
-						{
-							// Calculate new force of infections (FOIs)
-							double si = owner->myRandGamma(owner->k,owner->k);
-							double mu = 2*initialWormNumber*si;
-							hostPopulation[i]->totalWorms = owner->myRandPoisson(mu); // Total worms
-							hostPopulation[i]->femaleWorms = owner->myRandBinomial(hostPopulation[i]->totalWorms,0.5); // Half of worm population should be female
-
-							// Kill off all their worms
-							hostPopulation[i]->totalWorms = 0;
-							hostPopulation[i]->femaleWorms = 0;
-						}
-
 						// Work out new q array of host ages (to update contact age categories)
 						hostAge = (int) (floor(currentEvent.time - hostPopulation[i]->birthDate));
 						q[i] = hostAge;
@@ -376,16 +363,16 @@ bool CRealization::run(int repNo)
 
 						bool individualTreated = owner->myRandUniform() < individualCoverage;
 
-						// If individualTreated is TRUE
+						// If individualTreated condition is TRUE
 						if (individualTreated)
 						{
 							// How many worms to die?
-							int totalW = hostPopulation[i]->totalWorms;
-							int femaleW = hostPopulation[i]->femaleWorms;
-							int maleW = totalW - femaleW;
+							double totalW = hostPopulation[i]->totalWorms;
+							double femaleW = hostPopulation[i]->femaleWorms;
+							double maleW = totalW - femaleW;
 
-							int maleToDie = owner->myRandBinomial(maleW,owner->drugEff);
-							int femaleToDie = owner->myRandBinomial(femaleW,owner->drugEff);
+							double maleToDie = owner->myRandBinomial(maleW,owner->drugEff);
+							double femaleToDie = owner->myRandBinomial(femaleW,owner->drugEff);
 
 							hostPopulation[i]->totalWorms = totalW - maleToDie - femaleToDie;
 							hostPopulation[i]->femaleWorms = femaleW - femaleToDie;
@@ -427,7 +414,7 @@ bool CRealization::run(int repNo)
 			newNextStepCompare[3] = nextAgeTime;
 			nextStep = owner->min(newNextStepCompare,4); // Get new minimum value of the nextStepCompare array
 		} // End of predetermined event block
-	} while((currentEvent.type!=TERMINATE) && (outCount<=surveyLength)); // Do events until both nYears and the last survey year is reached
+	} while((currentEvent.type!=TERMINATE) && (outCount<surveyLength)); // Do events until both nYears and the last survey year is reached
 
 	return true;
 }
@@ -450,6 +437,16 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	// Calculate new death dates
 	double lifespan = owner->drawLifespan();
 	currentHost->deathDate = currentEvent.time + lifespan;
+
+	// Calculate new force of infections (FOIs)
+	double si = owner->myRandGamma(owner->k,owner->k);
+	double mu = 2*initialWormNumber*si;
+	currentHost->totalWorms = owner->myRandPoisson(mu); // Total worms
+	currentHost->femaleWorms = owner->myRandBinomial(currentHost->totalWorms,0.5); // Half of worm population should be female
+
+	// Kill off all their worms
+	currentHost->totalWorms = 0.0;
+	currentHost->femaleWorms = 0.0;
 
 	// Assign death event
 	localEvents.addEvent(HOST_DEATH,currentHost->deathDate,currentHost);
@@ -476,11 +473,11 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	for(int rIndex=0;rIndex<runs;rIndex++)
 	{
 		// Set up some variables that resets after each iteration
-		int sumFemaleWormsPerRun = 0;
-		int sumInfantFemaleWormsPerRun = 0;
-		int sumPreSACFemaleWormsPerRun = 0;
-		int sumSACFemaleWormsPerRun = 0;
-		int sumAdultFemaleWormsPerRun = 0;
+		double sumFemaleWormsPerRun = 0.0;
+		double sumInfantFemaleWormsPerRun = 0.0;
+		double sumPreSACFemaleWormsPerRun = 0.0;
+		double sumSACFemaleWormsPerRun = 0.0;
+		double sumAdultFemaleWormsPerRun = 0.0;
 		int infantCount = 0; // Infant number counter
 		int preSACCount = 0; // Pre-SAC number counter
 		int SACCount = 0; // SAC number counter
@@ -520,7 +517,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 			}
 
 			// Look at adults
-			if((q[i] >= SACCutoff) && (q[i] < adultCutoff) )
+			if((currentHostAge >= SACCutoff) && (currentHostAge < adultCutoff) )
 			{
 				sumAdultFemaleWormsPerRun += hostPopulation[i]->femaleWorms;
 				adultCount++; // Add one to adult number counter
@@ -528,7 +525,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		}
 
 		//printf("infant, pre-SAC, SAC and adult count is %d %d %d %d\n",infantCount,preSACCount,SACCount,adultCount);
-		//printf("sumAdultFemaleWormsPerRun %d\n",sumAdultFemaleWormsPerRun);
+		//printf("sumPreSACFemaleWormsPerRun %f\n",sumPreSACFemaleWormsPerRun);
 
 		// Whole population
 		outputArray[rIndex].meanFemaleWormsPerRun = (double) sumFemaleWormsPerRun/nHosts;

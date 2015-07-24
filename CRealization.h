@@ -51,8 +51,8 @@ public:
 	CHost** hostPopulation; // Array of host population
 	double initialWormNumber;
 	double tinyIncrement;
-	int sumTotalWorms;
-	int sumFemaleWorms;
+	double sumTotalWorms;
+	double sumFemaleWorms;
 	double* hostTotalWorms;
 	double* hostFemaleWorms;
 	double* productiveFemaleWorms;
