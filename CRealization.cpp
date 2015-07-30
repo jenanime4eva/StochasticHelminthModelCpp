@@ -153,11 +153,11 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 
 		// Initialise total and female worms per individual host
 		double si = owner->myRandGamma(owner->k,owner->k); // location = 1/scale (here scale = 1/k, so location = k); shape parameter is the parameter k
-		double mu = 2*initialWormNumber*si;
+		double mu = 2*initialWormNumber*si; // These values chosen as initial conditions (initial conditions should be the equilibrium)
 		hostPopulation[i]->totalWorms = owner->myRandPoisson(mu); // Total worms
 		hostPopulation[i]->femaleWorms = owner->myRandBinomial(hostPopulation[i]->totalWorms,0.5); // Half of worm population should be female
 		sumTotalWorms += hostPopulation[i]->totalWorms; // Sum of total worms for all hosts
-		sumFemaleWorms += hostPopulation[i]->totalWorms; // Sum of female worms for all hosts
+		sumFemaleWorms += hostPopulation[i]->femaleWorms; // Sum of female worms for all hosts
 
 		// Initial freeliving worms, don't know what this number should be
 		hostPopulation[i]->freeliving = 4.0;
@@ -167,9 +167,13 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		// For an exponential distribution, the survival function S(t) = exp(-t/mu)
 		// So to sample from this distribution, generate a random number on 0 1 and then invert this function
 
-		// Host lifespans
+		// Host life span
 		double lifespan = owner->drawLifespan();
+
+		// Host birth date
 		hostPopulation[i]->birthDate = -owner->myRandUniform()*lifespan;
+
+		// Host death date
 		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
 
 		// Equilibrate the population first, in the absence of understanding how to generate it in the first place
@@ -180,6 +184,8 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 			double newlifespan = owner->drawLifespan();
 			hostPopulation[i]->deathDate = hostPopulation[i]->deathDate + newlifespan;
 		}
+
+		// Updated birth and death dates
 		hostPopulation[i]->birthDate = hostPopulation[i]->birthDate - communityBurnIn;
 		hostPopulation[i]->deathDate = hostPopulation[i]->deathDate - communityBurnIn;
 
@@ -254,6 +260,8 @@ bool CRealization::run(int repNo)
 	nextStepCompare[3] = nextAgeTime;
 	double nextStep = owner->min(nextStepCompare,4); // Get minimum value of the nextStepCompare array
 
+	//double elimTime = -1; // Default elimination time
+
 	int outCount = 0;
 
 	Event currentEvent;
@@ -272,6 +280,20 @@ bool CRealization::run(int repNo)
 		int ratesLength = nHosts; // Remember in C++, array counts start from 0 so no need for a "+1" here
 		double sumRates = owner->sumArray(rates,ratesLength);
 
+		/*
+		if(sumRates < 1)
+		{
+			elimTime = timeNow; // Next worm event is about a year away -> elimination?
+		}
+		*/
+
+		for (int i=0;i<nHosts;i++)
+		{
+			hostTotalWorms[i] = hostPopulation[i]->totalWorms;
+			hostFemaleWorms[i] = hostPopulation[i]->femaleWorms;
+			//printf("%f\n",hostPopulation[i]->femaleWorms);
+		}
+
 		// Calculate the time step
 		double tstep = owner->myRandExponential(sumRates);
 
@@ -283,24 +305,26 @@ bool CRealization::run(int repNo)
 			// Determine if dead worm or new worm
 			int event = owner->multiNomBasic2(rates,ratesLength,owner->myRandUniform());
 
-
-			if(event==ratesLength)
+			if(event==ratesLength-1)
 			{
-				for (int i=0;i<nHosts;i++)
-				{
-					hostTotalWorms[i] = hostPopulation[i]->totalWorms;
-					hostFemaleWorms[i] = hostPopulation[i]->femaleWorms;
-				}
-
 				// Dead worm
 				int deathIndex = owner->multiNomBasic2(hostTotalWorms,nHosts,owner->myRandUniform());
 
-				// Is this worm female?
-				if(owner->myRandUniform()<(hostFemaleWorms[deathIndex]/hostTotalWorms[deathIndex]))
+				// Are there worms present in the first place?
+				if(hostPopulation[deathIndex]->totalWorms != 0)
 				{
-					hostPopulation[deathIndex]->femaleWorms = hostPopulation[deathIndex]->femaleWorms - 1; // Remove a worm
+					// Is this worm female?
+					if(owner->myRandUniform()<(hostFemaleWorms[deathIndex]/hostTotalWorms[deathIndex]))
+					{
+						hostPopulation[deathIndex]->femaleWorms = hostPopulation[deathIndex]->femaleWorms - 1; // Remove a worm
+					}
+					hostPopulation[deathIndex]->totalWorms = hostPopulation[deathIndex]->totalWorms - 1; // Remove a worm
 				}
-				hostPopulation[deathIndex]->totalWorms = hostPopulation[deathIndex]->totalWorms - 1; // Remove a worm
+				else // There were no worms left to begin with
+				{
+					hostPopulation[deathIndex]->totalWorms = 0;
+					hostPopulation[deathIndex]->femaleWorms = 0;
+				}
 			}
 			else
 			{
@@ -445,8 +469,8 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	currentHost->femaleWorms = owner->myRandBinomial(currentHost->totalWorms,0.5); // Half of worm population should be female
 
 	// Kill off all their worms
-	currentHost->totalWorms = 0.0;
-	currentHost->femaleWorms = 0.0;
+	currentHost->totalWorms = 0;
+	currentHost->femaleWorms = 0;
 
 	// Assign death event
 	localEvents.addEvent(HOST_DEATH,currentHost->deathDate,currentHost);

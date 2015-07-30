@@ -543,7 +543,7 @@ int CSimulator::multiNomBasic2(double* array, int length, double randNum)
 
 	while (++count < loopMax && (top - bottom > 1)) {
 		int mid = (top + bottom) / 2;
-		double midVal = array[mid];
+		double midVal = sumArray(array,mid);
 		if (midVal >= target) {
 			top = mid;
 			topVal = midVal;

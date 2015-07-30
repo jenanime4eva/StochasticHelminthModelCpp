@@ -24,7 +24,7 @@ rhoValues	0.48 1.95 1 0.57			## Contribution to the reservoir by contact age gro
 ### Epidemiological parameters 
 k	0.7									## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
 lambda	5470							## Eggs per gram (lambda)
-R0	2.56									## Basic reproductive number (R0) 
+R0	2.56								## Basic reproductive number (R0) 
 ReservoirDecayRate	6					## Reservoir decay rate (decay rate of eggs in the environment)
 sigma	1								## Worm death rate (sigma) i.e. 1/worm_life_span, same for all development stages
 gamma	0.08							## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
@@ -32,7 +32,7 @@ gamma	0.08							## Exponential density dependence of parasite adult stage (gamm
 ### Treatment parameters 
 treatmentBreaks	0 2 5 15 70				## Treatment age group breaks (minimum ages of each age group, last entry is the max age)
 coverage	0.0 0.75 0.75 0.75			## Coverages: Infants; Pre-SAC; SAC; Adults
-drugEff	0.9								## Drug efficacy
+drugEff	0.0								## Drug efficacy
 treatStart	10							## Treatment year start
 treatEnd	20							## Treatment year end
 treatInterval	1.0						## Interval between treatments in years 
