@@ -535,15 +535,14 @@ int CSimulator::multiNomBasic2(double* array, int length, double randNum)
 {
 	int loopMax = ceil(log(length) / log(2) + 2);
 	int bottom = -1;
-	int top = length - 1;
-	double arraySum = sumArray(array,length);
-	double topVal = arraySum;
+	int top = length-1;
+	double topVal = sumArray(array,length);
 	double target = topVal * randNum;
 	int count = 0;
 
 	while (++count < loopMax && (top - bottom > 1)) {
 		int mid = (top + bottom) / 2;
-		double midVal = sumArray(array,mid);
+		double midVal = sumArray(array,mid+1);
 		if (midVal >= target) {
 			top = mid;
 			topVal = midVal;

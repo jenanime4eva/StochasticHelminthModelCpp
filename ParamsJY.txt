@@ -32,7 +32,7 @@ gamma	0.08							## Exponential density dependence of parasite adult stage (gamm
 ### Treatment parameters 
 treatmentBreaks	0 2 5 15 70				## Treatment age group breaks (minimum ages of each age group, last entry is the max age)
 coverage	0.0 0.75 0.75 0.75			## Coverages: Infants; Pre-SAC; SAC; Adults
-drugEff	0.0								## Drug efficacy
+drugEff	0.9								## Drug efficacy
 treatStart	10							## Treatment year start
 treatEnd	20							## Treatment year end
 treatInterval	1.0						## Interval between treatments in years 

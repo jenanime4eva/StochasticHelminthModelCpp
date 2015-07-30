@@ -51,19 +51,21 @@ public:
 	CHost** hostPopulation; // Array of host population
 	double initialWormNumber;
 	double tinyIncrement;
-	double sumTotalWorms;
-	double sumFemaleWorms;
+	double freeliving;
 	double* hostTotalWorms;
 	double* hostFemaleWorms;
 	double* productiveFemaleWorms;
 	double* eggsOutputPerHost;
-	double* eggsProductionRate;
+	double eggsProductionRate;
 	double* hostInfectionRate;
 	int* contactAgeGroupIndex;
 	int* treatmentAgeGroupIndex;
 	double hostAge;
 	int* q;
+	double* si;
+	double* mu;
 	double* rates;
+	int ratesLength;
 	double* nextStepCompare;
 	int nextStepCompareLength;
 	double* newNextStepCompare;

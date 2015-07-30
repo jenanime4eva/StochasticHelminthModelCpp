@@ -12,7 +12,6 @@ CWorm::CWorm()
 {
 	// Default values
 	femaleWorms = totalWorms = 0;
-	freeliving = 0;
 }
 
 // Class destructor
