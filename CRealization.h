@@ -64,8 +64,7 @@ public:
 	double* hostInfectionRate;
 	int* contactAgeGroupIndex;
 	int* treatmentAgeGroupIndex;
-	double hostAge;
-	int* q;
+	int age;
 	double* si;
 	double* mu;
 	double* rates;

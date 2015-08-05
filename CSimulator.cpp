@@ -65,6 +65,7 @@ CSimulator::CSimulator() {
 	treatmentBreaksLength = 0;
 	coverage = NULL;
 	coverageLength = 0;
+	treatmentOnOff = 0;
 	drugEff = 0;
 	treatStart = 0;
 	treatEnd = 0;
@@ -322,6 +323,9 @@ bool CSimulator::initialiseSimulation()
 
 	// SET UP TREATMENT
 
+	// Is treatment on or off?
+	treatmentOnOff = atoi(myReader.getParamString("treatmentOnOff"));
+
 	// Read in treatment age group breaks
 	temp = myReader.getParamString("treatmentBreaks");
 	if (temp != NULL) {
@@ -347,6 +351,7 @@ bool CSimulator::initialiseSimulation()
 
 	// Drug efficacy
 	drugEff = atof(myReader.getParamString("drugEff"));
+	drugEff = drugEff*treatmentOnOff;
 
 	// Treatment year start
 	treatStart = atoi(myReader.getParamString("treatStart"));

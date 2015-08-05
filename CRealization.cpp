@@ -35,8 +35,7 @@ CRealization::CRealization()
 	hostInfectionRate = NULL;
 	contactAgeGroupIndex = NULL;
 	treatmentAgeGroupIndex = NULL;
-	q = NULL;
-	hostAge = 0;
+	age = 0;
 	si = NULL;
 	mu = NULL;
 	rates = NULL;
@@ -86,9 +85,6 @@ CRealization::~CRealization()
 
 	if (treatmentAgeGroupIndex != NULL)
 		delete[] treatmentAgeGroupIndex;
-
-	if(q!=NULL)
-		delete[] q;
 
 	if(si!=NULL)
 		delete[] si;
@@ -147,7 +143,6 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	rates = new double[ratesLength];
 	nextStepCompare = new double[nextStepCompareLength];
 	newNextStepCompare = new double[newNextStepCompareLength];
-	q = new int[nHosts]; // To store array of host ages
 	chemoTimes = new double[owner->treatmentTimesLength];
 	outTimes = new double[owner->surveyResultTimesLength];
 
@@ -192,9 +187,8 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		hostPopulation[i]->birthDate = hostPopulation[i]->birthDate - communityBurnIn;
 		hostPopulation[i]->deathDate = hostPopulation[i]->deathDate - communityBurnIn;
 
-		// Work out q array of host ages
-		hostAge = (int) (floor(-hostPopulation[i]->birthDate));
-		q[i] = hostAge;
+		// Work out host ages
+		hostPopulation[i]->hostAge = (int) (floor(-hostPopulation[i]->birthDate));
 
 		// Add host death events
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
@@ -277,7 +271,8 @@ bool CRealization::run(int repNo)
 		// Calculate the event rates (host infection rate and worm total death rate)
 		for (int i=0;i<nHosts;i++)
 		{
-			hostInfectionRate[i] = freeliving*si[i]*owner->betaValues[owner->contactAgeGroupIndex()[q[i]]];
+			age = hostPopulation[i]->hostAge;
+			hostInfectionRate[i] = freeliving*si[i]*owner->betaValues[owner->contactAgeGroupIndex()[age]];
 			rates[i] = hostInfectionRate[i];
 			sumTotalWorms += hostPopulation[i]->totalWorms; // Sum of total worms for all hosts
 			sumFemaleWorms += hostPopulation[i]->femaleWorms; // Sum of female worms for all hosts
@@ -357,7 +352,8 @@ bool CRealization::run(int repNo)
 
 				eggsOutputPerHost[i] = owner->lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*owner->gamma);
 
-				sumEggsOutputPerHostRho += eggsOutputPerHost[i]*owner->rhoValues[owner->contactAgeGroupIndex()[q[i]]];
+				age = hostPopulation[i]->hostAge;
+				sumEggsOutputPerHostRho += eggsOutputPerHost[i]*owner->rhoValues[owner->contactAgeGroupIndex()[age]];
 			}
 
 			eggsProductionRate = owner->psi*sumEggsOutputPerHostRho/nHosts;
@@ -377,12 +373,6 @@ bool CRealization::run(int repNo)
 				// Death of host
 				case HOST_DEATH:
 					hostDeathResponse(currentEvent);
-					for(int i=0;i<nHosts;i++)
-					{
-						// Work out new q array of host ages (to update age categories)
-						hostAge = (int) (floor(currentEvent.time - hostPopulation[i]->birthDate));
-						q[i] = hostAge;
-					}
 					nextAgeTime = nextAgeTime + ageingInterval;
 					break;
 
@@ -391,7 +381,8 @@ bool CRealization::run(int repNo)
 					for(int i=0;i<nHosts;i++)
 					{
 						// Coverage level for each host
-						int hostContactIndex = owner->contactAgeGroupIndex()[q[i]];
+						age = hostPopulation[i]->hostAge;
+						int hostContactIndex = owner->contactAgeGroupIndex()[age];
 						double individualCoverage = owner->coverage[hostContactIndex];
 
 						// Condition for those treated, randomly chosen
@@ -482,6 +473,9 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	currentHost->totalWorms = 0;
 	currentHost->femaleWorms = 0;
 
+	// New host age
+	currentHost->hostAge = (int) (floor(currentEvent.time - currentHost->birthDate));
+
 	// Assign death event
 	localEvents.addEvent(HOST_DEATH,currentHost->deathDate,currentHost);
 
@@ -517,16 +511,11 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		int SACCount = 0; // SAC number counter
 		int adultCount = 0; // Adult number counter
 
-		// Set up current age of host variable
-		double currentHostAge = 0;
-
 		// Female worms for each host
 		for(int i=0;i<nHosts;i++)
 		{
-			//printf("%f\n",hostPopulation[i]->femaleWorms);
-
 			// Get current age of host
-			currentHostAge = currentEvent.time - hostPopulation[i]->birthDate;
+			double currentHostAge = hostPopulation[i]->hostAge; // DEBUG: MIGHT BE CAUSING THE WORM NUMBER ISSUES
 
 			// Looks at whole population
 			sumFemaleWormsPerRun += hostPopulation[i]->femaleWorms;

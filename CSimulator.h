@@ -72,6 +72,7 @@ public:
 	double lambda, ReservoirDecayRate;
 
 	// Treatment
+	int treatmentOnOff;
 	double* treatmentBreaks;
 	int treatmentBreaksLength;
 	double* coverage;
