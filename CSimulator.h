@@ -23,11 +23,11 @@ using namespace std;
 struct resultsCollection
 {
 	double time;
-	double meanFemaleWormsPerRun;
-	double meanInfantFemaleWormsPerRun;
-	double meanPreSACFemaleWormsPerRun;
-	double meanSACFemaleWormsPerRun;
-	double meanAdultFemaleWormsPerRun;
+	double meanFemaleWorms;
+	double meanInfantFemaleWorms;
+	double meanPreSACFemaleWorms;
+	double meanSACFemaleWorms;
+	double meanAdultFemaleWorms;
 };
 
 class CSimulator {

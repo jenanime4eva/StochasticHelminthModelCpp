@@ -363,6 +363,10 @@ bool CSimulator::initialiseSimulation()
 		treatmentTimes[i] = treatmentTimes[i-1] + treatInterval;
 	}
 
+	// Set up arrays to be used later
+	contactIndices = new int[maxHostAge];
+	treatmentIndices = new int[maxHostAge];
+
 	// SET UP RESULTS COLLECTION
 
 	// Time step for the survey times in years
@@ -375,10 +379,6 @@ bool CSimulator::initialiseSimulation()
 	{
 		surveyResultTimes[i] = surveyResultTimes[i-1] + surveyTimesDt;
 	}
-
-	// Set up arrays to be used later
-	contactIndices = new int[maxHostAge];
-	treatmentIndices = new int[maxHostAge];
 
 	// Set up realisation array
 	myRealization = new CRealization*[nRepetitions];
@@ -421,20 +421,40 @@ void CSimulator::outputSimulation()
 			// Print times in the first column
 			surveyStream << surveyResultTimes[j] << "\t";
 
+			// Set up some variables;
 			double sumFemaleWorms = 0;
 			double sumInfantFemaleWorms = 0;
 			double sumPreSACFemaleWorms = 0;
 			double sumSACFemaleWorms = 0;
 			double sumAdultFemaleWorms = 0;
 
+			// Do some calculations
 			for (int repNo = 0; repNo < nRepetitions; repNo++)
 			{
-				// Do some calculations
-				sumInfantFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanInfantFemaleWormsPerRun;
-				sumPreSACFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanPreSACFemaleWormsPerRun;
-				sumSACFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanSACFemaleWormsPerRun;
-				sumAdultFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanAdultFemaleWormsPerRun;
-				sumFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].meanFemaleWormsPerRun;
+				// Infants
+				// The 0.01 is to avoid division by zero
+				double infantTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumInfantFemaleWormsPerRun;
+				double infantBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].infantNumber + 0.01;
+				sumInfantFemaleWorms += infantTopDivision/infantBottomDivision;
+
+				// Pre-SAC
+				double preSACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumPreSACFemaleWormsPerRun;
+				double preSACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].preSACNumber + 0.01;
+				sumPreSACFemaleWorms += preSACTopDivision/preSACBottomDivision;
+
+				// SAC
+				double SACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumSACFemaleWormsPerRun;
+				double SACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].SACNumber + 0.01;
+				sumSACFemaleWorms += SACTopDivision/SACBottomDivision;
+
+				// Adults
+				double adultTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumAdultFemaleWormsPerRun;
+				double adultBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].adultNumber + 0.01;
+				sumAdultFemaleWorms += adultTopDivision/adultBottomDivision;
+
+				// Whole population
+				double femaleWormsTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumFemaleWormsPerRun;
+				sumFemaleWorms += femaleWormsTopDivision/nHosts;
 			}
 
 			// Mean of the realisations
@@ -499,7 +519,7 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 // Also used for drawing a lifespan from the survival curve integral.
 int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 {
-	int loopMax = ceil(log(length) / log(2) + 2);
+	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)
 	int bottom = -1;
 	//double bottomVal;
 	int top = length - 1;
@@ -533,7 +553,7 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 // For a cumulative multinomial array, this will return the index of the event that occurred.
 int CSimulator::multiNomBasic2(double* array, int length, double randNum)
 {
-	int loopMax = ceil(log(length) / log(2) + 2);
+	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)
 	int bottom = -1;
 	int top = length-1;
 	double topVal = sumArray(array,length);
@@ -716,7 +736,7 @@ double CSimulator::myRandUniform()
 	  return  genunf(0,1);
 }
 
-// Gamma distribution random number generator (for returning the value of si, see myRandPoisson function)
+// Gamma distribution random number generator
 double CSimulator::myRandGamma(double l, double s)
 {
 	// double gengam(double l,double s) generates random deviates from gamma distribution (see randlib files)
@@ -724,7 +744,7 @@ double CSimulator::myRandGamma(double l, double s)
 	return gengam(l,s);
 }
 
-// Poisson distribution random number generator (for returning total worm numbers)
+// Poisson distribution random number generator
 double CSimulator::myRandPoisson(double mu)
 {
     // long ignpoi(double mu) generates a single random deviate from a poisson distribution with mean mu (see randlib files)

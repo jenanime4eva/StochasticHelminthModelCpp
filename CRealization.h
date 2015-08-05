@@ -24,11 +24,15 @@ using namespace std;
 struct surveyResultData
 {
 	double age;
-	double meanFemaleWormsPerRun;
-	double meanInfantFemaleWormsPerRun;
-	double meanPreSACFemaleWormsPerRun;
-	double meanSACFemaleWormsPerRun;
-	double meanAdultFemaleWormsPerRun;
+	double sumFemaleWormsPerRun;
+	double sumInfantFemaleWormsPerRun;
+	double sumPreSACFemaleWormsPerRun;
+	double sumSACFemaleWormsPerRun;
+	double sumAdultFemaleWormsPerRun;
+	int infantNumber;
+	int preSACNumber;
+	int SACNumber;
+	int adultNumber;
 };
 
 class CRealization

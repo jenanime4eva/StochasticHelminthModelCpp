@@ -175,18 +175,16 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		// Host life span
 		double lifespan = owner->drawLifespan();
 
-		// Host birth date
+		// Host birth and death date
 		hostPopulation[i]->birthDate = -owner->myRandUniform()*lifespan;
-
-		// Host death date
 		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
 
 		// Equilibrate the population first, in the absence of understanding how to generate it in the first place
 		double communityBurnIn = 1000;
 		while(hostPopulation[i]->deathDate < communityBurnIn)
 		{
-			hostPopulation[i]->birthDate = hostPopulation[i]->deathDate;
 			double newlifespan = owner->drawLifespan();
+			hostPopulation[i]->birthDate = hostPopulation[i]->deathDate;
 			hostPopulation[i]->deathDate = hostPopulation[i]->deathDate + newlifespan;
 		}
 
@@ -272,6 +270,7 @@ bool CRealization::run(int repNo)
 	Event currentEvent;
 	do
 	{
+		// Reset these variables to zero after each iteration
 		double sumTotalWorms = 0;
 		double sumFemaleWorms = 0;
 
@@ -282,18 +281,14 @@ bool CRealization::run(int repNo)
 			rates[i] = hostInfectionRate[i];
 			sumTotalWorms += hostPopulation[i]->totalWorms; // Sum of total worms for all hosts
 			sumFemaleWorms += hostPopulation[i]->femaleWorms; // Sum of female worms for all hosts
+			hostTotalWorms[i] = hostPopulation[i]->totalWorms;
+			hostFemaleWorms[i] = hostPopulation[i]->femaleWorms;
 		}
 		double wormTotalDeathRate = owner->sigma*sumTotalWorms;
 		rates[nHosts] = wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
 
 		// Calculate sum of rates
 		double sumRates = owner->sumArray(rates,ratesLength);
-
-		for(int i=0;i<nHosts;i++)
-		{
-			hostTotalWorms[i] = hostPopulation[i]->totalWorms;
-			hostFemaleWorms[i] = hostPopulation[i]->femaleWorms;
-		}
 
 		/*
 		if(sumRates < 1)
@@ -322,25 +317,21 @@ bool CRealization::run(int repNo)
 				if(hostPopulation[deathIndex]->totalWorms != 0)
 				{
 					// Is this worm female?
-					if(owner->myRandUniform()<(hostFemaleWorms[deathIndex]/hostTotalWorms[deathIndex]))
+					if(owner->myRandUniform() < (hostFemaleWorms[deathIndex]/hostTotalWorms[deathIndex]))
 					{
 						hostPopulation[deathIndex]->femaleWorms = hostPopulation[deathIndex]->femaleWorms - 1; // Remove a worm
 					}
 
 					hostPopulation[deathIndex]->totalWorms = hostPopulation[deathIndex]->totalWorms - 1; // Remove a worm
 				}
-				else // There were no worms left to begin with
-				{
-					hostPopulation[deathIndex]->totalWorms = 0;
-					hostPopulation[deathIndex]->femaleWorms = 0;
-				}
 			}
 			else
 			{
 				// New worm
 				hostPopulation[event]->totalWorms = hostPopulation[event]->totalWorms + 1; // Add a worm
+
 				// Female worm
-				if(owner->myRandUniform()<0.5)
+				if(owner->myRandUniform() < 0.5)
 				{
 					hostPopulation[event]->femaleWorms = hostPopulation[event]->femaleWorms + 1; // Add a worm
 				}
@@ -357,6 +348,7 @@ bool CRealization::run(int repNo)
 			for(int i=0;i<nHosts;i++)
 			{
 				productiveFemaleWorms[i] = hostPopulation[i]->femaleWorms;
+
 				// Female worms produce fertilised eggs only if there is a male worm around
 				if (hostPopulation[i]->totalWorms == hostPopulation[i]->femaleWorms)
 				{
@@ -387,7 +379,7 @@ bool CRealization::run(int repNo)
 					hostDeathResponse(currentEvent);
 					for(int i=0;i<nHosts;i++)
 					{
-						// Work out new q array of host ages (to update contact age categories)
+						// Work out new q array of host ages (to update age categories)
 						hostAge = (int) (floor(currentEvent.time - hostPopulation[i]->birthDate));
 						q[i] = hostAge;
 					}
@@ -398,9 +390,11 @@ bool CRealization::run(int repNo)
 				case CHEMOTHERAPY:
 					for(int i=0;i<nHosts;i++)
 					{
+						// Coverage level for each host
 						int hostContactIndex = owner->contactAgeGroupIndex()[q[i]];
 						double individualCoverage = owner->coverage[hostContactIndex];
 
+						// Condition for those treated, randomly chosen
 						bool individualTreated = owner->myRandUniform() < individualCoverage;
 
 						// If individualTreated condition is TRUE
@@ -443,7 +437,7 @@ bool CRealization::run(int repNo)
 
 				default:
 					owner->logStream << "Event number " << currentEvent.type << " not known.\n"
-					<< "Look at #define values in CPreDetEventQueue.h for definition.\n" << std::flush;
+					<< "Look at #define values in CPreDetEventQueue.h for event definition.\n" << std::flush;
 					break;
 			}
 
@@ -529,6 +523,8 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		// Female worms for each host
 		for(int i=0;i<nHosts;i++)
 		{
+			//printf("%f\n",hostPopulation[i]->femaleWorms);
+
 			// Get current age of host
 			currentHostAge = currentEvent.time - hostPopulation[i]->birthDate;
 
@@ -565,22 +561,26 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		}
 
 		//printf("infant, pre-SAC, SAC and adult count is %d %d %d %d\n",infantCount,preSACCount,SACCount,adultCount);
-		//printf("sumPreSACFemaleWormsPerRun %f\n",sumPreSACFemaleWormsPerRun);
+		//printf("Female numbers %f %f %f %f\n",sumInfantFemaleWormsPerRun,sumPreSACFemaleWormsPerRun,sumSACFemaleWormsPerRun,sumAdultFemaleWormsPerRun);
 
 		// Whole population
-		outputArray[rIndex].meanFemaleWormsPerRun = (double) sumFemaleWormsPerRun/nHosts;
+		outputArray[rIndex].sumFemaleWormsPerRun = sumFemaleWormsPerRun;
 
 		// Infants
-		outputArray[rIndex].meanInfantFemaleWormsPerRun = (double) sumInfantFemaleWormsPerRun/(infantCount + 0.01); // 0.01 is to avoid division by zero
+		outputArray[rIndex].sumInfantFemaleWormsPerRun = sumInfantFemaleWormsPerRun;
+		outputArray[rIndex].infantNumber = infantCount;
 
 		// Pre-SAC
-		outputArray[rIndex].meanPreSACFemaleWormsPerRun = (double) sumPreSACFemaleWormsPerRun/(preSACCount + 0.01); // 0.01 is to avoid division by zero
+		outputArray[rIndex].sumPreSACFemaleWormsPerRun = sumPreSACFemaleWormsPerRun;
+		outputArray[rIndex].preSACNumber = preSACCount;
 
 		// SAC
-		outputArray[rIndex].meanSACFemaleWormsPerRun = (double) sumSACFemaleWormsPerRun/(SACCount + 0.01); // 0.01 is to avoid division by zero
+		outputArray[rIndex].sumSACFemaleWormsPerRun = sumSACFemaleWormsPerRun;
+		outputArray[rIndex].SACNumber = SACCount;
 
 		// Adults
-		outputArray[rIndex].meanAdultFemaleWormsPerRun = (double) sumAdultFemaleWormsPerRun/(adultCount + 0.01); // 0.01 is to avoid division by zero
+		outputArray[rIndex].sumAdultFemaleWormsPerRun = sumAdultFemaleWormsPerRun;
+		outputArray[rIndex].adultNumber = adultCount;
 	}
 
 	return true;
