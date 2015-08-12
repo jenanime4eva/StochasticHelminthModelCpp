@@ -526,7 +526,6 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 {
 	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)
 	int bottom = -1;
-	//double bottomVal;
 	int top = length - 1;
 	double topVal = array[top];
 	double target = topVal * randNum;
@@ -540,7 +539,6 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 			topVal = midVal;
 		} else {
 			bottom = mid;
-			//bottomVal = midVal;
 		}
 	}
 
@@ -554,8 +552,7 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 }
 
 // This function takes a random number (0-1) and multiplies it by the SUM of the passed array.
-// It then finds the smallest index that has an array value greater than the product above.
-// For a cumulative multinomial array, this will return the index of the event that occurred.
+// It then finds the smallest index that has an cumulative sum value greater than the product above.
 int CSimulator::multiNomBasic2(double* array, int length, double randNum)
 {
 	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)

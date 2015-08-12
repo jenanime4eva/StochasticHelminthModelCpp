@@ -36,6 +36,8 @@ CRealization::CRealization()
 	contactAgeGroupIndex = NULL;
 	treatmentAgeGroupIndex = NULL;
 	age = 0;
+	hostContactIndex = 0;
+	hostTreatIndex = 0;
 	si = NULL;
 	mu = NULL;
 	rates = NULL;
@@ -155,7 +157,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		// Initialise total and female worms per individual host
 		// Force of infection
 		si[i] = owner->myRandGamma(owner->k,owner->k); // location = 1/scale (here scale = 1/k, so location = k); shape parameter is the parameter k
-		mu[i] = 2*initialWormNumber*si[i]; // These values chosen as initial conditions (initial conditions should be the equilibrium)
+		mu[i] = 2.0*initialWormNumber*si[i]; // These values chosen as initial conditions (initial conditions should be the equilibrium)
 		hostPopulation[i]->totalWorms = owner->myRandPoisson(mu[i]); // Total worms
 		hostPopulation[i]->femaleWorms = owner->myRandBinomial(hostPopulation[i]->totalWorms,0.5); // Half of worm population should be female
 
@@ -175,7 +177,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
 
 		// Equilibrate the population first, in the absence of understanding how to generate it in the first place
-		double communityBurnIn = 1000;
+		double communityBurnIn = 1000.0;
 		while(hostPopulation[i]->deathDate < communityBurnIn)
 		{
 			double newlifespan = owner->drawLifespan();
@@ -188,7 +190,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		hostPopulation[i]->deathDate = hostPopulation[i]->deathDate - communityBurnIn;
 
 		// Work out host ages
-		hostPopulation[i]->hostAge = (int) (floor(-hostPopulation[i]->birthDate));
+		hostPopulation[i]->hostAge =  -hostPopulation[i]->birthDate; // 0 - birthDate (as time at this point is zero)
 
 		// Add host death events
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
@@ -265,19 +267,18 @@ bool CRealization::run(int repNo)
 	do
 	{
 		// Reset these variables to zero after each iteration
-		double sumTotalWorms = 0;
-		double sumFemaleWorms = 0;
+		double sumTotalWorms = 0.0;
+		double sumFemaleWorms = 0.0;
 
 		// Calculate the event rates (host infection rate and worm total death rate)
 		for (int i=0;i<nHosts;i++)
 		{
-			age = hostPopulation[i]->hostAge;
-			hostInfectionRate[i] = freeliving*si[i]*owner->betaValues[owner->contactAgeGroupIndex()[age]];
+			age = (int) floor(hostPopulation[i]->hostAge);
+			hostContactIndex = owner->contactAgeGroupIndex()[age];
+			hostInfectionRate[i] = freeliving*si[i]*owner->betaValues[hostContactIndex];
 			rates[i] = hostInfectionRate[i];
 			sumTotalWorms += hostPopulation[i]->totalWorms; // Sum of total worms for all hosts
 			sumFemaleWorms += hostPopulation[i]->femaleWorms; // Sum of female worms for all hosts
-			hostTotalWorms[i] = hostPopulation[i]->totalWorms;
-			hostFemaleWorms[i] = hostPopulation[i]->femaleWorms;
 		}
 		double wormTotalDeathRate = owner->sigma*sumTotalWorms;
 		rates[nHosts] = wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
@@ -305,30 +306,34 @@ bool CRealization::run(int repNo)
 
 			if(event==ratesLength-1)
 			{
+				for (int i=0;i<nHosts;i++)
+				{
+					hostTotalWorms[i] = hostPopulation[i]->totalWorms;
+					hostFemaleWorms[i] = hostPopulation[i]->femaleWorms;
+				}
+
 				// Dead worm
 				int deathIndex = owner->multiNomBasic2(hostTotalWorms,nHosts,owner->myRandUniform());
 
-				// Are there worms present in the first place?
-				if(hostPopulation[deathIndex]->totalWorms != 0)
+				// Is this worm female?
+				if(owner->myRandUniform() < (owner->myRandUniform(),hostPopulation[deathIndex]->femaleWorms/hostPopulation[deathIndex]->totalWorms))
 				{
-					// Is this worm female?
-					if(owner->myRandUniform() < (hostFemaleWorms[deathIndex]/hostTotalWorms[deathIndex]))
-					{
-						hostPopulation[deathIndex]->femaleWorms = hostPopulation[deathIndex]->femaleWorms - 1; // Remove a worm
-					}
-
-					hostPopulation[deathIndex]->totalWorms = hostPopulation[deathIndex]->totalWorms - 1; // Remove a worm
+					// Remove a worm from female worms
+					hostPopulation[deathIndex]->femaleWorms = hostPopulation[deathIndex]->femaleWorms - 1.0;
 				}
+
+				// Remove worm from total worms
+				hostPopulation[deathIndex]->totalWorms = hostPopulation[deathIndex]->totalWorms - 1.0;
 			}
 			else
 			{
-				// New worm
-				hostPopulation[event]->totalWorms = hostPopulation[event]->totalWorms + 1; // Add a worm
+				// New worm in total worms
+				hostPopulation[event]->totalWorms = hostPopulation[event]->totalWorms + 1.0;
 
-				// Female worm
+				// New female worm
 				if(owner->myRandUniform() < 0.5)
 				{
-					hostPopulation[event]->femaleWorms = hostPopulation[event]->femaleWorms + 1; // Add a worm
+					hostPopulation[event]->femaleWorms = hostPopulation[event]->femaleWorms + 1.0;
 				}
 			}
 		}
@@ -337,7 +342,7 @@ bool CRealization::run(int repNo)
 			// Time step
 			double ts = nextStep - FLlast;
 
-			double sumEggsOutputPerHostRho = 0; // Reset this value before next iteration
+			double sumEggsOutputPerHostRho = 0.0; // Reset this value before next iteration
 
 			// Update the freeliving worm populations (worms found in the environment) deterministically
 			for(int i=0;i<nHosts;i++)
@@ -347,12 +352,12 @@ bool CRealization::run(int repNo)
 				// Female worms produce fertilised eggs only if there is a male worm around
 				if (hostPopulation[i]->totalWorms == hostPopulation[i]->femaleWorms)
 				{
-					productiveFemaleWorms[i] = 0;
+					productiveFemaleWorms[i] = 0.0;
 				}
 
 				eggsOutputPerHost[i] = owner->lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*owner->gamma);
 
-				age = hostPopulation[i]->hostAge;
+				age = (int) floor(hostPopulation[i]->hostAge);
 				sumEggsOutputPerHostRho += eggsOutputPerHost[i]*owner->rhoValues[owner->contactAgeGroupIndex()[age]];
 			}
 
@@ -373,6 +378,13 @@ bool CRealization::run(int repNo)
 				// Death of host
 				case HOST_DEATH:
 					hostDeathResponse(currentEvent);
+					/*
+					// New host ages
+					for(int i=0;i<nHosts;i++)
+					{
+						hostPopulation[i]->hostAge = currentEvent.time - hostPopulation[i]->birthDate;
+					}
+					*/
 					nextAgeTime = nextAgeTime + ageingInterval;
 					break;
 
@@ -381,9 +393,9 @@ bool CRealization::run(int repNo)
 					for(int i=0;i<nHosts;i++)
 					{
 						// Coverage level for each host
-						age = hostPopulation[i]->hostAge;
-						int hostContactIndex = owner->contactAgeGroupIndex()[age];
-						double individualCoverage = owner->coverage[hostContactIndex];
+						age = (int) floor(hostPopulation[i]->hostAge);
+						hostTreatIndex = owner->treatmentAgeGroupIndex()[age];
+						double individualCoverage = owner->coverage[hostTreatIndex];
 
 						// Condition for those treated, randomly chosen
 						bool individualTreated = owner->myRandUniform() < individualCoverage;
@@ -465,16 +477,16 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 
 	// Calculate new force of infection (FOI)
 	double newSi = owner->myRandGamma(owner->k,owner->k);
-	double newMu = 2*initialWormNumber*newSi;
+	double newMu = 2.0*initialWormNumber*newSi;
 	currentHost->totalWorms = owner->myRandPoisson(newMu); // Total worms
 	currentHost->femaleWorms = owner->myRandBinomial(currentHost->totalWorms,0.5); // Half of worm population should be female
 
 	// Kill off all their worms
-	currentHost->totalWorms = 0;
-	currentHost->femaleWorms = 0;
+	currentHost->totalWorms = 0.0;
+	currentHost->femaleWorms = 0.0;
 
 	// New host age
-	currentHost->hostAge = (int) (floor(currentEvent.time - currentHost->birthDate));
+	currentHost->hostAge = currentEvent.time - currentHost->birthDate;
 
 	// Assign death event
 	localEvents.addEvent(HOST_DEATH,currentHost->deathDate,currentHost);
@@ -515,7 +527,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		for(int i=0;i<nHosts;i++)
 		{
 			// Get current age of host
-			double currentHostAge = hostPopulation[i]->hostAge; // DEBUG: MIGHT BE CAUSING THE WORM NUMBER ISSUES
+			double currentHostAge = hostPopulation[i]->hostAge;
 
 			// Looks at whole population
 			sumFemaleWormsPerRun += hostPopulation[i]->femaleWorms;

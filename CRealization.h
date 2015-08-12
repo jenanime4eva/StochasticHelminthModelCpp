@@ -65,6 +65,8 @@ public:
 	int* contactAgeGroupIndex;
 	int* treatmentAgeGroupIndex;
 	int age;
+	int hostContactIndex;
+	int hostTreatIndex;
 	double* si;
 	double* mu;
 	double* rates;
