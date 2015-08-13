@@ -432,34 +432,45 @@ void CSimulator::outputSimulation()
 			double sumPreSACFemaleWorms = 0;
 			double sumSACFemaleWorms = 0;
 			double sumAdultFemaleWorms = 0;
+			double infantTopDivision = 0;
+			double infantBottomDivision = 0;
+			double preSACTopDivision = 0;
+			double preSACBottomDivision = 0;
+			double SACTopDivision = 0;
+			double SACBottomDivision = 0;
+			double adultTopDivision = 0;
+			double adultBottomDivision = 0;
+			double femaleWormsTopDivision = 0;
+			double femaleWormsBottomDivision = 0;
 
 			// Do some calculations
 			for (int repNo = 0; repNo < nRepetitions; repNo++)
 			{
 				// Infants
 				// The 0.01 is to avoid division by zero
-				double infantTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumInfantFemaleWormsPerRun;
-				double infantBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].infantNumber + 0.01;
+				infantTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumInfantFemaleWorms;
+				infantBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].infantNumber + 0.01;
 				sumInfantFemaleWorms += infantTopDivision/infantBottomDivision;
 
 				// Pre-SAC
-				double preSACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumPreSACFemaleWormsPerRun;
-				double preSACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].preSACNumber + 0.01;
+				preSACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumPreSACFemaleWorms;
+				preSACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].preSACNumber + 0.01;
 				sumPreSACFemaleWorms += preSACTopDivision/preSACBottomDivision;
 
 				// SAC
-				double SACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumSACFemaleWormsPerRun;
-				double SACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].SACNumber + 0.01;
+				SACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumSACFemaleWorms;
+				SACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].SACNumber + 0.01;
 				sumSACFemaleWorms += SACTopDivision/SACBottomDivision;
 
 				// Adults
-				double adultTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumAdultFemaleWormsPerRun;
-				double adultBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].adultNumber + 0.01;
+				adultTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumAdultFemaleWorms;
+				adultBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].adultNumber + 0.01;
 				sumAdultFemaleWorms += adultTopDivision/adultBottomDivision;
 
 				// Whole population
-				double femaleWormsTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumFemaleWormsPerRun;
-				sumFemaleWorms += femaleWormsTopDivision/nHosts;
+				femaleWormsTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumFemaleWorms;
+				femaleWormsBottomDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].nHostsNumber;
+				sumFemaleWorms += femaleWormsTopDivision/femaleWormsBottomDivision;
 			}
 
 			// Mean of the realisations

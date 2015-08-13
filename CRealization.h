@@ -24,15 +24,16 @@ using namespace std;
 struct surveyResultData
 {
 	double age;
-	double sumFemaleWormsPerRun;
-	double sumInfantFemaleWormsPerRun;
-	double sumPreSACFemaleWormsPerRun;
-	double sumSACFemaleWormsPerRun;
-	double sumAdultFemaleWormsPerRun;
+	double sumFemaleWorms;
+	double sumInfantFemaleWorms;
+	double sumPreSACFemaleWorms;
+	double sumSACFemaleWorms;
+	double sumAdultFemaleWorms;
 	int infantNumber;
 	int preSACNumber;
 	int SACNumber;
 	int adultNumber;
+	int nHostsNumber;
 };
 
 class CRealization
@@ -46,12 +47,19 @@ public:
 
 	// Predetermined event responses
 	bool hostDeathResponse(Event& currentEvent);
+	void hostChemoResponse();
 	bool surveyResultResponse(Event& currentEvent);
 	void debugEventResponse(Event& currentEvent);
+
+	// Other functions
+	void calculateEventRates();
+	void doEvent();
+	void doFreeliving(double ts);
 
 	// Members
 	class CSimulator* owner;
 	int nHosts;
+	int runs;
 	CHost** hostPopulation; // Array of host population
 	double initialWormNumber;
 	double tinyIncrement;
@@ -64,10 +72,6 @@ public:
 	double* hostInfectionRate;
 	int* contactAgeGroupIndex;
 	int* treatmentAgeGroupIndex;
-	int age;
-	int hostContactIndex;
-	int hostTreatIndex;
-	double* si;
 	double* mu;
 	double* rates;
 	int ratesLength;
@@ -77,14 +81,19 @@ public:
 	int newNextStepCompareLength;
 	double* chemoTimes;
 	double* outTimes;
-	double timeNow;
 	int surveyLength;
 	int treatLength;
+	int outCount;
 	double ageingInterval;
 	double maxStep;
+	double nextAgeTime;
+	double nextChemoTime;
+	int nextChemoIndex;
+	double nextOutTime;
+	int nextOutIndex;
+	double ts;
 
 	surveyResultData** surveyResultsArrayPerRun;
-
 
 	// Realization event queue
 	CPreDetEventQueue localEvents;

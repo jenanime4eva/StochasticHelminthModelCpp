@@ -14,8 +14,10 @@ CHost::CHost()
 {
 	// Default values
 	birthDate = deathDate = 0;
-	femaleWorms = totalWorms = 0;
 	hostAge = 0;
+	femaleWorms = totalWorms = 0;
+	si = 0;
+	hostContactIndex = hostTreatIndex = 0;
 }
 
 // Class destructor
