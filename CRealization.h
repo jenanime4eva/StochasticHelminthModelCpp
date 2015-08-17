@@ -33,7 +33,6 @@ struct surveyResultData
 	int preSACNumber;
 	int SACNumber;
 	int adultNumber;
-	int nHostsNumber;
 };
 
 class CRealization
@@ -47,7 +46,7 @@ public:
 
 	// Predetermined event responses
 	bool hostDeathResponse(Event& currentEvent);
-	void hostChemoResponse();
+	bool hostChemoResponse(Event& currentEvent);
 	bool surveyResultResponse(Event& currentEvent);
 	void debugEventResponse(Event& currentEvent);
 
@@ -60,6 +59,7 @@ public:
 	class CSimulator* owner;
 	int nHosts;
 	int runs;
+	double nYears;
 	CHost** hostPopulation; // Array of host population
 	double initialWormNumber;
 	double tinyIncrement;
@@ -83,15 +83,10 @@ public:
 	double* outTimes;
 	int surveyLength;
 	int treatLength;
-	int outCount;
 	double ageingInterval;
 	double maxStep;
-	double nextAgeTime;
-	double nextChemoTime;
-	int nextChemoIndex;
-	double nextOutTime;
-	int nextOutIndex;
 	double ts;
+	double timeNow;
 
 	surveyResultData** surveyResultsArrayPerRun;
 

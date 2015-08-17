@@ -24,7 +24,6 @@ struct Event
 #define CHEMOTHERAPY 2
 #define DEBUG_EVENT 3
 #define SURVEY_EVENT 4
-#define TERMINATE 5
 
 class CPreDetEventQueue
 {

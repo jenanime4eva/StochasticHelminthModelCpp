@@ -441,7 +441,6 @@ void CSimulator::outputSimulation()
 			double adultTopDivision = 0;
 			double adultBottomDivision = 0;
 			double femaleWormsTopDivision = 0;
-			double femaleWormsBottomDivision = 0;
 
 			// Do some calculations
 			for (int repNo = 0; repNo < nRepetitions; repNo++)
@@ -469,8 +468,7 @@ void CSimulator::outputSimulation()
 
 				// Whole population
 				femaleWormsTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumFemaleWorms;
-				femaleWormsBottomDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].nHostsNumber;
-				sumFemaleWorms += femaleWormsTopDivision/femaleWormsBottomDivision;
+				sumFemaleWorms += femaleWormsTopDivision/nHosts;
 			}
 
 			// Mean of the realisations
@@ -542,18 +540,22 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 	double target = topVal * randNum;
 	int count = 0;
 
-	while (++count < loopMax && (top - bottom > 1)) {
+	while (++count < loopMax && (top - bottom > 1))
+	{
 		int mid = (top + bottom) / 2;
 		double midVal = array[mid];
-		if (midVal >= target) {
+		if (midVal >= target)
+		{
 			top = mid;
 			topVal = midVal;
-		} else {
+		} else
+		{
 			bottom = mid;
 		}
 	}
 
-	if (count >= loopMax) {
+	if (count >= loopMax)
+	{
 		logStream << "Max iterations exceeded in multiNomBasic1(...),\n"
 				<< std::flush;
 		return -1;
@@ -573,18 +575,21 @@ int CSimulator::multiNomBasic2(double* array, int length, double randNum)
 	double target = topVal * randNum;
 	int count = 0;
 
-	while (++count < loopMax && (top - bottom > 1)) {
+	while (++count < loopMax && (top - bottom > 1))
+	{
 		int mid = (top + bottom) / 2;
 		double midVal = sumArray(array,mid+1);
 		if (midVal >= target) {
 			top = mid;
 			topVal = midVal;
-		} else {
+		} else
+		{
 			bottom = mid;
 		}
 	}
 
-	if (count >= loopMax) {
+	if (count >= loopMax)
+	{
 		logStream << "Max iterations exceeded in multiNomBasic2(...),\n"
 				<< std::flush;
 		return -1;
@@ -841,4 +846,3 @@ int CSimulator::indexSmallestElement(double* array, int size)
 
     return smallestIndex;
 }
-
