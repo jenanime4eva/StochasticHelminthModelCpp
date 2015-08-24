@@ -65,7 +65,6 @@ public:
 	double tinyIncrement;
 	double freeliving;
 	double* hostTotalWorms;
-	double* hostFemaleWorms;
 	double* productiveFemaleWorms;
 	double* eggsOutputPerHost;
 	double eggsProductionRate;

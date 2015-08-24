@@ -420,13 +420,15 @@ void CSimulator::outputSimulation()
 		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
+		double noZeroDivision = 0.01; // To avoid division by zero
+
 		// For printing values of the means of the four age groups over time
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
 			// Print times in the first column
 			surveyStream << surveyResultTimes[j] << "\t";
 
-			// Set up some variables;
+			// Set up some variables that resets after each iteration
 			double sumFemaleWorms = 0;
 			double sumInfantFemaleWorms = 0;
 			double sumPreSACFemaleWorms = 0;
@@ -446,24 +448,23 @@ void CSimulator::outputSimulation()
 			for (int repNo = 0; repNo < nRepetitions; repNo++)
 			{
 				// Infants
-				// The 0.01 is to avoid division by zero
 				infantTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumInfantFemaleWorms;
-				infantBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].infantNumber + 0.01;
+				infantBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].infantNumber + noZeroDivision;
 				sumInfantFemaleWorms += infantTopDivision/infantBottomDivision;
 
 				// Pre-SAC
 				preSACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumPreSACFemaleWorms;
-				preSACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].preSACNumber + 0.01;
+				preSACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].preSACNumber + noZeroDivision;
 				sumPreSACFemaleWorms += preSACTopDivision/preSACBottomDivision;
 
 				// SAC
 				SACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumSACFemaleWorms;
-				SACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].SACNumber + 0.01;
+				SACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].SACNumber + noZeroDivision;
 				sumSACFemaleWorms += SACTopDivision/SACBottomDivision;
 
 				// Adults
 				adultTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumAdultFemaleWorms;
-				adultBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].adultNumber + 0.01;
+				adultBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].adultNumber + noZeroDivision;
 				sumAdultFemaleWorms += adultTopDivision/adultBottomDivision;
 
 				// Whole population
