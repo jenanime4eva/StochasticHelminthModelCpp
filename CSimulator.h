@@ -20,16 +20,6 @@ using namespace std;
 
 #define BUFFER_SIZE 1024 // Define buffer size
 
-struct resultsCollection
-{
-	double time;
-	double meanFemaleWorms;
-	double meanInfantFemaleWorms;
-	double meanPreSACFemaleWorms;
-	double meanSACFemaleWorms;
-	double meanAdultFemaleWorms;
-};
-
 class CSimulator {
 public:
 	CSimulator();
@@ -93,7 +83,7 @@ public:
 	CRealization** myRealization; // Array of realisations
 
 	// Simulation
-	void runSimulation();
+	bool runSimulation();
 
 	// Outputs
 	void outputSimulation();
@@ -113,9 +103,9 @@ public:
 	double* readDoublesVector(char* valuesString, int& currentVectorLength);
 	double* vectorArray;
 	// Return an index for the value that is just above a uniform random deviate (for drawing lifespans)
-	int multiNomBasic1(double* array, int length, double randNum);
+	int multiNomBasic1(double* array, int length);
 	// Return an index for the value that is just above a uniform random deviate (for enacting an event in CRealization)
-	int multiNomBasic2(double* array, int length, double randNum);
+	int multiNomBasic2(double* array, int length);
 	// Calculate the psi value
 	double calculatePsi();
 	// Draw a lifespan from the population survival curve
@@ -131,9 +121,9 @@ public:
 	// A gamma distribution random number generator
 	double myRandGamma(double l, double s);
 	// A poisson distribution random number generator
-	double myRandPoisson(double mu);
+	int myRandPoisson(double mu);
 	// A binomial distribution random number generator
-	double myRandBinomial(long n, double p);
+	int myRandBinomial(long n, double p);
 	// An exponential distribution random number generator
 	double myRandExponential(double a);
 	// Find the sum of an array

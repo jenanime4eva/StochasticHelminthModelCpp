@@ -13,6 +13,7 @@ surveyTimesDt	0.25					## Time step for the survey times in years e.g. 1 is annu
 ### Demographic structure
 ## Data from the total rural population for Kenya 2003 from the KDHS Household Questionnaire (See DeathAndSurvival.xlsx: sheet Kenya KDHS)
 hostMuData	0.01193 0.00896 0.001 0.12747 0.0085 0.06292 0.03941 0.00366 0.04963 0.05128 0.01715 0.04414 0.05223 0.05202 0.05566 0.02961 0.15997	## Host death rate by age range 
+##hostMuData	0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04	## TEST LINE
 upperBoundData	5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 100	## Upper bounds for the above (bottom bound is zero)
 demogDt	1.0								## Age step for survival curve in years
 

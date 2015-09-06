@@ -23,16 +23,17 @@ using namespace std;
 // Structure to contain data from individuals in survey results
 struct surveyResultData
 {
-	double age;
-	double sumFemaleWorms;
-	double sumInfantFemaleWorms;
-	double sumPreSACFemaleWorms;
-	double sumSACFemaleWorms;
-	double sumAdultFemaleWorms;
+	double hostAge;
+	int femaleWorms;
+	int infantFemaleWorms;
+	int preSACFemaleWorms;
+	int SACFemaleWorms;
+	int adultFemaleWorms;
 	int infantNumber;
 	int preSACNumber;
 	int SACNumber;
 	int adultNumber;
+	int totalHostNumber;
 };
 
 class CRealization
@@ -45,15 +46,14 @@ public:
 	bool run(int repNo);
 
 	// Predetermined event responses
-	bool hostDeathResponse(Event& currentEvent);
-	bool hostChemoResponse(Event& currentEvent);
 	bool surveyResultResponse(Event& currentEvent);
-	void debugEventResponse(Event& currentEvent);
 
 	// Other functions
-	void calculateEventRates();
-	void doEvent();
-	void doFreeliving(double ts);
+	void calculateEventRates(int sumTotalWorms);
+	void doEvent(double* hostTotalWorms);
+	double doFreeliving(double ts,int freeliving);
+	void doDeath(double timeNow);
+	void doChemo();
 
 	// Members
 	class CSimulator* owner;
@@ -65,7 +65,7 @@ public:
 	double tinyIncrement;
 	double freeliving;
 	double* hostTotalWorms;
-	double* productiveFemaleWorms;
+	int* productiveFemaleWorms;
 	double* eggsOutputPerHost;
 	double eggsProductionRate;
 	double* hostInfectionRate;
@@ -73,19 +73,23 @@ public:
 	int* treatmentAgeGroupIndex;
 	double* mu;
 	double* rates;
-	int ratesLength;
-	double* nextStepCompare;
-	int nextStepCompareLength;
-	double* newNextStepCompare;
-	int newNextStepCompareLength;
+	double* compareArray;
 	double* chemoTimes;
 	double* outTimes;
+	int ratesLength;
 	int surveyLength;
 	int treatLength;
 	double ageingInterval;
 	double maxStep;
 	double ts;
 	double timeNow;
+	double birthCutoff;
+	double infantCutoff;
+	double preSACCutoff;
+	double SACCutoff;
+	double adultCutoff;
+
+	int counter; // Global variable counter
 
 	surveyResultData** surveyResultsArrayPerRun;
 

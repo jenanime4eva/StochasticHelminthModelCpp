@@ -147,14 +147,14 @@ CSimulator::~CSimulator() {
 	if (treatmentIndices != NULL)
 		delete[] treatmentIndices;
 
-	int r;
 	if(myRealization!=NULL)
 	{
-		for(r=0;r<nRepetitions;r++)
+		for(int r=0;r<nRepetitions;r++)
 			delete myRealization[r];
 
 		delete[] myRealization;
 	}
+
 }
 
 // Initialise the input/output aspects of the simulator
@@ -399,7 +399,7 @@ bool CSimulator::initialiseSimulation()
 }
 
 // Run simulation
-void CSimulator::runSimulation()
+bool CSimulator::runSimulation()
 {
 	// Loop through the runs
 	for (int repNo=0;repNo<nRepetitions;repNo++)
@@ -407,6 +407,8 @@ void CSimulator::runSimulation()
 		// Run a realisation
 		myRealization[repNo]->run(repNo);
 	}
+
+	return true;
 }
 
 // Output simulation
@@ -420,73 +422,83 @@ void CSimulator::outputSimulation()
 		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
-		double noZeroDivision = 0.01; // To avoid division by zero
-
-		// For printing values of the means of the four age groups over time
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
 			// Print times in the first column
 			surveyStream << surveyResultTimes[j] << "\t";
 
-			// Set up some variables that resets after each iteration
-			double sumFemaleWorms = 0;
-			double sumInfantFemaleWorms = 0;
-			double sumPreSACFemaleWorms = 0;
-			double sumSACFemaleWorms = 0;
-			double sumAdultFemaleWorms = 0;
-			double infantTopDivision = 0;
-			double infantBottomDivision = 0;
-			double preSACTopDivision = 0;
-			double preSACBottomDivision = 0;
-			double SACTopDivision = 0;
-			double SACBottomDivision = 0;
-			double adultTopDivision = 0;
-			double adultBottomDivision = 0;
-			double femaleWormsTopDivision = 0;
+			// These variables reset after each iteration
+			int sumInfantFemaleWorms = 0;
+			int sumPreSACFemaleWorms = 0;
+			int sumSACFemaleWorms = 0;
+			int sumAdultFemaleWorms = 0;
+			int sumFemaleWorms = 0;
+			int sumInfantNumber = 0;
+			int sumPreSACNumber = 0;
+			int sumSACNumber = 0;
+			int sumAdultNumber = 0;
+			int sumTotalHostNumber = 0;
 
-			// Do some calculations
-			for (int repNo = 0; repNo < nRepetitions; repNo++)
+			// Loop through the hosts...
+			for(int i=0;i<nHosts;i++)
 			{
-				// Infants
-				infantTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumInfantFemaleWorms;
-				infantBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].infantNumber + noZeroDivision;
-				sumInfantFemaleWorms += infantTopDivision/infantBottomDivision;
+				// Loop through the runs...
+				for(int repNo=0;repNo<nRepetitions;repNo++)
+				{
+					// Perform some calculations here
 
-				// Pre-SAC
-				preSACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumPreSACFemaleWorms;
-				preSACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].preSACNumber + noZeroDivision;
-				sumPreSACFemaleWorms += preSACTopDivision/preSACBottomDivision;
+					// Infants
+					sumInfantFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].infantFemaleWorms;
+					sumInfantNumber += myRealization[repNo]->surveyResultsArrayPerRun[j][i].infantNumber;
 
-				// SAC
-				SACTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumSACFemaleWorms;
-				SACBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].SACNumber + noZeroDivision;
-				sumSACFemaleWorms += SACTopDivision/SACBottomDivision;
+					// Pre-SAC
+					sumPreSACFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].preSACFemaleWorms;
+					sumPreSACNumber += myRealization[repNo]->surveyResultsArrayPerRun[j][i].preSACNumber;
 
-				// Adults
-				adultTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumAdultFemaleWorms;
-				adultBottomDivision = (double) myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].adultNumber + noZeroDivision;
-				sumAdultFemaleWorms += adultTopDivision/adultBottomDivision;
+					// SAC
+					sumSACFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].SACFemaleWorms;
+					sumSACNumber += myRealization[repNo]->surveyResultsArrayPerRun[j][i].SACNumber;
 
-				// Whole population
-				femaleWormsTopDivision = myRealization[repNo]->surveyResultsArrayPerRun[j][repNo].sumFemaleWorms;
-				sumFemaleWorms += femaleWormsTopDivision/nHosts;
+					// Adults
+					sumAdultFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].adultFemaleWorms;
+					sumAdultNumber += myRealization[repNo]->surveyResultsArrayPerRun[j][i].adultNumber;
+
+					// Whole population
+					sumFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].femaleWorms;
+					sumTotalHostNumber += myRealization[repNo]->surveyResultsArrayPerRun[j][i].totalHostNumber;
+				}
 			}
 
-			// Mean of the realisations
-			meanInfantFemaleWorms = sumInfantFemaleWorms/nRepetitions;
-			meanPreSACFemaleWorms = sumPreSACFemaleWorms/nRepetitions;
-			meanSACFemaleWorms = sumSACFemaleWorms/nRepetitions;
-			meanAdultFemaleWorms = sumAdultFemaleWorms/nRepetitions;
-			meanFemaleWorms = sumFemaleWorms/nRepetitions;
+			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
 
-			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over survey time intervals
-			surveyStream << meanInfantFemaleWorms << "\t" << std::flush;
-			surveyStream << meanPreSACFemaleWorms << "\t" << std::flush;
-			surveyStream << meanSACFemaleWorms << "\t" << std::flush;
-			surveyStream << meanAdultFemaleWorms << "\t" << std::flush;
-			surveyStream << "\t" << meanFemaleWorms << "\t" << std::flush;
+			// Infants
+			if(sumInfantNumber!=0)
+				surveyStream << "\t" << sumInfantFemaleWorms/sumInfantNumber << "\t";
+			if(sumInfantNumber==0) // Do not divide by zero!
+				surveyStream << "\t" << 0 << "\t"; // If there are no infants, there are no infant-related worms!
 
-			surveyStream << "\n" << std::flush;
+			// Pre-SAC
+			if(sumPreSACNumber!=0)
+				surveyStream << sumPreSACFemaleWorms/sumPreSACNumber << "\t";
+			if(sumPreSACNumber==0) // Do not divide by zero!
+				surveyStream << 0 << "\t"; // If there are no pre-SAC, there are no pre-SAC-related worms!
+
+			// SAC
+			if(sumSACNumber!=0)
+				surveyStream << sumSACFemaleWorms/sumSACNumber << "\t";
+			if(sumSACNumber==0) // Do not divide by zero!
+				surveyStream << 0 << "\t"; // If there are no SAC, there are no SAC-related worms!
+
+			// Adults
+			if(sumAdultNumber!=0)
+				surveyStream << sumAdultFemaleWorms/sumAdultNumber << "\t";
+			if(sumAdultNumber==0) // Do not divide by zero!
+				surveyStream << 0 << "\t"; // If there are no adults, there are no adult-related worms!
+
+			// Whole Population
+			surveyStream << "\t" << sumFemaleWorms/sumTotalHostNumber << "\t";
+
+			surveyStream << "\n";
 		}
 	}
 }
@@ -532,12 +544,13 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 // It then finds the smallest index that has an array value greater than the product above.
 // For a cumulative multinomial array, this will return the index of the event that occurred.
 // Also used for drawing a lifespan from the survival curve integral.
-int CSimulator::multiNomBasic1(double* array, int length, double randNum)
+int CSimulator::multiNomBasic1(double* array, int length)
 {
 	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)
 	int bottom = -1;
 	int top = length - 1;
-	double topVal = array[top];
+	double topVal = max(array,length);
+	double randNum = myRandUniform();
 	double target = topVal * randNum;
 	int count = 0;
 
@@ -545,10 +558,9 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 	{
 		int mid = (top + bottom) / 2;
 		double midVal = array[mid];
-		if (midVal >= target)
+		if (midVal > target)
 		{
 			top = mid;
-			topVal = midVal;
 		} else
 		{
 			bottom = mid;
@@ -567,34 +579,25 @@ int CSimulator::multiNomBasic1(double* array, int length, double randNum)
 
 // This function takes a random number (0-1) and multiplies it by the SUM of the passed array.
 // It then finds the smallest index that has an cumulative sum value greater than the product above.
-int CSimulator::multiNomBasic2(double* array, int length, double randNum)
+int CSimulator::multiNomBasic2(double* array, int length)
 {
-	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)
-	int bottom = -1;
 	int top = length-1;
-	double topVal = sumArray(array,length);
+	double topVal = sumArray(array,top+1);
+	double randNum = myRandUniform();
 	double target = topVal * randNum;
-	int count = 0;
+	int mid = 0;
+	double midVal;
 
-	while (++count < loopMax && (top - bottom > 1))
+	do
 	{
-		int mid = (top + bottom) / 2;
-		double midVal = sumArray(array,mid+1);
-		if (midVal >= target) {
-			top = mid;
-			topVal = midVal;
-		} else
+		midVal = sumArray(array,mid+1);
+		if (midVal > target)
 		{
-			bottom = mid;
+			top = mid;
 		}
+		mid++;
 	}
-
-	if (count >= loopMax)
-	{
-		logStream << "Max iterations exceeded in multiNomBasic2(...),\n"
-				<< std::flush;
-		return -1;
-	}
+	while(midVal <= target);
 
 	return top;
 }
@@ -705,10 +708,7 @@ double CSimulator::calculatePsi()
 // Draw a life span from the survival curve from the population
 double CSimulator::drawLifespan()
 {
-	// Get a random integer from the probDeathIntegral using the multinomial generator. This shouldn't be zero!
-	double currentRand = myRandUniform();
-
-	int index = multiNomBasic1(probDeathIntegral, maxDtIntervals, currentRand); // maxDtIntervals = maxHostAge here?
+	int index = multiNomBasic1(probDeathIntegral, maxDtIntervals); // maxDtIntervals = maxHostAge here?
 
 	// Choose a point in the middle of the interval in which the person dies
 	double ans = (index + 0.5) * demogDt;
@@ -764,18 +764,18 @@ double CSimulator::myRandGamma(double l, double s)
 }
 
 // Poisson distribution random number generator
-double CSimulator::myRandPoisson(double mu)
+int CSimulator::myRandPoisson(double mu)
 {
     // long ignpoi(double mu) generates a single random deviate from a poisson distribution with mean mu (see randlib files)
-	return ignpoi(mu);
+	return (int) ignpoi(mu);
 }
 
 // Binomial distribution random number generator
-double CSimulator::myRandBinomial(long n, double p)
+int CSimulator::myRandBinomial(long n, double p)
 {
     // long ignbin(long n,double p) generates a single random deviate from a binomial distribution (see randlib files)
 	// n is the number of trials, p is probability of event
-	return ignbin(n,p);
+	return (int) ignbin(n,p);
 }
 
 // Exponential distribution random number generator
