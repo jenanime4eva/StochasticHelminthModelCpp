@@ -428,11 +428,11 @@ void CSimulator::outputSimulation()
 			surveyStream << surveyResultTimes[j] << "\t";
 
 			// These variables reset after each iteration
-			int sumInfantFemaleWorms = 0;
-			int sumPreSACFemaleWorms = 0;
-			int sumSACFemaleWorms = 0;
-			int sumAdultFemaleWorms = 0;
-			int sumFemaleWorms = 0;
+			double sumInfantFemaleWorms = 0;
+			double sumPreSACFemaleWorms = 0;
+			double sumSACFemaleWorms = 0;
+			double sumAdultFemaleWorms = 0;
+			double sumFemaleWorms = 0;
 			int sumInfantNumber = 0;
 			int sumPreSACNumber = 0;
 			int sumSACNumber = 0;
@@ -471,32 +471,36 @@ void CSimulator::outputSimulation()
 
 			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
 
+			// Test: Demography printout
+			//printf("%d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
+			//printf("%f %f %f %f\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
+
 			// Infants
 			if(sumInfantNumber!=0)
-				surveyStream << "\t" << sumInfantFemaleWorms/sumInfantNumber << "\t";
+				surveyStream << "\t" << (double) sumInfantFemaleWorms/sumInfantNumber << "\t";
 			if(sumInfantNumber==0) // Do not divide by zero!
 				surveyStream << "\t" << 0 << "\t"; // If there are no infants, there are no infant-related worms!
 
 			// Pre-SAC
 			if(sumPreSACNumber!=0)
-				surveyStream << sumPreSACFemaleWorms/sumPreSACNumber << "\t";
+				surveyStream << (double) sumPreSACFemaleWorms/sumPreSACNumber << "\t";
 			if(sumPreSACNumber==0) // Do not divide by zero!
 				surveyStream << 0 << "\t"; // If there are no pre-SAC, there are no pre-SAC-related worms!
 
 			// SAC
 			if(sumSACNumber!=0)
-				surveyStream << sumSACFemaleWorms/sumSACNumber << "\t";
+				surveyStream << (double) sumSACFemaleWorms/sumSACNumber << "\t";
 			if(sumSACNumber==0) // Do not divide by zero!
 				surveyStream << 0 << "\t"; // If there are no SAC, there are no SAC-related worms!
 
 			// Adults
 			if(sumAdultNumber!=0)
-				surveyStream << sumAdultFemaleWorms/sumAdultNumber << "\t";
+				surveyStream << (double) sumAdultFemaleWorms/sumAdultNumber << "\t";
 			if(sumAdultNumber==0) // Do not divide by zero!
 				surveyStream << 0 << "\t"; // If there are no adults, there are no adult-related worms!
 
 			// Whole Population
-			surveyStream << "\t" << sumFemaleWorms/sumTotalHostNumber << "\t";
+			surveyStream << "\t" << (double) sumFemaleWorms/sumTotalHostNumber << "\t";
 
 			surveyStream << "\n";
 		}

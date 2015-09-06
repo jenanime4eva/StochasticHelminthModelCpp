@@ -46,14 +46,17 @@ public:
 	bool run(int repNo);
 
 	// Predetermined event responses
+	bool hostDeathResponse(Event& currentEvent);
+	bool hostChemoResponse(Event& currentEvent);
 	bool surveyResultResponse(Event& currentEvent);
+	void debugEventResponse(Event& currentEvent);
 
 	// Other functions
 	void calculateEventRates(int sumTotalWorms);
 	void doEvent(double* hostTotalWorms);
 	double doFreeliving(double ts,int freeliving);
-	void doDeath(double timeNow);
-	void doChemo();
+	//void doDeath(double timeNow);
+	//void doChemo();
 
 	// Members
 	class CSimulator* owner;
