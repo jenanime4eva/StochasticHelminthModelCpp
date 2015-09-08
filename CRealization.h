@@ -52,11 +52,9 @@ public:
 	void debugEventResponse(Event& currentEvent);
 
 	// Other functions
-	void calculateEventRates(int sumTotalWorms);
-	void doEvent(double* hostTotalWorms);
-	double doFreeliving(double ts,int freeliving);
-	//void doDeath(double timeNow);
-	//void doChemo();
+	void calculateEventRates();
+	void doEvent();
+	double doFreeliving(double ts,double freeliving);
 
 	// Members
 	class CSimulator* owner;
@@ -64,11 +62,10 @@ public:
 	int runs;
 	double nYears;
 	CHost** hostPopulation; // Array of host population
-	double initialWormNumber;
 	double tinyIncrement;
 	double freeliving;
 	double* hostTotalWorms;
-	int* productiveFemaleWorms;
+	double* productiveFemaleWorms;
 	double* eggsOutputPerHost;
 	double eggsProductionRate;
 	double* hostInfectionRate;
@@ -85,14 +82,13 @@ public:
 	double ageingInterval;
 	double maxStep;
 	double ts;
-	double timeNow;
 	double birthCutoff;
 	double infantCutoff;
 	double preSACCutoff;
 	double SACCutoff;
 	double adultCutoff;
 
-	int counter; // Global variable counter
+	int counter1,counter2; // Global variable counters for testing purposes
 
 	surveyResultData** surveyResultsArrayPerRun;
 

@@ -68,8 +68,8 @@ public:
 	double* coverage;
 	int coverageLength;
 	double drugEff;
-	int treatStart;
-	int treatEnd;
+	double treatStart;
+	double treatEnd;
 	double treatInterval;
 	double* treatmentTimes;
 	int treatmentTimesLength;
@@ -102,10 +102,7 @@ public:
 	// A function to read in a list of doubles into a vector
 	double* readDoublesVector(char* valuesString, int& currentVectorLength);
 	double* vectorArray;
-	// Return an index for the value that is just above a uniform random deviate (for drawing lifespans)
-	int multiNomBasic1(double* array, int length);
-	// Return an index for the value that is just above a uniform random deviate (for enacting an event in CRealization)
-	int multiNomBasic2(double* array, int length);
+	int multiNomBasic(double* array, int length, double randNum);
 	// Calculate the psi value
 	double calculatePsi();
 	// Draw a lifespan from the population survival curve

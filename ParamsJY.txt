@@ -5,7 +5,7 @@
 ### Any line starting with '#' is completely ignored
 
 ### Model running parameters
-repNum	100								## Number of repetitions
+repNum	1								## Number of repetitions
 nYears	40								## Number of years to run
 nHosts	100								## Size of definitive host population (N)
 surveyTimesDt	0.25					## Time step for the survey times in years e.g. 1 is annual, 0.5 is biannual

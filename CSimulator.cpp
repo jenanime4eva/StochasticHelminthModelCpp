@@ -204,7 +204,7 @@ bool CSimulator::initialiseSimulation()
 	logStream << "Number of repetitions: " << nRepetitions << "\n" << std::flush; // Test flag
 
 	// Number of years to run
-	nYears = atoi(myReader.getParamString("nYears"));
+	nYears = atof(myReader.getParamString("nYears"));
 	logStream << "Number of years to run: " << nYears << "\n" << std::flush; // Test flag
 
 	// Number of hosts
@@ -262,7 +262,6 @@ bool CSimulator::initialiseSimulation()
 	maxHostAgeCompare[0] = upperAgeBound;
 	maxHostAgeCompare[1] = contactAgeBreaks[contactAgeBreaksLength-1];
 	maxHostAge = (int) min(maxHostAgeCompare,2); 	// Get maximum host age
-	logStream << "\nmaxHostAge: " << maxHostAge << "\n";
 
 	// Recalculate maxDtIntervals now that we know the maxHostAge value
 	maxDtIntervals = maxHostAge/demogDt;
@@ -354,9 +353,9 @@ bool CSimulator::initialiseSimulation()
 	drugEff = drugEff*treatmentOnOff;
 
 	// Treatment year start
-	treatStart = atoi(myReader.getParamString("treatStart"));
+	treatStart = atof(myReader.getParamString("treatStart"));
 	// Treatment year end
-	treatEnd = atoi(myReader.getParamString("treatEnd"));
+	treatEnd = atof(myReader.getParamString("treatEnd"));
 	// Interval between treatments in years
 	treatInterval = atof(myReader.getParamString("treatInterval"));
 	// Now create a vector of treatment times
@@ -428,11 +427,11 @@ void CSimulator::outputSimulation()
 			surveyStream << surveyResultTimes[j] << "\t";
 
 			// These variables reset after each iteration
-			double sumInfantFemaleWorms = 0;
-			double sumPreSACFemaleWorms = 0;
-			double sumSACFemaleWorms = 0;
-			double sumAdultFemaleWorms = 0;
-			double sumFemaleWorms = 0;
+			int sumInfantFemaleWorms = 0;
+			int sumPreSACFemaleWorms = 0;
+			int sumSACFemaleWorms = 0;
+			int sumAdultFemaleWorms = 0;
+			int sumFemaleWorms = 0;
 			int sumInfantNumber = 0;
 			int sumPreSACNumber = 0;
 			int sumSACNumber = 0;
@@ -471,9 +470,9 @@ void CSimulator::outputSimulation()
 
 			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
 
-			// Test: Demography printout
+			// TODO: Demography printout
 			//printf("%d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
-			//printf("%f %f %f %f\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
+			//printf("%d %d %d %d\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
 
 			// Infants
 			if(sumInfantNumber!=0)
@@ -502,7 +501,7 @@ void CSimulator::outputSimulation()
 			// Whole Population
 			surveyStream << "\t" << (double) sumFemaleWorms/sumTotalHostNumber << "\t";
 
-			surveyStream << "\n";
+			surveyStream << "\n"; // New line before next time output
 		}
 	}
 }
@@ -548,13 +547,12 @@ double* CSimulator::readDoublesVector(char* currentString, int& currentVectorLen
 // It then finds the smallest index that has an array value greater than the product above.
 // For a cumulative multinomial array, this will return the index of the event that occurred.
 // Also used for drawing a lifespan from the survival curve integral.
-int CSimulator::multiNomBasic1(double* array, int length)
+int CSimulator::multiNomBasic(double* array, int length, double randNum)
 {
 	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)
 	int bottom = -1;
 	int top = length - 1;
-	double topVal = max(array,length);
-	double randNum = myRandUniform();
+	double topVal = array[top];
 	double target = topVal * randNum;
 	int count = 0;
 
@@ -562,6 +560,7 @@ int CSimulator::multiNomBasic1(double* array, int length)
 	{
 		int mid = (top + bottom) / 2;
 		double midVal = array[mid];
+
 		if (midVal > target)
 		{
 			top = mid;
@@ -573,35 +572,10 @@ int CSimulator::multiNomBasic1(double* array, int length)
 
 	if (count >= loopMax)
 	{
-		logStream << "Max iterations exceeded in multiNomBasic1(...),\n"
+		logStream << "Max iterations exceeded in multiNomBasic(...),\n"
 				<< std::flush;
 		return -1;
 	}
-
-	return top;
-}
-
-// This function takes a random number (0-1) and multiplies it by the SUM of the passed array.
-// It then finds the smallest index that has an cumulative sum value greater than the product above.
-int CSimulator::multiNomBasic2(double* array, int length)
-{
-	int top = length-1;
-	double topVal = sumArray(array,top+1);
-	double randNum = myRandUniform();
-	double target = topVal * randNum;
-	int mid = 0;
-	double midVal;
-
-	do
-	{
-		midVal = sumArray(array,mid+1);
-		if (midVal > target)
-		{
-			top = mid;
-		}
-		mid++;
-	}
-	while(midVal <= target);
 
 	return top;
 }
@@ -712,7 +686,8 @@ double CSimulator::calculatePsi()
 // Draw a life span from the survival curve from the population
 double CSimulator::drawLifespan()
 {
-	int index = multiNomBasic1(probDeathIntegral, maxDtIntervals); // maxDtIntervals = maxHostAge here?
+	double randNum = myRandUniform();
+	int index = multiNomBasic(probDeathIntegral,maxDtIntervals,randNum); // maxDtIntervals = maxHostAge here?
 
 	// Choose a point in the middle of the interval in which the person dies
 	double ans = (index + 0.5) * demogDt;

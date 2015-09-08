@@ -25,9 +25,8 @@ CRealization::CRealization()
 	nHosts = 0;
 	runs = 0;
 	nYears = 0;
-	initialWormNumber = 11.5; // Choose this number such that initial conditions are at the equilibrium
 	tinyIncrement = 0.01;
-	freeliving = 4.0; // Initial freeliving worms, don't know what this number should be
+	freeliving = 0;
 	surveyResultsArrayPerRun = NULL;
 	hostTotalWorms = NULL;
 	productiveFemaleWorms = NULL;
@@ -47,13 +46,12 @@ CRealization::CRealization()
 	ageingInterval = 0.25; // Checks ages every quarter year
 	maxStep = (double) 1/52; // Time steps never exceed this for deterministic update of freeliving populations
 	ts = 0;
-	timeNow = 0;
 	birthCutoff = 0;
 	infantCutoff = 0;
 	preSACCutoff = 0;
 	SACCutoff = 0;
 	adultCutoff = 0;
-	counter = 0; // Global variable counter for testing purposes
+	counter1 = counter2 = 0; // Global variable counters for testing purposes
 }
 
 // Class destructor
@@ -103,7 +101,7 @@ CRealization::~CRealization()
 
 	if(surveyResultsArrayPerRun!=NULL)
 	{
-		for(i=0;i<owner->surveyResultTimesLength;i++)
+		for(i=0;i<surveyLength;i++)
 			delete[] surveyResultsArrayPerRun[i];
 
 		delete[] surveyResultsArrayPerRun;
@@ -124,7 +122,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 
 	// Set up some arrays required later
 	hostTotalWorms = new double[nHosts];
-	productiveFemaleWorms = new int[nHosts];
+	productiveFemaleWorms = new double[nHosts];
 	eggsOutputPerHost = new double[nHosts];
 	hostInfectionRate = new double[nHosts];
 
@@ -151,7 +149,9 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 
 		// Initialise total and female worms per individual host
 		// Force of infection
-		hostPopulation[i]->si = owner->myRandGamma(owner->k,owner->k); // location = 1/scale (here scale = 1/k, so location = k); shape parameter is the parameter k
+		double k = owner->k;
+		hostPopulation[i]->si = owner->myRandGamma(k,k); // location = 1/scale (here scale = 1/k, so location = k); shape parameter is the parameter k
+		double initialWormNumber = 11.5; // Choose this number such that initial conditions are at the equilibrium
 		mu[i] = 2.0*initialWormNumber*hostPopulation[i]->si; // These values chosen as initial conditions (initial conditions should be the equilibrium)
 		hostPopulation[i]->totalWorms = owner->myRandPoisson(mu[i]); // Total worms
 		hostPopulation[i]->femaleWorms = owner->myRandBinomial(hostPopulation[i]->totalWorms,0.5); // Half of worm population should be female
@@ -165,7 +165,8 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		double lifespan = owner->drawLifespan();
 
 		// Host birth and death date
-		hostPopulation[i]->birthDate = -owner->myRandUniform()*lifespan;
+		double randNum = owner->myRandUniform();
+		hostPopulation[i]->birthDate = -randNum*lifespan;
 		hostPopulation[i]->deathDate = hostPopulation[i]->birthDate + lifespan;
 
 		// Equilibrate the population first, in the absence of understanding how to generate it in the first place
@@ -195,22 +196,34 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
 	}
 
+	freeliving = 4.0; // Initial freeliving worms, don't know what this number should be
+
+	for(int j=0;j<treatLength;j++)
+	{
+		chemoTimes[j] = owner->treatmentTimes[j];
+	}
+
 	// Add treatment events
 	for(int j=0;j<treatLength;j++)
 	{
-		localEvents.addEvent(CHEMOTHERAPY,owner->treatmentTimes[j],NULL);
+		localEvents.addEvent(CHEMOTHERAPY,chemoTimes[j],NULL);
+	}
+
+	for(int i=0;i<surveyLength;i++)
+	{
+		outTimes[i] = owner->surveyResultTimes[i];
 	}
 
 	// Set up results collection for this realization.
-	if(owner->surveyResultTimes!=NULL)
+	if(outTimes!=NULL)
 	{
 		// There are survey results to collect
 		// For each time point set up an array of surveyResultData structures the length of the population size
-		surveyResultsArrayPerRun = new surveyResultData*[owner->surveyResultTimesLength];
-		for(int i=0;i<owner->surveyResultTimesLength;i++)
+		surveyResultsArrayPerRun = new surveyResultData*[surveyLength];
+		for(int i=0;i<surveyLength;i++)
 		{
 			surveyResultsArrayPerRun[i] = new surveyResultData[nHosts];
-			localEvents.addEvent(SURVEY_EVENT,owner->surveyResultTimes[i],surveyResultsArrayPerRun[i]); // Add a pointer to the array that's going to hold the data
+			localEvents.addEvent(SURVEY_EVENT,outTimes[i],surveyResultsArrayPerRun[i]); // Add a pointer to the array that's going to hold the data
 		}
 	}
 
@@ -223,111 +236,60 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 // Run the realisation
 bool CRealization::run(int repNo)
 {
-	Event currentEvent;
-
 	// Some initial time-related variables
-	currentEvent.time = 0;
-	double FLlast = currentEvent.time;
-
-	/*
-	for(int i=0;i<surveyLength;i++)
-	{
-		outTimes[i] = owner->surveyResultTimes[i];
-	}
+	double timeNow = 0;
+	double FLlast = timeNow;
 
 	int nextOutIndex = 0;
 	double nextOutTime = outTimes[nextOutIndex]; // First survey output time
 	double nextAgeTime = ageingInterval;
-
-	for(int j=0;j<treatLength;j++)
-	{
-		chemoTimes[j] = owner->treatmentTimes[j];
-	}
 
 	int nextChemoIndex = 0;
 	double nextChemoTime = chemoTimes[nextChemoIndex]; // First chemotherapy time
 
 	// Get minimum value of compareArray
 	compareArray[0] = nextOutTime;
-	compareArray[1] = timeNow+maxStep;
+	compareArray[1] = timeNow + maxStep;
 	compareArray[2] = nextChemoTime;
 	compareArray[3] = nextAgeTime;
+
 	double nextStep = owner->min(compareArray,4);
-	*/
 
-	double nextStep = 0;
-
-	//int outCount = 0;
+	Event currentEvent;
 
 	do
 	{
-		// Store individual host total worms into the hostTotalWorms array
-		for (int i=0;i<nHosts;i++)
-		{
-			hostTotalWorms[i] = (double) hostPopulation[i]->totalWorms;
-		}
-
-		// Work out sum of the total worms array
-		int sumTotalWorms = (int) owner->sumArray(hostTotalWorms,nHosts);
-
 		// Calculate the event rates (host infection rate and worm total death rate)
-		calculateEventRates(sumTotalWorms);
+		calculateEventRates();
 
-		// Calculate sum of rates
-		double sumRates = owner->sumArray(rates,ratesLength);
+		// rates is a cumulative array, what is the final entry?
+		double lastRate = rates[ratesLength-1];
+		//printf("lastRate %f\n",lastRate);
 
 		// Calculate the time step
-		double tstep = owner->myRandExponential(sumRates);
+		double tstep = owner->myRandExponential(lastRate);
 		//printf("tstep: %f\n",tstep);
 
-		if( (currentEvent.time+tstep) < nextStep )
+		if( (timeNow+tstep) < nextStep )
 		{
-			currentEvent.time = currentEvent.time + tstep;
+			counter1++;
+			timeNow = timeNow + tstep;
 
 			// Enact an event
-			doEvent(hostTotalWorms);
+			doEvent();
 		}
-		else // (currentEvent.time+tstep) >= nextStep
+		else // (timeNow+tstep) >= nextStep
 		{
+			counter2++;
 			// Time step
 			ts = nextStep - FLlast;
 			//printf("ts: %f\n",ts);
 
 			// Update the freeliving worm populations (worms found in the environment) deterministically
 			freeliving = doFreeliving(ts,freeliving);
+			//printf("freeliving %f\n",freeliving);
 
 			FLlast = nextStep;
-
-			/*
-			// This was the R method of doing things
-
-			double timeBarrier = nextStep + 0.001;
-
-			// Ageing and death
-			if(timeBarrier > nextAgeTime)
-			{
-				doDeath(timeNow);
-				nextAgeTime = nextAgeTime + ageingInterval;
-			}
-
-			// Chemotherapy
-			if(timeBarrier > nextChemoTime)
-			{
-				doChemo();
-				chemoTimes[nextChemoIndex] = nYears + 10; // The 10 is to make sure chemo isn't been done at maxTime
-				nextChemoIndex = owner->indexSmallestElement(chemoTimes,treatLength);
-				nextChemoTime = chemoTimes[nextChemoIndex];
-			}
-
-			// Record
-			if(timeBarrier > nextOutTime)
-			{
-				outCount++; // Add one to outCount
-				outTimes[nextOutIndex] = nYears + 10;
-				nextOutIndex = owner->indexSmallestElement(outTimes,surveyLength);
-				nextOutTime = outTimes[nextOutIndex];
-			}
-			*/
 
 			// Get next predetermined event
 			localEvents.popEvent(currentEvent);
@@ -337,21 +299,18 @@ bool CRealization::run(int repNo)
 			{
 				// Death of host
 				case HOST_DEATH:
+					//printf("hostdeath currentEvent.time: %f\t",currentEvent.time);
 					hostDeathResponse(currentEvent);
-					// Update host ages
-					for(int i=0;i<nHosts;i++)
-					{
-						int age = (int) floor(currentEvent.time - hostPopulation[i]->birthDate);
-
-						// Update hostContactIndex and hostTreatIndex
-						hostPopulation[i]->hostContactIndex = owner->contactAgeGroupIndex()[age];
-						hostPopulation[i]->hostTreatIndex = owner->treatmentAgeGroupIndex()[age];
-					}
+					nextAgeTime = nextAgeTime + ageingInterval;
 					break;
 
 				// Apply treatment
 				case CHEMOTHERAPY:
+					//printf("chemo currentEvent.time: %f\t",currentEvent.time);
 					hostChemoResponse(currentEvent);
+					chemoTimes[nextChemoIndex] = nYears + 10; // The 10 is to make sure chemo isn't been done at maxTime
+					nextChemoIndex = owner->indexSmallestElement(chemoTimes,treatLength);
+					nextChemoTime = chemoTimes[nextChemoIndex];
 					break;
 
 				// Any events to debug?
@@ -361,8 +320,11 @@ bool CRealization::run(int repNo)
 
 				// What to output from the simulation
 				case SURVEY_EVENT:
-					//printf("survey currentEvent.time: %f\n",currentEvent.time);
+					//printf("survey currentEvent.time: %f\t",currentEvent.time);
 					surveyResultResponse(currentEvent);
+					outTimes[nextOutIndex] = nYears + 10;
+					nextOutIndex = owner->indexSmallestElement(outTimes,surveyLength);
+					nextOutTime = outTimes[nextOutIndex];
 					break;
 
 				default:
@@ -371,24 +333,24 @@ bool CRealization::run(int repNo)
 					break;
 			}
 
-			/*
+			timeNow = nextStep;
+
 			// Get new minimum of compareArray
 			compareArray[0] = nextOutTime;
-			compareArray[1] = timeNow+maxStep;
+			compareArray[1] = currentEvent.time + maxStep;
 			compareArray[2] = nextChemoTime;
 			compareArray[3] = nextAgeTime;
-			nextStep = owner->min(compareArray,4);
-			*/
 
-			nextStep = currentEvent.time+maxStep;
+			nextStep = owner->min(compareArray,4);
 
 			// TODO
-			//printf("currentEvent.time: %f\n",currentEvent.time);
-			//printf("hostPopulation[10] %d\n",hostPopulation[10]->femaleWorms);
+			//printf("timeNow nextStep: %f %f\n",timeNow,nextStep);
+			//printf("hostPopulation[0] %d\n",hostPopulation[0]->femaleWorms);
 
 		} // End of predetermined event block
-	} while(currentEvent.time < nYears); // Do events until nYears is reached
-
+	} while(timeNow < nYears); // Do events until nYears is reached
+	//printf("if %d times\n",counter1);
+	//printf("else %d times",counter2);
 	return true;
 }
 
@@ -414,11 +376,19 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	currentHost->deathDate = currentEvent.time + lifespan;
 
 	// Calculate new force of infection (FOI)
-	currentHost->si = owner->myRandGamma(owner->k,owner->k);
+	double k = owner->k;
+	currentHost->si = owner->myRandGamma(k,k);
 
 	// Kill off all their worms
-	currentHost->totalWorms = 0; // TODO: Worms die but no new worms appear
+	currentHost->totalWorms = 0;
 	currentHost->femaleWorms = 0;
+
+	// Update hostContactIndex and hostTreatIndex
+	int age = (int) floor(currentEvent.time - currentHost->birthDate);
+
+	// Update hostContactIndex and hostTreatIndex
+	currentHost->hostContactIndex = owner->contactAgeGroupIndex()[age];
+	currentHost->hostTreatIndex = owner->treatmentAgeGroupIndex()[age];
 
 	// Assign death event
 	localEvents.addEvent(HOST_DEATH,currentHost->deathDate,currentHost);
@@ -435,23 +405,24 @@ bool CRealization::hostChemoResponse(Event& currentEvent)
 		double individualCoverage = owner->coverage[hostPopulation[i]->hostTreatIndex];
 
 		// Condition for those treated, randomly chosen
-		bool individualTreated = owner->myRandUniform() < individualCoverage;
+		double randNum = owner->myRandUniform();
+		bool individualTreated = randNum < individualCoverage;
 
 		// If individualTreated condition is TRUE
 		if (individualTreated)
 		{
 			// How many worms to die?
-			double totalW = hostPopulation[i]->totalWorms;
-			double femaleW = hostPopulation[i]->femaleWorms;
+			double totalW = (double) hostPopulation[i]->totalWorms;
+			double femaleW = (double) hostPopulation[i]->femaleWorms;
 			double maleW = totalW - femaleW;
 
 			double drugEfficacy = owner->drugEff;
 
-			double maleToDie = owner->myRandBinomial(maleW,drugEfficacy);
-			double femaleToDie = owner->myRandBinomial(femaleW,drugEfficacy);
+			int maleToDie = owner->myRandBinomial(maleW,drugEfficacy);
+			int femaleToDie = owner->myRandBinomial(femaleW,drugEfficacy);
 
-			hostPopulation[i]->totalWorms = totalW - maleToDie - femaleToDie;
-			hostPopulation[i]->femaleWorms = femaleW - femaleToDie;
+			hostPopulation[i]->totalWorms = hostPopulation[i]->totalWorms - maleToDie - femaleToDie;
+			hostPopulation[i]->femaleWorms = hostPopulation[i]->femaleWorms - femaleToDie;
 		}
 	}
 
@@ -469,6 +440,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 	{
 		// Get current age of host
 		outputArray[i].hostAge = currentEvent.time - hostPopulation[i]->birthDate;
+		//outputArray[i].hostAge = hostPopulation[i]->hostAge;
 		double currentHostAge = outputArray[i].hostAge;
 
 		// Look at whole population
@@ -550,48 +522,87 @@ void CRealization::debugEventResponse(Event& currentEvent)
 /// OTHER FUNCTIONS
 
 // Calculate the event rates
-void CRealization::calculateEventRates(int sumTotalWorms)
+void CRealization::calculateEventRates()
 {
+	// Store individual host total worms into the hostTotalWorms array
 	for (int i=0;i<nHosts;i++)
 	{
-		hostInfectionRate[i] = freeliving*hostPopulation[i]->si*owner->betaValues[hostPopulation[i]->hostContactIndex];
-		rates[i] = hostInfectionRate[i];
+		hostTotalWorms[i] = (double) hostPopulation[i]->totalWorms;
 	}
-	double wormTotalDeathRate = (double) owner->sigma*sumTotalWorms;
-	rates[nHosts] = wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
+
+	// Work out sum of the total worms array
+	int sumTotalWorms = (int) owner->sumArray(hostTotalWorms,nHosts);
+
+	// rates array has nHost entries
+	// Entries 0 to nHost-1 are cumulative hostInfectionRate values, entry nHost is wormTotalDeathRate + cumulative value
+	double cumul = 0; // A cumulative value
+	for (int i=0;i<nHosts;i++)
+	{
+		double betaValue = owner->betaValues[hostPopulation[i]->hostContactIndex];
+		hostInfectionRate[i] = freeliving*hostPopulation[i]->si*betaValue;
+		rates[i] = cumul + hostInfectionRate[i];
+		cumul = rates[i];
+	}
+	double sigma = owner->sigma;
+	double wormTotalDeathRate = (double) (sigma*sumTotalWorms);
+	rates[nHosts] = cumul + wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
 }
 
 // Enact an event
-void CRealization::doEvent(double* hostTotalWorms)
+void CRealization::doEvent()
 {
 	// Determine if dead worm or new worm
-	int event = owner->multiNomBasic2(rates,ratesLength);
+	// If event is equal to 0,1,2,...,nHosts-1 it's a NEW WORM, otherwise (if event is equal to nHost) it's a DEAD WORM
+	double currentRand = owner->myRandUniform();
+	int event = owner->multiNomBasic(rates,ratesLength,currentRand); // TODO: Check if this is working properly
 	//printf("event %d\n",event);
-	if(event==ratesLength-1) // The -1 is there because C++ counts array entries from 0
+
+	if(event==nHosts) // DEAD WORM
 	{
-		// Dead worm
-		int deathIndex = owner->multiNomBasic2(hostTotalWorms,nHosts);
-
-		double femaleMaleWormProportion = (double) (hostPopulation[deathIndex]->femaleWorms / hostPopulation[deathIndex]->totalWorms);
-
-		bool femaleWormCondition = owner->myRandUniform() < femaleMaleWormProportion;
-
-		// Is this worm female?
-		if(femaleWormCondition)
+		// Now let's make hostTotalWorms a cumulative array (so that multiNomBasic may be used in a bit)
+		double cumulTotalWorms = 0;
+		for (int i=0;i<nHosts;i++)
 		{
-			// Remove a worm from female worms
-			hostPopulation[deathIndex]->femaleWorms = hostPopulation[deathIndex]->femaleWorms - 1;
+			double TW = (double) hostPopulation[i]->totalWorms;
+			hostTotalWorms[i] = cumulTotalWorms + TW;
+			cumulTotalWorms = hostTotalWorms[i];
 		}
 
-		// Remove worm from total worms
-		hostPopulation[deathIndex]->totalWorms = hostPopulation[deathIndex]->totalWorms - 1;
+		// Dead worm
+		double currentRand = owner->myRandUniform();
+		int deathIndex = owner->multiNomBasic(hostTotalWorms,nHosts,currentRand);
+		//printf("deathIndex %d\n",deathIndex);
+
+		// Does this host have any worms to begin with? You can't remove a worm if there weren't any to begin with!
+		bool hostHasWorms = hostPopulation[deathIndex]->totalWorms != 0;
+
+		if(hostHasWorms)
+		{
+			double FW = (double) hostPopulation[deathIndex]->femaleWorms;
+			double TW = (double) hostPopulation[deathIndex]->totalWorms;
+			double femaleMaleWormProportion = FW/TW;
+
+			double randNum = owner->myRandUniform();
+			bool femaleWormCondition = randNum < femaleMaleWormProportion;
+
+			// Is this worm female?
+			if(femaleWormCondition)
+			{
+				// Remove a worm from female worms
+				hostPopulation[deathIndex]->femaleWorms = hostPopulation[deathIndex]->femaleWorms - 1;
+			}
+
+			// Remove worm from total worms
+			hostPopulation[deathIndex]->totalWorms = hostPopulation[deathIndex]->totalWorms - 1;
+		}
 	}
-	else
+	else // NEW WORM
 	{
 		// New worm in total worms
 		hostPopulation[event]->totalWorms = hostPopulation[event]->totalWorms + 1;
 
-		bool newFemaleWormCondition = owner->myRandUniform() < 0.5;
+		double randNum = owner->myRandUniform();
+		bool newFemaleWormCondition = randNum < 0.5;
 
 		// New female worm
 		if(newFemaleWormCondition)
@@ -602,7 +613,7 @@ void CRealization::doEvent(double* hostTotalWorms)
 }
 
 // Update the freeliving populations deterministically
-double CRealization::doFreeliving(double ts,int freeliving)
+double CRealization::doFreeliving(double ts,double freeliving)
 {
 	double sumEggsOutputPerHostRho = 0.0; // Reset this value before next iteration
 
@@ -611,93 +622,29 @@ double CRealization::doFreeliving(double ts,int freeliving)
 		// Female worms produce fertilised eggs only if there is a male worm around
 		bool noMales = hostPopulation[i]->totalWorms == hostPopulation[i]->femaleWorms;
 
-		productiveFemaleWorms[i] = hostPopulation[i]->femaleWorms;
+		productiveFemaleWorms[i] = (double) hostPopulation[i]->femaleWorms;
 
 		if (noMales)
 		{
-			productiveFemaleWorms[i] = 0;
+			productiveFemaleWorms[i] = 0.0;
 		}
 
-		eggsOutputPerHost[i] = (double) owner->lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*owner->gamma);
+		double lambda = owner->lambda;
+		double gamma = owner->gamma;
+		eggsOutputPerHost[i] = lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*gamma);
 
-		sumEggsOutputPerHostRho += eggsOutputPerHost[i]*owner->rhoValues[hostPopulation[i]->hostContactIndex];
+		double rhoValue = owner->rhoValues[hostPopulation[i]->hostContactIndex];
+		sumEggsOutputPerHostRho += eggsOutputPerHost[i]*rhoValue;
 	}
 
-	eggsProductionRate = owner->psi*sumEggsOutputPerHostRho/nHosts;
+	double psi = owner->psi;
+	eggsProductionRate = (double) (psi*sumEggsOutputPerHostRho/nHosts);
 
 	// dL/dt = K-mu*L has solution: L(0)exp(-mu*t)+K*(1-exp(-mu*t))/mu, this is exact if rate of egg production is constant in the timestep
 	// Here L = freeliving, K = eggsProductionRate, mu = ReservoirDecayRate
-	double expo = exp(-owner->ReservoirDecayRate*ts);
-	double freelivingNumber = freeliving*expo + eggsProductionRate*(1.0-expo)/(owner->ReservoirDecayRate);
+	double ReservoirDecayRate = owner->ReservoirDecayRate;
+	double expo = exp(-ReservoirDecayRate*ts);
+	double freelivingNumber = freeliving*expo + (eggsProductionRate*(1.0-expo)/ReservoirDecayRate);
 
 	return freelivingNumber;
 }
-
-/*
-// Respond to host death
-void CRealization::doDeath(double timeNow)
-{
-	for(int i=0;i<nHosts;i++)
-	{
-		// Identify the indices of the dead
-		bool theDead = hostPopulation[i]->deathDate < timeNow;
-
-		if(theDead)
-		{
-			// Set birth date to now
-			// Put birth slightly in the past to ensure age is just positive for catergorisation
-			hostPopulation[i]->birthDate = timeNow - 0.001;
-
-			// Calculate new death dates
-			double lifespan = owner->drawLifespan();
-			hostPopulation[i]->deathDate = timeNow + lifespan;
-
-			// Calculate new force of infection (FOI)
-			hostPopulation[i]->si = owner->myRandGamma(owner->k,owner->k);
-
-			// Kill off all their worms
-			hostPopulation[i]->totalWorms = 0;
-			hostPopulation[i]->femaleWorms = 0;
-
-			// New host age
-			hostPopulation[i]->hostAge = timeNow - hostPopulation[i]->birthDate;
-
-			int age = (int) floor(hostPopulation[i]->hostAge);
-
-			// Update hostContactIndex and hostTreatIndex
-			hostPopulation[i]->hostContactIndex = owner->contactAgeGroupIndex()[age];
-			hostPopulation[i]->hostTreatIndex = owner->treatmentAgeGroupIndex()[age];
-		}
-	}
-}
-
-// Chemotherapy
-void CRealization::doChemo()
-{
-	for(int i=0;i<nHosts;i++)
-	{
-		// Coverage level for each host
-		double individualCoverage = owner->coverage[hostPopulation[i]->hostTreatIndex];
-
-		// Condition for those treated, randomly chosen
-		bool individualTreated = owner->myRandUniform() < individualCoverage;
-
-		// If individualTreated condition is TRUE
-		if (individualTreated)
-		{
-			// How many worms to die?
-			int totalW = hostPopulation[i]->totalWorms;
-			int femaleW = hostPopulation[i]->femaleWorms;
-			int maleW = totalW - femaleW;
-
-			double drugEfficacy = owner->drugEff;
-
-			int maleToDie = owner->myRandBinomial(maleW,drugEfficacy);
-			int femaleToDie = owner->myRandBinomial(femaleW,drugEfficacy);
-
-			hostPopulation[i]->totalWorms = hostPopulation[i]->totalWorms - maleToDie - femaleToDie;
-			hostPopulation[i]->femaleWorms = hostPopulation[i]->femaleWorms - femaleToDie;
-		}
-	}
-}
-*/
