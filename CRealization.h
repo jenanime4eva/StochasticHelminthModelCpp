@@ -79,9 +79,6 @@ public:
 	int ratesLength;
 	int surveyLength;
 	int treatLength;
-	double ageingInterval;
-	double maxStep;
-	double ts;
 	double birthCutoff;
 	double infantCutoff;
 	double preSACCutoff;

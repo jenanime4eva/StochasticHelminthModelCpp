@@ -16,7 +16,6 @@ CHost::CHost()
 	birthDate = deathDate = 0;
 	femaleWorms = totalWorms = 0;
 	si = 0;
-	hostAge = 0;
 	hostContactIndex = hostTreatIndex = 0;
 }
 
