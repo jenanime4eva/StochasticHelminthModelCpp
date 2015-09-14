@@ -465,6 +465,9 @@ void CSimulator::outputSimulation()
 					// Whole population
 					sumFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].femaleWorms;
 					sumTotalHostNumber += myRealization[repNo]->surveyResultsArrayPerRun[j][i].totalHostNumber;
+
+					// TODO: TEST PRINTOUTS FOR ONE REALISATION
+					//surveyStream << (int) myRealization[repNo]->surveyResultsArrayPerRun[j][i].femaleWorms << "\t";
 				}
 			}
 
@@ -474,6 +477,7 @@ void CSimulator::outputSimulation()
 			//printf("%d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
 			//printf("%d %d %d %d\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
 
+			///*
 			// Infants
 			if(sumInfantNumber!=0)
 				surveyStream << "\t" << (double) sumInfantFemaleWorms/sumInfantNumber << "\t";
@@ -500,7 +504,7 @@ void CSimulator::outputSimulation()
 
 			// Whole Population
 			surveyStream << "\t" << (double) sumFemaleWorms/sumTotalHostNumber << "\t";
-
+			//*/
 			surveyStream << "\n"; // New line before next time output
 		}
 	}
@@ -573,6 +577,39 @@ int CSimulator::multiNomBasic(double* array, int length, double randNum)
 	if (count >= loopMax)
 	{
 		logStream << "Max iterations exceeded in multiNomBasic(...),\n"
+				<< std::flush;
+		return -1;
+	}
+
+	return top;
+}
+
+int CSimulator::multiNomBasicAlt(double* array, int length, double randNum)
+{
+	int loopMax = ceil(log(length) / log(2) + 2); // N.B. LOGb(x)/LOGb(a)=LOGa(x)
+	int bottom = -1;
+	int top = length - 1;
+	double topVal = sumArray(array,top+1);
+	double target = topVal * randNum;
+	int count = 0;
+
+	while (++count < loopMax && (top - bottom > 1))
+	{
+		int mid = (top + bottom) / 2;
+		double midVal = sumArray(array,mid+1);
+
+		if (midVal > target)
+		{
+			top = mid;
+		} else
+		{
+			bottom = mid;
+		}
+	}
+
+	if (count >= loopMax)
+	{
+		logStream << "Max iterations exceeded in multiNomBasicAlt(...),\n"
 				<< std::flush;
 		return -1;
 	}

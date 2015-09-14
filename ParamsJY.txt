@@ -5,7 +5,7 @@
 ### Any line starting with '#' is completely ignored
 
 ### Model running parameters
-repNum	1								## Number of repetitions
+repNum	100								## Number of repetitions
 nYears	40								## Number of years to run
 nHosts	100								## Size of definitive host population (N)
 surveyTimesDt	0.25					## Time step for the survey times in years e.g. 1 is annual, 0.5 is biannual
@@ -35,6 +35,6 @@ treatmentOnOff	0						## 1 for treatment (on); 0 for no treatment (off)
 treatmentBreaks	0 2 5 15 70				## Treatment age group breaks (minimum ages of each age group, last entry is the max age)
 coverage	0.0 0.75 0.75 0.75			## Coverages: Infants; Pre-SAC; SAC; Adults
 drugEff	0.9								## Drug efficacy
-treatStart	10							## Treatment year start
-treatEnd	20							## Treatment year end
+treatStart	20							## Treatment year start
+treatEnd	30							## Treatment year end
 treatInterval	1.0						## Interval between treatments in years 

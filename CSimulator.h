@@ -103,6 +103,7 @@ public:
 	double* readDoublesVector(char* valuesString, int& currentVectorLength);
 	double* vectorArray;
 	int multiNomBasic(double* array, int length, double randNum);
+	int multiNomBasicAlt(double* array, int length, double randNum);
 	// Calculate the psi value
 	double calculatePsi();
 	// Draw a lifespan from the population survival curve
