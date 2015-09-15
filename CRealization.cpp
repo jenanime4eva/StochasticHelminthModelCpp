@@ -38,7 +38,6 @@ CRealization::CRealization()
 	mu = NULL;
 	rates = NULL;
 	ratesLength = 0;
-	compareArray = NULL;
 	chemoTimes = NULL;
 	outTimes = NULL;
 	surveyLength = 0;
@@ -48,7 +47,6 @@ CRealization::CRealization()
 	preSACCutoff = 0;
 	SACCutoff = 0;
 	adultCutoff = 0;
-	counter1 = counter2 = 0; // Global variable counters for testing purposes
 }
 
 // Class destructor
@@ -87,9 +85,6 @@ CRealization::~CRealization()
 	if (rates != NULL)
 		delete[] rates;
 
-	if (compareArray != NULL)
-		delete[] compareArray;
-
 	if (chemoTimes != NULL)
 		delete[] chemoTimes;
 
@@ -127,7 +122,6 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	mu = new double[nHosts];
 	ratesLength = nHosts+1;
 	rates = new double[ratesLength];
-	compareArray = new double[4];
 	chemoTimes = new double[treatLength];
 	outTimes = new double[surveyLength];
 
@@ -187,7 +181,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		double hostAge = -hostPopulation[i]->birthDate; // 0 - birthDate (as time at this point is zero)
 
 		// Work out hostContactIndex and hostTreatIndex
-		int age = (int) floor(hostAge);
+		int age = (int) round(hostAge);
 		int contactIndex =  owner->contactAgeGroupIndex()[age];
 		int treatIndex =  owner->treatmentAgeGroupIndex()[age];
 		hostPopulation[i]->hostContactIndex = contactIndex;
@@ -275,7 +269,7 @@ bool CRealization::run(int repNo)
 			double hostAge = timeNow - hostPopulation[i]->birthDate;
 
 			// Work out hostContactIndex and hostTreatIndex
-			int age = (int) floor(hostAge);
+			int age = (int) round(hostAge);
 			int contactIndex =  owner->contactAgeGroupIndex()[age];
 			int treatIndex =  owner->treatmentAgeGroupIndex()[age];
 			hostPopulation[i]->hostContactIndex = contactIndex;
@@ -317,8 +311,6 @@ bool CRealization::run(int repNo)
 			// Update the freeliving worm populations (worms found in the environment) deterministically
 			double ts = timeRes - timeNow;
 			freeliving = doFreeliving(ts,freeliving);
-
-			//freeliving = 12.0; // TODO: If freeliving value is set to R's equilibrium, the worm numbers stabilise
 
 			//printf("ts: %f\n",ts);
 			//printf("freeliving: %f\n",freeliving);
@@ -417,7 +409,7 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 
 	// Update hostContactIndex and hostTreatIndex
 	double hostAge = currentEvent.time - currentHost->birthDate;
-	int age = (int) floor(hostAge);
+	int age = (int) round(hostAge);
 	int contactIndex = owner->contactAgeGroupIndex()[age];
 	int treatIndex = owner->treatmentAgeGroupIndex()[age];
 	currentHost->hostContactIndex = contactIndex;
@@ -653,7 +645,7 @@ double CRealization::doFreeliving(double ts,double freeliving)
 
 	for(int i=0;i<nHosts;i++)
 	{
-		// Female worms produce fertilised eggs only if there is a male worm around
+		// Female worms produce fertilised eggs only if there is a male worm
 		bool noMales = hostPopulation[i]->totalWorms == hostPopulation[i]->femaleWorms;
 
 		productiveFemaleWorms[i] = (double) hostPopulation[i]->femaleWorms;

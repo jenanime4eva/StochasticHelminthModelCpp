@@ -6,7 +6,7 @@
 
 ### Model running parameters
 repNum	100								## Number of repetitions
-nYears	40								## Number of years to run
+nYears	60								## Number of years to run
 nHosts	100								## Size of definitive host population (N)
 surveyTimesDt	0.25					## Time step for the survey times in years e.g. 1 is annual, 0.5 is biannual
 
@@ -31,10 +31,10 @@ sigma	1								## Worm death rate (sigma) i.e. 1/worm_life_span, same for all de
 gamma	0.08							## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
 
 ### Treatment parameters 
-treatmentOnOff	0						## 1 for treatment (on); 0 for no treatment (off)
+treatmentOnOff	1						## 1 for treatment (on); 0 for no treatment (off)
 treatmentBreaks	0 2 5 15 70				## Treatment age group breaks (minimum ages of each age group, last entry is the max age)
 coverage	0.0 0.75 0.75 0.75			## Coverages: Infants; Pre-SAC; SAC; Adults
 drugEff	0.9								## Drug efficacy
-treatStart	20							## Treatment year start
-treatEnd	30							## Treatment year end
+treatStart	40							## Treatment year start
+treatEnd	50							## Treatment year end
 treatInterval	1.0						## Interval between treatments in years 

@@ -73,7 +73,6 @@ public:
 	int* treatmentAgeGroupIndex;
 	double* mu;
 	double* rates;
-	double* compareArray;
 	double* chemoTimes;
 	double* outTimes;
 	int ratesLength;
@@ -84,8 +83,6 @@ public:
 	double preSACCutoff;
 	double SACCutoff;
 	double adultCutoff;
-
-	int counter1,counter2; // Global variable counters for testing purposes
 
 	surveyResultData** surveyResultsArrayPerRun;
 
