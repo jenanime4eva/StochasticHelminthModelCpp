@@ -25,8 +25,10 @@ CRealization::CRealization()
 	nHosts = 0;
 	runs = 0;
 	nYears = 0;
+	lifespan = 0;
 	tinyIncrement = 0.01;
 	freeliving = 0;
+	compareArray = NULL;
 	surveyResultsArrayPerRun = NULL;
 	hostTotalWorms = NULL;
 	productiveFemaleWorms = NULL;
@@ -60,6 +62,9 @@ CRealization::~CRealization()
 
 		delete[] hostPopulation;
 	}
+
+	if (compareArray != NULL)
+		delete[] compareArray;
 
 	if (hostTotalWorms != NULL)
 		delete[] hostTotalWorms;
@@ -113,6 +118,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	treatLength = owner->treatmentTimesLength; // Length of treatment times array
 
 	// Set up some arrays required later
+	compareArray = new double[4];
 	hostTotalWorms = new double[nHosts];
 	productiveFemaleWorms = new double[nHosts];
 	eggsOutputPerHost = new double[nHosts];
@@ -156,21 +162,24 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		// So to sample from this distribution, generate a random number on 0 1 and then invert this function
 
 		// Host life span
-		double lifespan = owner->drawLifespan();
+		lifespan = owner->drawLifespan();
 
 		// Host birth and death date
 		double randNum = owner->myRandUniform();
-		double currentBirthDate = -randNum*lifespan;
-		double currentDeathDate = currentBirthDate + lifespan;
+		double birthDate = -randNum*lifespan;
+		double deathDate = birthDate + lifespan;
 
 		// Equilibrate the population first, in the absence of understanding how to generate it in the first place
 		double communityBurnIn = 1000.0; // 1000 years should be plenty of time to equilibrate the population
 
+		double currentBirthDate = birthDate;
+		double currentDeathDate = deathDate;
+
 		while(currentDeathDate < communityBurnIn)
 		{
-			double newlifespan = owner->drawLifespan();
+			lifespan = owner->drawLifespan();
 			currentBirthDate = currentDeathDate;
-			currentDeathDate = currentDeathDate + newlifespan;
+			currentDeathDate = currentBirthDate + lifespan;
 		}
 
 		// Updated birth and death dates
@@ -181,7 +190,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		double hostAge = -hostPopulation[i]->birthDate; // 0 - birthDate (as time at this point is zero)
 
 		// Work out hostContactIndex and hostTreatIndex
-		int age = (int) round(hostAge);
+		int age = (int) ceil(hostAge);
 		int contactIndex =  owner->contactAgeGroupIndex()[age];
 		int treatIndex =  owner->treatmentAgeGroupIndex()[age];
 		hostPopulation[i]->hostContactIndex = contactIndex;
@@ -191,7 +200,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
 	}
 
-	freeliving = 4.0; // Initial freeliving worms, don't know what this number should be
+	freeliving = 11.5; // Initial freeliving worms, don't know what this number should be
 
 	for(int j=0;j<treatLength;j++)
 	{
@@ -202,7 +211,8 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	// Add treatment events
 	for(int j=0;j<treatLength;j++)
 	{
-		localEvents.addEvent(CHEMOTHERAPY,chemoTimes[j],NULL);
+		// Add treatment events just slightly before the specified treat times to make sure treatment has definitely been carried out by those times
+		localEvents.addEvent(CHEMOTHERAPY,chemoTimes[j] - 0.001,NULL);
 	}
 
 	for(int i=0;i<surveyLength;i++)
@@ -249,7 +259,13 @@ bool CRealization::run(int repNo)
 
 	Event nextEvent; // Take nextEvent off queue and store it here
 
-	nextEvent.time = 0; // For each run, reset this value to 0
+	// Allocate values to compareArray
+	compareArray[0] = outTimes[0]; // First survey time
+	compareArray[1] = 0.25; // Ageing interval
+	compareArray[2] = chemoTimes[0]; // First treat time
+	compareArray[3] = timeRes; // Time of next reservoir update
+
+	nextEvent.time = owner->min(compareArray,4); // For each run, reset this value to the minimum of compareArray
 
 	// Which event?
 	double timeEvent = timeRes;
@@ -269,7 +285,7 @@ bool CRealization::run(int repNo)
 			double hostAge = timeNow - hostPopulation[i]->birthDate;
 
 			// Work out hostContactIndex and hostTreatIndex
-			int age = (int) round(hostAge);
+			int age = (int) ceil(hostAge);
 			int contactIndex =  owner->contactAgeGroupIndex()[age];
 			int treatIndex =  owner->treatmentAgeGroupIndex()[age];
 			hostPopulation[i]->hostContactIndex = contactIndex;
@@ -288,7 +304,7 @@ bool CRealization::run(int repNo)
 		// Time of next event
 		double timeNextEvent = timeNow + deltaTimeStoch;
 
-		while(timeNextEvent < timeEvent)
+		while(timeNextEvent < timeEvent) // TODO: CHECK HERE
 		{
 			// Enact a worm event
 			doEvent();
@@ -301,7 +317,8 @@ bool CRealization::run(int repNo)
 			timeNextEvent = timeNow + deltaTimeStoch;
 		}
 
-		// Must be time for the event now
+		// timeNextEvent must be greater or equal to timeEvent now
+		// Time for the event
 
 		// If reservoirNext is TRUE
 		if(reservoirNext)
@@ -318,11 +335,10 @@ bool CRealization::run(int repNo)
 			timeNow = timeRes;
 			timeRes = timeNow + deltaTimeDet;
 		}
-		else
+		else // reservoirNext is FALSE
 		{
 			// Time for the queued events to take place
 			timeNow = nextEvent.time;
-			//printf("timeNow %f\n",timeNow);
 
 			// Do the event
 			switch (nextEvent.type)
@@ -371,7 +387,7 @@ bool CRealization::run(int repNo)
 		//printf("timeNow: %f\n",timeNow);
 		//printf("nextEvent.time: %f\n",nextEvent.time);
 
-	} while(timeNow < nYears); // Do events until nYears is reached
+	} while(timeNow <= nYears); // Do events until nYears is reached
 
 	return true;
 }
@@ -387,9 +403,7 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	CHost* currentHost = (CHost*) currentEvent.subject;
 
 	// Host life span
-	double lifespan = owner->drawLifespan();
-	//printf("lifespan %f\n",lifespan);
-	//printf("currentEvent.time %f\n",currentEvent.time);
+	lifespan = owner->drawLifespan();
 
 	// Set birth date to now
 	// Put birth slightly in the past to ensure age is just positive for categorisation
@@ -409,7 +423,7 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 
 	// Update hostContactIndex and hostTreatIndex
 	double hostAge = currentEvent.time - currentHost->birthDate;
-	int age = (int) round(hostAge);
+	int age = (int) ceil(hostAge);
 	int contactIndex = owner->contactAgeGroupIndex()[age];
 	int treatIndex = owner->treatmentAgeGroupIndex()[age];
 	currentHost->hostContactIndex = contactIndex;
@@ -473,7 +487,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		outputArray[i].totalHostNumber = 1;
 
 		// Look at infants
-		bool infants = (currentHostAge >= birthCutoff) && (currentHostAge < infantCutoff);
+		bool infants = (currentHostAge > birthCutoff) && (currentHostAge <= infantCutoff);
 
 		if(infants)
 		{
@@ -488,7 +502,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		}
 
 		// Look at pre-SAC
-		bool preSAC = (currentHostAge >= infantCutoff) && (currentHostAge < preSACCutoff);
+		bool preSAC = (currentHostAge > infantCutoff) && (currentHostAge <= preSACCutoff);
 
 		if(preSAC)
 		{
@@ -503,7 +517,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		}
 
 		// Look at SAC
-		bool SAC = (currentHostAge >= preSACCutoff) && (currentHostAge < SACCutoff);
+		bool SAC = (currentHostAge > preSACCutoff) && (currentHostAge <= SACCutoff);
 
 		if(SAC)
 		{
@@ -518,7 +532,7 @@ bool CRealization::surveyResultResponse(Event& currentEvent)
 		}
 
 		// Look at adults
-		bool adults = (currentHostAge >= SACCutoff) && (currentHostAge < adultCutoff);
+		bool adults = (currentHostAge > SACCutoff) && (currentHostAge <= adultCutoff);
 
 		if(adults)
 		{
@@ -563,7 +577,7 @@ void CRealization::calculateEventRates()
 	double cumul = 0; // A cumulative value
 	for (int i=0;i<nHosts;i++)
 	{
-		int contactIndex = hostPopulation[i]->hostContactIndex;
+		int contactIndex =  hostPopulation[i]->hostContactIndex;
 		double betaValue = owner->betaValues[contactIndex];
 		hostInfectionRate[i] = freeliving*hostPopulation[i]->si*betaValue;
 		rates[i] = cumul + hostInfectionRate[i];
@@ -580,7 +594,7 @@ void CRealization::doEvent()
 	// Determine if dead worm or new worm
 	// If event is equal to 0,1,2,...,nHosts-1 it's a NEW WORM, otherwise (if event is equal to nHost) it's a DEAD WORM
 	double currentRand = owner->myRandUniform();
-	int event = owner->multiNomBasic(rates,ratesLength,currentRand); // TODO: Check if this is working properly
+	int event = owner->multiNomBasic(rates,ratesLength,currentRand);
 	//printf("event=%d\n",event);
 
 	if(event==nHosts) // DEAD WORM

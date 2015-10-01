@@ -32,12 +32,16 @@ int main(int argc, char** argv)
 	//srand(time(NULL));
 	srand(1); // Fixed seed for testing
 
+
+
+	//fflush(stdout);
 	// Create a CSimulator object
 	CSimulator simulator;
 
 	// Initialise the input/output aspects of the simulator
 	if(!simulator.initialiseIO(argv[1],argv[2],argv[3]))
 	{
+
 		simulator.logStream << "Failure in initialiseIO(...).\n" << std::flush;
 		return 0;
 	}
@@ -51,7 +55,7 @@ int main(int argc, char** argv)
 
 	int t2 = time(NULL); // Stop clock counter
 
-	printf ("\n\nTime taken = %d secs", t2 - t1); // Print time taken in seconds to run the program to the console
+	printf ("\nTime taken = %d secs", t2 - t1); // Print time taken in seconds to run the program to the console
 
 	return 1; 
 }

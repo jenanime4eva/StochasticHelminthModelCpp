@@ -62,8 +62,10 @@ public:
 	int runs;
 	double nYears;
 	CHost** hostPopulation; // Array of host population
+	double lifespan;
 	double tinyIncrement;
 	double freeliving;
+	double* compareArray;
 	double* hostTotalWorms;
 	double* productiveFemaleWorms;
 	double* eggsOutputPerHost;

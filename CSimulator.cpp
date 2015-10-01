@@ -154,18 +154,20 @@ CSimulator::~CSimulator() {
 
 		delete[] myRealization;
 	}
-
 }
 
 // Initialise the input/output aspects of the simulator
 bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 {
 	// As string classes
+
+	printf(" "); // I don't know why but removing this printf statement causes the code to crash (runs fine in debug mode though)
 	runName = run;
 	thePath = path;
 
 	// Setting up all the files needed
 	std::string logFilePath = thePath + runName + ".log.txt";
+
 	logStream.open(logFilePath.c_str());
 	if (!logStream.is_open()) {
 		std::cout << "Couldn't open the log file: " << logFilePath
@@ -368,8 +370,8 @@ bool CSimulator::initialiseSimulation()
 	}
 
 	// Set up arrays to be used later
-	contactIndices = new int[maxHostAge];
-	treatmentIndices = new int[maxHostAge];
+	contactIndices = new int[maxHostAge+1];
+	treatmentIndices = new int[maxHostAge+1];
 
 	// SET UP RESULTS COLLECTION
 
@@ -421,6 +423,10 @@ void CSimulator::outputSimulation()
 		std::string surveyResultsOut = thePath + runName + ".surveyResults.txt";
 		std::ofstream surveyStream(surveyResultsOut.c_str());
 
+		// Uncomment as necessary for what kind of output file you want
+
+		///*
+		// FOR TIME COURSE PLOTS
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
 			// Print times in the first column
@@ -477,7 +483,6 @@ void CSimulator::outputSimulation()
 			//printf("%d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
 			//printf("%d %d %d %d\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
 
-			///*
 			// Infants
 			if(sumInfantNumber!=0)
 				surveyStream << "\t" << (double) sumInfantFemaleWorms/sumInfantNumber << "\t";
@@ -504,9 +509,51 @@ void CSimulator::outputSimulation()
 
 			// Whole Population
 			surveyStream << "\t" << (double) sumFemaleWorms/sumTotalHostNumber << "\t";
-			//*/
+
 			surveyStream << "\n"; // New line before next time output
 		}
+		//*/
+
+		/*
+		// FOR WORM BURDEN VS AGE AT EQUILIBRIUM (make sure a no treatment parameter file has been used)
+		int lastTimePoint = surveyResultTimesLength-1;
+		for (int currentAge = 1; currentAge <= maxHostAge; currentAge++)
+		{
+			// Print host ages in the first column
+			surveyStream << currentAge << "\t";
+
+			// Reset these after each iteration
+			double femaleWormsAtCurrentAge = 0;
+			double hostAge = 0;
+			int hostCount = 0;
+
+			// Loop through the hosts...
+			for(int i=0;i<nHosts;i++)
+			{
+				// Loop through the runs...
+				for(int repNo=0;repNo<nRepetitions;repNo++)
+				{
+					// Perform some calculations here
+
+					// Age of host falls into current age point?
+					hostAge = myRealization[repNo]->surveyResultsArrayPerRun[lastTimePoint][i].hostAge;
+					if (ceil(hostAge)==currentAge)
+					{
+						// Female worms at last survey time point
+						femaleWormsAtCurrentAge += myRealization[repNo]->surveyResultsArrayPerRun[lastTimePoint][i].femaleWorms;
+
+						// Add one to host count
+						hostCount++;
+					}
+				}
+
+			}
+
+			surveyStream << femaleWormsAtCurrentAge/hostCount;
+
+			surveyStream << "\n"; // New line before next age output
+		}
+		*/
 	}
 }
 
@@ -631,7 +678,7 @@ double CSimulator::calculatePsi()
 	double meanLifespan = 0;
 	double sumRhoAgeHostSurvivalCurveK = 0;
 
-	int maxHostAgeInterval = (int) (maxHostAge/deltaT)+1;
+	int maxHostAgeInterval = (int) (maxHostAge/deltaT);
 	double* modelAges = new double[maxHostAgeInterval];
 	double* hostMuArray = new double[maxHostAgeInterval];
 	double* hostSurvivalCurve = new double[maxHostAgeInterval];
@@ -736,7 +783,7 @@ double CSimulator::drawLifespan()
 int* CSimulator::contactAgeGroupIndex()
 {
 	int currentContactIndex = 1;
-	for(int i=0;i<maxHostAge;i++)
+	for(int i=0;i<=maxHostAge;i++)
 	{
 		contactIndices[i] = currentContactIndex-1;
 		if(i >= contactAgeBreaks[currentContactIndex])
@@ -752,7 +799,7 @@ int* CSimulator::contactAgeGroupIndex()
 int* CSimulator::treatmentAgeGroupIndex()
 {
 	int currentTreatIndex = 1;
-	for(int i=0;i<maxHostAge;i++)
+	for(int i=0;i<=maxHostAge;i++)
 	{
 		treatmentIndices[i] = currentTreatIndex-1;
 		if(i >= treatmentBreaks[currentTreatIndex])
