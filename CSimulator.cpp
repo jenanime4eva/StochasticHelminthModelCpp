@@ -161,7 +161,7 @@ bool CSimulator::initialiseIO(char* run, char* path, char* paramFilePath)
 {
 	// As string classes
 
-	printf(" "); // I don't know why but removing this printf statement causes the code to crash (runs fine in debug mode though)
+	printf("\n"); // I don't know why but removing this printf statement causes the code to crash (runs fine in debug mode though)
 	runName = run;
 	thePath = path;
 
@@ -471,17 +471,16 @@ void CSimulator::outputSimulation()
 					// Whole population
 					sumFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].femaleWorms;
 					sumTotalHostNumber += myRealization[repNo]->surveyResultsArrayPerRun[j][i].totalHostNumber;
-
-					// TODO: TEST PRINTOUTS FOR ONE REALISATION
-					//surveyStream << (int) myRealization[repNo]->surveyResultsArrayPerRun[j][i].femaleWorms << "\t";
 				}
 			}
 
 			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
 
 			// TODO: Demography printout
-			//printf("%d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
-			//printf("%d %d %d %d\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
+			//printf("Time:%f\n",surveyResultTimes[j]);
+			//printf(" Hosts %d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
+			//printf("  Worms %d %d %d %d\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
+			//printf("  Total worms is %d\n",sumInfantFemaleWorms+sumPreSACFemaleWorms+sumSACFemaleWorms+sumAdultFemaleWorms);
 
 			// Infants
 			if(sumInfantNumber!=0)

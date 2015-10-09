@@ -85,6 +85,17 @@ public:
 	double preSACCutoff;
 	double SACCutoff;
 	double adultCutoff;
+	int treatmentOnOff;
+	double treatStart;
+	double treatEnd;
+	double treatInterval;
+	double sigma;
+	double psi;
+	double k;
+	double drugEfficacy;
+	double lambda;
+	double gamma;
+	double ReservoirDecayRate;
 
 	surveyResultData** surveyResultsArrayPerRun;
 

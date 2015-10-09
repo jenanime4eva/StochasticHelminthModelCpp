@@ -49,6 +49,17 @@ CRealization::CRealization()
 	preSACCutoff = 0;
 	SACCutoff = 0;
 	adultCutoff = 0;
+	treatmentOnOff = 0;
+	treatStart = 0;
+	treatEnd = 0;
+	treatInterval = 0;
+	sigma = 0;
+	psi = 0;
+	k = 0;
+	drugEfficacy = 0;
+	lambda = 0;
+	gamma = 0;
+	ReservoirDecayRate = 0;
 }
 
 // Class destructor
@@ -116,6 +127,17 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	nYears = owner->nYears; // Number of years to run
 	surveyLength = owner->surveyResultTimesLength; // Length of survey times array
 	treatLength = owner->treatmentTimesLength; // Length of treatment times array
+	treatmentOnOff = owner->treatmentOnOff; // Is treatment on (value is 1) or off (value is 0)?
+	treatStart = owner->treatStart; // Treatment start year
+	treatEnd = owner->treatEnd; // Treatment end year
+	treatInterval= owner->treatInterval; // Treatment interval
+	sigma = owner->sigma; // Worm death rate
+	psi = owner->psi;
+	k = owner->k;
+	drugEfficacy = owner->drugEff; // Drug efficacy
+	lambda = owner->lambda; // EPG
+	gamma = owner->gamma; // Exponential density dependence of parasite adult stage
+	ReservoirDecayRate = owner->ReservoirDecayRate; // decay rate of eggs in the environment
 
 	// Set up some arrays required later
 	compareArray = new double[4];
@@ -138,6 +160,8 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	SACCutoff = owner->treatmentBreaks[3];
 	adultCutoff = owner->treatmentBreaks[4];
 
+	double initialWormNumber = 11.5; // Choose this number such that initial conditions are at the equilibrium
+
 	// Set up host population array
 	hostPopulation = new CHost* [nHosts];
 	for (int i=0;i<nHosts;i++)
@@ -146,10 +170,8 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 
 		// Initialise total and female worms per individual host
 		// Force of infection
-		double k = owner->k;
 		double siValue = owner->myRandGamma(k,k); // location = 1/scale (here scale = 1/k, so location = k); shape parameter is the parameter k
 		hostPopulation[i]->si = siValue;
-		double initialWormNumber = 11.5; // Choose this number such that initial conditions are at the equilibrium
 		mu[i] = 2.0*initialWormNumber*hostPopulation[i]->si; // These values chosen as initial conditions (initial conditions should be the equilibrium)
 		int TW = owner->myRandPoisson(mu[i]);
 		hostPopulation[i]->totalWorms = TW; // Total worms
@@ -200,7 +222,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 		localEvents.addEvent(HOST_DEATH,hostPopulation[i]->deathDate,hostPopulation[i]);
 	}
 
-	freeliving = 11.5; // Initial freeliving worms, don't know what this number should be
+	freeliving = initialWormNumber; // Initial freeliving worms, don't know what this number should be
 
 	for(int j=0;j<treatLength;j++)
 	{
@@ -297,6 +319,7 @@ bool CRealization::run(int repNo)
 
 		// Last rates array entry
 		double lastRate = rates[ratesLength-1];
+		//printf("timeNow: %f	hostInfectionRate: %f	wormTotalDeathRate: %f\n",timeNow,rates[nHosts-1],rates[nHosts]-rates[nHosts-1]);
 
 		// Stochastic time step
 		double deltaTimeStoch = owner->myRandExponential(lastRate);
@@ -304,7 +327,7 @@ bool CRealization::run(int repNo)
 		// Time of next event
 		double timeNextEvent = timeNow + deltaTimeStoch;
 
-		while(timeNextEvent < timeEvent) // TODO: CHECK HERE
+		while(timeNextEvent < timeEvent)
 		{
 			// Enact a worm event
 			doEvent();
@@ -327,10 +350,8 @@ bool CRealization::run(int repNo)
 
 			// Update the freeliving worm populations (worms found in the environment) deterministically
 			double ts = timeRes - timeNow;
-			freeliving = doFreeliving(ts,freeliving);
-
-			//printf("ts: %f\n",ts);
-			//printf("freeliving: %f\n",freeliving);
+			freeliving = doFreeliving(ts,freeliving); // TODO: CHECK THIS
+			//printf("timeNow: %f freeliving: %f\n",timeNow,freeliving);
 
 			timeNow = timeRes;
 			timeRes = timeNow + deltaTimeDet;
@@ -350,7 +371,9 @@ bool CRealization::run(int repNo)
 
 				// Apply treatment
 				case CHEMOTHERAPY:
+					//printf("BEFORE %d\t",hostPopulation[10]->femaleWorms);
 					hostChemoResponse(nextEvent);
+					//printf("AFTER %d\n",hostPopulation[10]->femaleWorms);
 					break;
 
 				// Any events to debug?
@@ -413,7 +436,6 @@ bool CRealization::hostDeathResponse(Event& currentEvent)
 	currentHost->deathDate = currentEvent.time + lifespan;
 
 	// Calculate new force of infection (FOI)
-	double k = owner->k;
 	double siValue = owner->myRandGamma(k,k);
 	currentHost->si = siValue;
 
@@ -455,8 +477,6 @@ bool CRealization::hostChemoResponse(Event& currentEvent)
 			int TW = hostPopulation[i]->totalWorms;
 			int FW = hostPopulation[i]->femaleWorms;
 			int MW = TW - FW;
-
-			double drugEfficacy = owner->drugEff;
 
 			int maleToDie = owner->myRandBinomial(MW,drugEfficacy);
 			int femaleToDie = owner->myRandBinomial(FW,drugEfficacy);
@@ -583,7 +603,7 @@ void CRealization::calculateEventRates()
 		rates[i] = cumul + hostInfectionRate[i];
 		cumul = rates[i];
 	}
-	double sigma = owner->sigma;
+	// TODO: Check cumulative force of infection value rates[nHosts-1]
 	double wormTotalDeathRate = (double) (sigma*sumTotalWorms);
 	rates[nHosts] = cumul + wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
 }
@@ -669,8 +689,6 @@ double CRealization::doFreeliving(double ts,double freeliving)
 			productiveFemaleWorms[i] = 0.0;
 		}
 
-		double lambda = owner->lambda;
-		double gamma = owner->gamma;
 		eggsOutputPerHost[i] = lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*gamma);
 
 		int contactIndex = hostPopulation[i]->hostContactIndex;
@@ -678,12 +696,10 @@ double CRealization::doFreeliving(double ts,double freeliving)
 		sumEggsOutputPerHostRho += eggsOutputPerHost[i]*rhoValue;
 	}
 
-	double psi = owner->psi;
 	eggsProductionRate = (double) (psi*sumEggsOutputPerHostRho/nHosts);
 
 	// dL/dt = K-mu*L has solution L=L(0)exp(-mu*t)+K*(1-exp(-mu*t))/mu, this is exact if rate of egg production is constant in the timestep
 	// Here L = freeliving, K = eggsProductionRate, mu = ReservoirDecayRate
-	double ReservoirDecayRate = owner->ReservoirDecayRate;
 	double expo = exp(-ReservoirDecayRate*ts);
 	double freelivingNumber = freeliving*expo + (eggsProductionRate*(1.0-expo)/ReservoirDecayRate);
 
