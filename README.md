@@ -8,3 +8,5 @@ This repository contains C++ code for generating data from an individual-based s
 COMMAND LINE USAGE
 
 4 expected arguments: .exe file(space)Run name e.g. Test(space)Path to output log and results files(space)Path of parameter file
+
+Example: StochasticHelminthModelCPP.exe TESTNAME C:/FOLDER/ C:/FOLDER/PARAMETER.txt
