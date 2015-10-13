@@ -142,7 +142,7 @@ bool CRealization::initialize(CSimulator* currentOwner,int repNo)
 	// Set up some arrays required later
 	compareArray = new double[4];
 	hostTotalWorms = new double[nHosts];
-	productiveFemaleWorms = new double[nHosts];
+	productiveFemaleWorms = new int[nHosts];
 	eggsOutputPerHost = new double[nHosts];
 	hostInfectionRate = new double[nHosts];
 
@@ -349,8 +349,7 @@ bool CRealization::run(int repNo)
 			// It's deltaTimeDet since the last reservoir update, so it's time to update the reservoir
 
 			// Update the freeliving worm populations (worms found in the environment) deterministically
-			double ts = timeRes - timeNow;
-			freeliving = doFreeliving(ts,freeliving); // TODO: CHECK THIS
+			freeliving = doFreeliving(timeNow,freeliving); // TODO: CHECK THIS
 			//printf("timeNow: %f freeliving: %f\n",timeNow,freeliving);
 
 			timeNow = timeRes;
@@ -603,9 +602,11 @@ void CRealization::calculateEventRates()
 		rates[i] = cumul + hostInfectionRate[i];
 		cumul = rates[i];
 	}
-	// TODO: Check cumulative force of infection value rates[nHosts-1]
+
 	double wormTotalDeathRate = (double) (sigma*sumTotalWorms);
-	rates[nHosts] = cumul + wormTotalDeathRate; // Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
+
+	// Append wormTotalDeathRate onto the hostInfectionRate array to complete rates array
+	rates[nHosts] = cumul + wormTotalDeathRate;
 }
 
 // Enact an event
@@ -673,7 +674,7 @@ void CRealization::doEvent()
 }
 
 // Update the freeliving populations deterministically
-double CRealization::doFreeliving(double ts,double freeliving)
+double CRealization::doFreeliving(double timeNow,double freeliving)
 {
 	double sumEggsOutputPerHostRho = 0.0; // Reset this value before next iteration
 
@@ -682,14 +683,14 @@ double CRealization::doFreeliving(double ts,double freeliving)
 		// Female worms produce fertilised eggs only if there is a male worm
 		bool noMales = hostPopulation[i]->totalWorms == hostPopulation[i]->femaleWorms;
 
-		productiveFemaleWorms[i] = (double) hostPopulation[i]->femaleWorms;
+		productiveFemaleWorms[i] = hostPopulation[i]->femaleWorms;
 
 		if (noMales)
 		{
-			productiveFemaleWorms[i] = 0.0;
+			productiveFemaleWorms[i] = 0;
 		}
 
-		eggsOutputPerHost[i] = lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*gamma);
+		eggsOutputPerHost[i] = (double) lambda*productiveFemaleWorms[i]*exp(-productiveFemaleWorms[i]*gamma);
 
 		int contactIndex = hostPopulation[i]->hostContactIndex;
 		double rhoValue = owner->rhoValues[contactIndex];
@@ -700,8 +701,8 @@ double CRealization::doFreeliving(double ts,double freeliving)
 
 	// dL/dt = K-mu*L has solution L=L(0)exp(-mu*t)+K*(1-exp(-mu*t))/mu, this is exact if rate of egg production is constant in the timestep
 	// Here L = freeliving, K = eggsProductionRate, mu = ReservoirDecayRate
-	double expo = exp(-ReservoirDecayRate*ts);
-	double freelivingNumber = freeliving*expo + (eggsProductionRate*(1.0-expo)/ReservoirDecayRate);
+	double expo = exp(-ReservoirDecayRate*timeNow);
+	double freelivingNumber = freeliving*expo + (eggsProductionRate*(1.0-expo)/ReservoirDecayRate); // TODO: CHECK HERE
 
 	return freelivingNumber;
 }

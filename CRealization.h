@@ -67,7 +67,7 @@ public:
 	double freeliving;
 	double* compareArray;
 	double* hostTotalWorms;
-	double* productiveFemaleWorms;
+	int* productiveFemaleWorms;
 	double* eggsOutputPerHost;
 	double eggsProductionRate;
 	double* hostInfectionRate;
