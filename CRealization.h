@@ -71,8 +71,6 @@ public:
 	double* eggsOutputPerHost;
 	double eggsProductionRate;
 	double* hostInfectionRate;
-	int* contactAgeGroupIndex;
-	int* treatmentAgeGroupIndex;
 	double* mu;
 	double* rates;
 	double* chemoTimes;
@@ -85,7 +83,6 @@ public:
 	double preSACCutoff;
 	double SACCutoff;
 	double adultCutoff;
-	int treatmentOnOff;
 	double treatStart;
 	double treatEnd;
 	double treatInterval;

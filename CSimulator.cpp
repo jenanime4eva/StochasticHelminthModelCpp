@@ -425,8 +425,7 @@ void CSimulator::outputSimulation()
 
 		// Uncomment as necessary for what kind of output file you want
 
-		///*
-		// FOR TIME COURSE PLOTS
+		/* TODO: FOR TIME COURSE PLOTS OF FEMALE WORM BURDEN
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
 			// Print times in the first column
@@ -476,54 +475,81 @@ void CSimulator::outputSimulation()
 
 			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
 
-			// TODO: Demography printout
+			// TODO: Demography check
 			//printf("Time:%f\n",surveyResultTimes[j]);
 			//printf(" Hosts %d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
 			//printf("  Worms %d %d %d %d\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
 			//printf("  Total worms is %d\n",sumInfantFemaleWorms+sumPreSACFemaleWorms+sumSACFemaleWorms+sumAdultFemaleWorms);
 
 			// Infants
-			if(sumInfantNumber!=0)
-				surveyStream << "\t" << (double) sumInfantFemaleWorms/sumInfantNumber << "\t";
-			if(sumInfantNumber==0) // Do not divide by zero!
-				surveyStream << "\t" << 0 << "\t"; // If there are no infants, there are no infant-related worms!
+			surveyStream << (double) sumInfantFemaleWorms/(sumInfantNumber+0.01) << "\t"; // 0.01 is to avoid division by zero
 
 			// Pre-SAC
-			if(sumPreSACNumber!=0)
-				surveyStream << (double) sumPreSACFemaleWorms/sumPreSACNumber << "\t";
-			if(sumPreSACNumber==0) // Do not divide by zero!
-				surveyStream << 0 << "\t"; // If there are no pre-SAC, there are no pre-SAC-related worms!
+			surveyStream << (double) sumPreSACFemaleWorms/(sumPreSACNumber+0.01) << "\t"; // 0.01 is to avoid division by zero
 
 			// SAC
-			if(sumSACNumber!=0)
-				surveyStream << (double) sumSACFemaleWorms/sumSACNumber << "\t";
-			if(sumSACNumber==0) // Do not divide by zero!
-				surveyStream << 0 << "\t"; // If there are no SAC, there are no SAC-related worms!
+			surveyStream << (double) sumSACFemaleWorms/(sumSACNumber+0.01) << "\t"; // 0.01 is to avoid division by zero
 
 			// Adults
-			if(sumAdultNumber!=0)
-				surveyStream << (double) sumAdultFemaleWorms/sumAdultNumber << "\t";
-			if(sumAdultNumber==0) // Do not divide by zero!
-				surveyStream << 0 << "\t"; // If there are no adults, there are no adult-related worms!
+			surveyStream << (double) sumAdultFemaleWorms/(sumAdultNumber+0.01) << "\t"; // 0.01 is to avoid division by zero
 
 			// Whole Population
-			surveyStream << "\t" << (double) sumFemaleWorms/sumTotalHostNumber << "\t";
+			surveyStream << "\t" << (double) sumFemaleWorms/(sumTotalHostNumber+0.01) << "\t"; // 0.01 is to avoid division by zero
 
 			surveyStream << "\n"; // New line before next time output
 		}
+		*/
+
+		///* TODO: FOR WORKING OUT PROPORTION OF FEMALE WORM EXTINCTIONS VS YEARS AFTER TREATMENT
+		int treatStartIndex = (int) (treatStart/surveyTimesDt)+1;
+		for (int j = treatStartIndex; j < surveyResultTimesLength; j++)
+		{
+			// Print times from first treatment time in the first column
+			// N.B. Printout will actually be the current run time minus the treatment start year
+			surveyStream << surveyResultTimes[j]-treatStart << "\t";
+
+			int sumZeroFemaleWorms = 0;
+
+			// Loop through the hosts...
+			for(int repNo=0;repNo<nRepetitions;repNo++)
+			{
+				int zeroFemaleWorms = 0;
+				int sumFemaleWorms = 0;
+
+				// Loop through the runs...
+				for(int i=0;i<nHosts;i++)
+				{
+					sumFemaleWorms += myRealization[repNo]->surveyResultsArrayPerRun[j][i].femaleWorms;
+				}
+
+				// Has female worms reached zero yet? Allocate value of one for yes, zero for no
+				if(sumFemaleWorms==0)
+				{
+					zeroFemaleWorms = 1; // Worms have gone extinct for current run
+				}
+				else
+				{
+					zeroFemaleWorms = 0; // Worms have not gone extinct for current run
+				}
+
+				sumZeroFemaleWorms += zeroFemaleWorms; // Sum up the number of runs that have reached zero female worms
+			}
+
+			// Output proportion of female worm extinctions out of the specified number of runs in the second column
+			surveyStream << (double) sumZeroFemaleWorms/nRepetitions << "\n";
+		}
 		//*/
 
-		/*
-		// FOR WORM BURDEN VS AGE AT EQUILIBRIUM (make sure a no treatment parameter file has been used)
-		int lastTimePoint = surveyResultTimesLength-1;
-		for (int currentAge = 1; currentAge <= maxHostAge; currentAge++)
+		/* TODO: FOR WORM BURDEN VS AGE AT EQUILIBRIUM
+		int equiTimeIndex = (int) (treatStart/surveyTimesDt)-1; // Get index of equilibrium time point
+		for (int ageCat = 1; ageCat <= maxHostAge; ageCat++)
 		{
 			// Print host ages in the first column
-			surveyStream << currentAge << "\t";
+			surveyStream << ageCat << "\t";
 
 			// Reset these after each iteration
-			double femaleWormsAtCurrentAge = 0;
-			double hostAge = 0;
+			int femaleWormsAgeCat = 0;
+			int hostAge = 0;
 			int hostCount = 0;
 
 			// Loop through the hosts...
@@ -534,12 +560,12 @@ void CSimulator::outputSimulation()
 				{
 					// Perform some calculations here
 
-					// Age of host falls into current age point?
-					hostAge = myRealization[repNo]->surveyResultsArrayPerRun[lastTimePoint][i].hostAge;
-					if (ceil(hostAge)==currentAge)
+					// Age of host falls into current age category?
+					hostAge = (int) ceil(myRealization[repNo]->surveyResultsArrayPerRun[equiTimeIndex][i].hostAge);
+					if (hostAge == ageCat)
 					{
 						// Female worms at last survey time point
-						femaleWormsAtCurrentAge += myRealization[repNo]->surveyResultsArrayPerRun[lastTimePoint][i].femaleWorms;
+						femaleWormsAgeCat += myRealization[repNo]->surveyResultsArrayPerRun[equiTimeIndex][i].femaleWorms;
 
 						// Add one to host count
 						hostCount++;
@@ -548,7 +574,7 @@ void CSimulator::outputSimulation()
 
 			}
 
-			surveyStream << femaleWormsAtCurrentAge/hostCount;
+			surveyStream << (double) femaleWormsAgeCat/(hostCount+0.01); // 0.01 is to avoid division by zero
 
 			surveyStream << "\n"; // New line before next age output
 		}
@@ -784,11 +810,12 @@ int* CSimulator::contactAgeGroupIndex()
 	int currentContactIndex = 1;
 	for(int i=0;i<=maxHostAge;i++)
 	{
-		contactIndices[i] = currentContactIndex-1;
 		if(i >= contactAgeBreaks[currentContactIndex])
 		{
 			currentContactIndex++;
 		}
+
+		contactIndices[i] = currentContactIndex-1;
 	}
 
 	return contactIndices;
@@ -800,11 +827,12 @@ int* CSimulator::treatmentAgeGroupIndex()
 	int currentTreatIndex = 1;
 	for(int i=0;i<=maxHostAge;i++)
 	{
-		treatmentIndices[i] = currentTreatIndex-1;
 		if(i >= treatmentBreaks[currentTreatIndex])
 		{
 			currentTreatIndex++;
 		}
+
+		treatmentIndices[i] = currentTreatIndex-1;
 	}
 
 	return treatmentIndices;

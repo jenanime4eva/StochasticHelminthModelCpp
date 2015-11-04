@@ -4,37 +4,42 @@
 ### Name (TAB) Values separated by spaces (TABS) ## Comments
 ### Any line starting with '#' is completely ignored
 
+### The following are Ascaris parameter values 
+### These parameters are from the fit to all the Ascaris data simultaneously 
+
 ### Model running parameters
-repNum	1000								## Number of repetitions
-nYears	50								## Number of years to run the simulation
-nHosts	100								## Size of definitive host population (N)
-surveyTimesDt	0.25					## Time step for the survey times in years e.g. 1 is annual, 0.5 is biannual
+repNum	50								## Number of repetitions
+nYears	60								## Number of years to run the simulation
+nHosts	200								## Size of definitive host population (N)
+surveyTimesDt	0.01923					## Time step for the survey times in years e.g. 1 is annual, 0.5 is biannual
 
 ### Demographic structure
+## The following death rates are for Kenya 2013 and come from the WHO Global Health Observatory Data Repository
+## hostMuData	0.049 0.006 0.003 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.008 0.010 0.013 0.019 0.029 0.047 0.077 0.137 0.215 0.319 0.453 0.605	## Host death rate by age range 
+## upperBoundData	1 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110	## Upper bounds for the above (bottom bound is zero)
 ## Data from the total rural population for Kenya 2003 from the KDHS Household Questionnaire (See DeathAndSurvival.xlsx: sheet Kenya KDHS)
 hostMuData	0.01193 0.00896 0.001 0.12747 0.0085 0.06292 0.03941 0.00366 0.04963 0.05128 0.01715 0.04414 0.05223 0.05202 0.05566 0.02961 0.15997	## Host death rate by age range 
-##hostMuData	0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04 0.04	## TEST LINE
 upperBoundData	5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 100	## Upper bounds for the above (bottom bound is zero)
 demogDt	1.0								## Age step for survival curve in years
 
 ### Social structure
 contactAgeBreaks	0 2 5 15 70			## Contact age group breaks (minimum ages of each age group, last entry is the max age)
-betaValues	0.48 1.95 1 0.57			## Relative contact rates (Beta)
-rhoValues	0.48 1.95 1 0.57			## Contribution to the reservoir by contact age group (Rho)
+betaValues	0.22 1.88 1 0.53			## Relative contact rates (Beta)
+rhoValues	0.22 1.88 1 0.53			## Contribution to the reservoir by contact age group (Rho)
 
 ### Epidemiological parameters 
-k	0.7									## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
+k	0.9									## Shape parameter of assumed negative binomial distribution of worms amongst host (k)
 lambda	5470							## Eggs per gram (lambda)
-R0	2.56								## Basic reproductive number (R0) 
-ReservoirDecayRate	6					## Reservoir decay rate (decay rate of eggs in the environment)
+R0	1.5								## Basic reproductive number (R0) 
+ReservoirDecayRate	5					## Reservoir decay rate (decay rate of eggs in the environment)
 sigma	1								## Worm death rate (sigma) i.e. 1/worm_life_span, same for all development stages
-gamma	0.08							## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
+gamma	0.07							## Exponential density dependence of parasite adult stage (gamma) N.B. fecundity parameter z = exp(-gamma)
 
 ### Treatment parameters 
 treatmentOnOff	1						## 1 for treatment (on); 0 for no treatment (off)
 treatmentBreaks	0 2 5 15 70				## Treatment age group breaks (minimum ages of each age group, last entry is the max age)
-coverage	0.0 0.75 0.75 0.75			## Coverages: Infants; Pre-SAC; SAC; Adults
-drugEff	0.9								## Drug efficacy
-treatStart	20							## Treatment year start
-treatEnd	30							## Treatment year end
+coverage	0.0 0.0 0.75 0.0			## Coverages: Infants; Pre-SAC; SAC; Adults
+drugEff	0.99								## Drug efficacy
+treatStart	30							## Treatment year start
+treatEnd	60							## Treatment year end
 treatInterval	1.0						## Interval between treatments in years e.g. 1 is annual, 0.5 is biannual

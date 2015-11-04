@@ -29,12 +29,9 @@ int main(int argc, char** argv)
 
 	// Set the seed
 	// Initialise random number generator
-	//srand(time(NULL));
+	//srand(time(NULL)); // Random seed
 	srand(1); // Fixed seed for testing
 
-
-
-	//fflush(stdout);
 	// Create a CSimulator object
 	CSimulator simulator;
 
