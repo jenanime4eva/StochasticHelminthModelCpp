@@ -352,7 +352,7 @@ bool CSimulator::initialiseSimulation()
 
 	// Drug efficacy
 	drugEff = atof(myReader.getParamString("drugEff"));
-	drugEff = drugEff*treatmentOnOff;
+	drugEff = (double) drugEff*treatmentOnOff;
 
 	// Treatment year start
 	treatStart = atof(myReader.getParamString("treatStart"));
@@ -425,7 +425,7 @@ void CSimulator::outputSimulation()
 
 		// Uncomment as necessary for what kind of output file you want
 
-		/* TODO: FOR TIME COURSE PLOTS OF FEMALE WORM BURDEN
+		///* TODO: FOR TIME COURSE PLOTS OF FEMALE WORM BURDEN OF THE INFANT, PRE-SAC, SAC AND ADULT AGE GROUPS
 		for (int j = 0; j < surveyResultTimesLength; j++)
 		{
 			// Print times in the first column
@@ -475,12 +475,6 @@ void CSimulator::outputSimulation()
 
 			// Print out infant, pre-SAC, SAC, adult and whole population mean female worm burdens over time
 
-			// TODO: Demography check
-			//printf("Time:%f\n",surveyResultTimes[j]);
-			//printf(" Hosts %d %d %d %d\n",sumInfantNumber,sumPreSACNumber,sumSACNumber,sumAdultNumber);
-			//printf("  Worms %d %d %d %d\n",sumInfantFemaleWorms,sumPreSACFemaleWorms,sumSACFemaleWorms,sumAdultFemaleWorms);
-			//printf("  Total worms is %d\n",sumInfantFemaleWorms+sumPreSACFemaleWorms+sumSACFemaleWorms+sumAdultFemaleWorms);
-
 			// Infants
 			surveyStream << (double) sumInfantFemaleWorms/(sumInfantNumber+0.01) << "\t"; // 0.01 is to avoid division by zero
 
@@ -498,15 +492,37 @@ void CSimulator::outputSimulation()
 
 			surveyStream << "\n"; // New line before next time output
 		}
+		//*/
+
+		/* TODO: FOR TIME COURSE PLOTS OF FEMALE WORM BURDEN FOR EACH HOST (Set repNum = 1 in the parameter file)
+		for (int j = 0; j < surveyResultTimesLength; j++)
+		{
+			// Print times in the first column
+			surveyStream << surveyResultTimes[j] << "\t";
+
+			// Loop through the hosts...
+			for(int i=0;i<nHosts;i++)
+			{
+				// Loop through the runs
+				for(int repNo=0;repNo<nRepetitions;repNo++)
+				{
+					// Print female worms for current host
+					surveyStream << myRealization[repNo]->surveyResultsArrayPerRun[j][i].femaleWorms << "\t";
+				}
+			}
+
+			surveyStream << "\n"; // New line before next time output
+		}
 		*/
 
-		///* TODO: FOR WORKING OUT PROPORTION OF FEMALE WORM EXTINCTIONS VS YEARS AFTER TREATMENT
-		int treatStartIndex = (int) (treatStart/surveyTimesDt)+1;
+		/* TODO: FOR WORKING OUT PROPORTION OF FEMALE WORM EXTINCTIONS VS YEARS AFTER TREATMENT
+		int treatStartIndex = (int) (treatStart/surveyTimesDt);
 		for (int j = treatStartIndex; j < surveyResultTimesLength; j++)
 		{
 			// Print times from first treatment time in the first column
 			// N.B. Printout will actually be the current run time minus the treatment start year
-			surveyStream << surveyResultTimes[j]-treatStart << "\t";
+			double timeOut = surveyResultTimes[j]-treatStart;
+			surveyStream << timeOut << "\t";
 
 			int sumZeroFemaleWorms = 0;
 
@@ -538,7 +554,7 @@ void CSimulator::outputSimulation()
 			// Output proportion of female worm extinctions out of the specified number of runs in the second column
 			surveyStream << (double) sumZeroFemaleWorms/nRepetitions << "\n";
 		}
-		//*/
+		*/
 
 		/* TODO: FOR WORM BURDEN VS AGE AT EQUILIBRIUM
 		int equiTimeIndex = (int) (treatStart/surveyTimesDt)-1; // Get index of equilibrium time point
